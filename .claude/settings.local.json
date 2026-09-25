@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.github.com)",
+      "Bash(xcodebuild -version)",
+      "Bash(xcrun --sdk iphoneos --show-sdk-version)",
+      "Bash(git ls-remote *)",
+      "Bash(awk -F'refs/tags/' '{print $2}')",
+      "Bash(swift --version)",
+      "Bash(mkdir -p /tmp/afres)",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p Sources/afres)",
+      "Bash(swift package *)",
+      "Bash(xcodebuild -project jev-chat-jarvis-ios.xcodeproj -scheme jev-chat-jarvis-ios -destination 'generic/platform=iOS' -resolvePackageDependencies)",
+      "Bash(xcodebuild -project jev-chat-jarvis-ios.xcodeproj -scheme jev-chat-jarvis-ios -destination 'generic/platform=iOS' -configuration Debug CODE_SIGNING_ALLOWED=NO build)",
+      "Bash(perl -pi -e 's/\\\\binputView\\\\b/chatInputView/g' AnalysisViewController.swift)",
+      "Bash(xcrun simctl *)",
+      "Bash(xcodebuild -project jev-chat-jarvis-ios.xcodeproj -scheme jev-chat-jarvis-ios -destination 'platform=iOS Simulator,id=0D1F9A9B-569F-448A-8828-C808BF6D8D97' -configuration Debug CODE_SIGNING_ALLOWED=NO build)",
+      "Bash(osascript -e 'tell application \"Simulator\" to activate')",
+      "Bash(osascript -e 'tell application \"System Events\" to tell process \"Simulator\" to get {position, size} of window 1')",
+      "Bash(curl -s --max-time 10 -X POST https://openrouter.ai/api/v1/chat/completions -H \"Authorization: Bearer sk-invalid-key-for-transport-test\" -H \"Content-Type: application/json\" -d '{\"model\":\"deepseek/deepseek-chat-v3.1\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}')",
+      "Bash(curl -s --max-time 10 -X POST https://openrouter.ai/api/v1/chat/completions -H \"Authorization: Bearer sk-or-v1-invalidbutwellformedkey0000000000000000000000000000000000000000000\" -H \"Content-Type: application/json\" -d '{\"model\":\"deepseek/deepseek-chat-v3.1\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}')",
+      "Bash(xcodebuild -project jev-chat-jarvis-ios.xcodeproj -scheme jev-chat-jarvis-ios -destination 'generic/platform=iOS' -configuration Release CODE_SIGNING_ALLOWED=NO clean build)"
+    ]
+  }
+}

@@ -1,0 +1,739 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4D32167B53586A298C10431D /* VisynCapture in Frameworks */ = {isa = PBXBuildFile; productRef = 1CDAF92EBDB25433A4A6C5C0 /* VisynCapture */; };
+		4D32167C53586A298C10431E /* Synapse in Frameworks */ = {isa = PBXBuildFile; productRef = 1CDAF92FBDB25433A4A6C5C1 /* Synapse */; };
+		4D32167D53586A298C10431F /* SeeU in Frameworks */ = {isa = PBXBuildFile; productRef = 1CDAF930BDB25433A4A6C5C2 /* SeeU */; };
+		5CE9A6C1F7FA282FED7F5CBC /* GalchatBroadcastExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DC0E29E5CA688E24A8B5242A /* GalchatBroadcastExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1B2C3D4E5F6071829304A5D /* GalchatKeyboardExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B46138095F5795515E07FE18 /* VisynBroadcast in Frameworks */ = {isa = PBXBuildFile; productRef = F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */; };
+		FD6A89AD749CB351767FC831 /* SampleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB1659D065D75EF7E9FAB88 /* SampleHandler.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A1B2C3D4E5F6071829304A5E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DC5D1CF73062845E0033519A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1B2C3D4E5F6071829304A5B;
+			remoteInfo = GalchatKeyboardExtension;
+		};
+		F10DC8A1B5F4E367C9E35EF6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DC5D1CF73062845E0033519A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C11AACE318D6317B3D01FD74;
+			remoteInfo = GalchatBroadcastExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D6E4D017E4D4532A02FC1F85 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				5CE9A6C1F7FA282FED7F5CBC /* GalchatBroadcastExtension.appex in Embed App Extensions */,
+				A1B2C3D4E5F6071829304A5D /* GalchatKeyboardExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		506E3BE0CF5FC4F4E2118ECA /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		98DC5746B0605AFEB74F5256 /* GalchatBroadcastExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = GalchatBroadcastExtension.entitlements; sourceTree = "<group>"; };
+		A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GalchatKeyboardExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC0E29E5CA688E24A8B5242A /* GalchatBroadcastExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GalchatBroadcastExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC5D1CFF3062845E0033519A /* Galchat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Galchat.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FAB1659D065D75EF7E9FAB88 /* SampleHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleHandler.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A1B2C3D4E5F6071829304A67 /* Exceptions for "GalchatKeyboardExtension" folder in "GalchatKeyboardExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A1B2C3D4E5F6071829304A5B /* GalchatKeyboardExtension */;
+		};
+		DC5D1D113062845F0033519A /* Exceptions for "Galchat" folder in "Galchat" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DC5D1CFE3062845E0033519A /* Galchat */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A1B2C3D4E5F6071829304A66 /* GalchatKeyboardExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A1B2C3D4E5F6071829304A67 /* Exceptions for "GalchatKeyboardExtension" folder in "GalchatKeyboardExtension" target */,
+			);
+			path = GalchatKeyboardExtension;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F6071829304A68 /* GalchatShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GalchatShared;
+			sourceTree = "<group>";
+		};
+		DC5D1D013062845E0033519A /* Galchat */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DC5D1D113062845F0033519A /* Exceptions for "Galchat" folder in "Galchat" target */,
+			);
+			path = "Galchat";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5F04504B033C75CD68D47E0B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B46138095F5795515E07FE18 /* VisynBroadcast in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B2C3D4E5F6071829304A61 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC5D1CFC3062845E0033519A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D32167B53586A298C10431D /* VisynCapture in Frameworks */,
+				4D32167C53586A298C10431E /* Synapse in Frameworks */,
+				4D32167D53586A298C10431F /* SeeU in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		51E81F31E4B9E7916C073EA6 /* GalchatBroadcastExtension */ = {
+			isa = PBXGroup;
+			children = (
+				FAB1659D065D75EF7E9FAB88 /* SampleHandler.swift */,
+				506E3BE0CF5FC4F4E2118ECA /* Info.plist */,
+				98DC5746B0605AFEB74F5256 /* GalchatBroadcastExtension.entitlements */,
+			);
+			path = GalchatBroadcastExtension;
+			sourceTree = "<group>";
+		};
+		DC5D1CF63062845E0033519A = {
+			isa = PBXGroup;
+			children = (
+				DC5D1D013062845E0033519A /* Galchat */,
+				DC5D1D003062845E0033519A /* Products */,
+				51E81F31E4B9E7916C073EA6 /* GalchatBroadcastExtension */,
+				A1B2C3D4E5F6071829304A66 /* GalchatKeyboardExtension */,
+				A1B2C3D4E5F6071829304A68 /* GalchatShared */,
+			);
+			sourceTree = "<group>";
+		};
+		DC5D1D003062845E0033519A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D1CFF3062845E0033519A /* Galchat.app */,
+				DC0E29E5CA688E24A8B5242A /* GalchatBroadcastExtension.appex */,
+				A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1B2C3D4E5F6071829304A5B /* GalchatKeyboardExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B2C3D4E5F6071829304A63 /* Build configuration list for PBXNativeTarget "GalchatKeyboardExtension" */;
+			buildPhases = (
+				A1B2C3D4E5F6071829304A60 /* Sources */,
+				A1B2C3D4E5F6071829304A61 /* Frameworks */,
+				A1B2C3D4E5F6071829304A62 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A1B2C3D4E5F6071829304A66 /* GalchatKeyboardExtension */,
+				A1B2C3D4E5F6071829304A68 /* GalchatShared */,
+			);
+			name = GalchatKeyboardExtension;
+			productName = GalchatKeyboardExtension;
+			productReference = A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		C11AACE318D6317B3D01FD74 /* GalchatBroadcastExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 565ADF5DF1922EBAD5D8B321 /* Build configuration list for PBXNativeTarget "GalchatBroadcastExtension" */;
+			buildPhases = (
+				C1FE030972864A9E24416CE7 /* Sources */,
+				5F04504B033C75CD68D47E0B /* Frameworks */,
+				3030B9917DB281BBD71C980F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GalchatBroadcastExtension;
+			packageProductDependencies = (
+				F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */,
+			);
+			productName = GalchatBroadcastExtension;
+			productReference = DC0E29E5CA688E24A8B5242A /* GalchatBroadcastExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		DC5D1CFE3062845E0033519A /* Galchat */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DC5D1D123062845F0033519A /* Build configuration list for PBXNativeTarget "Galchat" */;
+			buildPhases = (
+				DC5D1CFB3062845E0033519A /* Sources */,
+				DC5D1CFC3062845E0033519A /* Frameworks */,
+				DC5D1CFD3062845E0033519A /* Resources */,
+				D6E4D017E4D4532A02FC1F85 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4271A107D00BFF2B6B27C782 /* PBXTargetDependency */,
+				A1B2C3D4E5F6071829304A5F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A1B2C3D4E5F6071829304A68 /* GalchatShared */,
+				DC5D1D013062845E0033519A /* Galchat */,
+			);
+			name = "Galchat";
+			packageProductDependencies = (
+				1CDAF92EBDB25433A4A6C5C0 /* VisynCapture */,
+				1CDAF92FBDB25433A4A6C5C1 /* Synapse */,
+				1CDAF930BDB25433A4A6C5C2 /* SeeU */,
+			);
+			productName = "Galchat";
+			productReference = DC5D1CFF3062845E0033519A /* Galchat.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DC5D1CF73062845E0033519A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					A1B2C3D4E5F6071829304A5B = {
+						CreatedOnToolsVersion = 26.6;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
+					};
+					C11AACE318D6317B3D01FD74 = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
+					};
+					DC5D1CFE3062845E0033519A = {
+						CreatedOnToolsVersion = 26.6;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = DC5D1CFA3062845E0033519A /* Build configuration list for PBXProject "Galchat" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DC5D1CF63062845E0033519A;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E3E4B153D2AB06FC7383CDA1 /* XCLocalSwiftPackageReference "../Visyn" */,
+				E3E4B154D2AB06FC7383CDA2 /* XCLocalSwiftPackageReference "../Synapse" */,
+				E3E4B155D2AB06FC7383CDA3 /* XCLocalSwiftPackageReference "../SeeU" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = DC5D1D003062845E0033519A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DC5D1CFE3062845E0033519A /* Galchat */,
+				C11AACE318D6317B3D01FD74 /* GalchatBroadcastExtension */,
+				A1B2C3D4E5F6071829304A5B /* GalchatKeyboardExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3030B9917DB281BBD71C980F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B2C3D4E5F6071829304A62 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC5D1CFD3062845E0033519A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1B2C3D4E5F6071829304A60 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C1FE030972864A9E24416CE7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FD6A89AD749CB351767FC831 /* SampleHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC5D1CFB3062845E0033519A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4271A107D00BFF2B6B27C782 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = GalchatBroadcastExtension;
+			target = C11AACE318D6317B3D01FD74 /* GalchatBroadcastExtension */;
+			targetProxy = F10DC8A1B5F4E367C9E35EF6 /* PBXContainerItemProxy */;
+		};
+		A1B2C3D4E5F6071829304A5F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1B2C3D4E5F6071829304A5B /* GalchatKeyboardExtension */;
+			targetProxy = A1B2C3D4E5F6071829304A5E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		37F3E6F1719E356F2DBD83B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = GalchatBroadcastExtension/GalchatBroadcastExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GalchatBroadcastExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 录屏";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).BroadcastExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		603CF2F2E3D1115799EBFA13 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = GalchatBroadcastExtension/GalchatBroadcastExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GalchatBroadcastExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 录屏";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).BroadcastExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1B2C3D4E5F6071829304A64 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = GalchatKeyboardExtension/GalchatKeyboardExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GalchatKeyboardExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 键盘";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).KeyboardExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1B2C3D4E5F6071829304A65 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = GalchatKeyboardExtension/GalchatKeyboardExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GalchatKeyboardExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 键盘";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).KeyboardExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		DC5D1D133062845F0033519A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Galchat/Galchat.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 43MJ7CT2NR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Galchat/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Galchat;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DC5D1D143062845F0033519A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Galchat/Galchat.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 43MJ7CT2NR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Galchat/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Galchat;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		DC5D1D153062845F0033519A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 43MJ7CT2NR;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VISYN_APP_BUNDLE_IDENTIFIER = "com.heself.galchat";
+				VISYN_APP_GROUP = "group.$(VISYN_APP_BUNDLE_IDENTIFIER)";
+			};
+			name = Debug;
+		};
+		DC5D1D163062845F0033519A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 43MJ7CT2NR;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+				VISYN_APP_BUNDLE_IDENTIFIER = "com.heself.galchat";
+				VISYN_APP_GROUP = "group.$(VISYN_APP_BUNDLE_IDENTIFIER)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		565ADF5DF1922EBAD5D8B321 /* Build configuration list for PBXNativeTarget "GalchatBroadcastExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				37F3E6F1719E356F2DBD83B3 /* Release */,
+				603CF2F2E3D1115799EBFA13 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D4E5F6071829304A63 /* Build configuration list for PBXNativeTarget "GalchatKeyboardExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D4E5F6071829304A64 /* Debug */,
+				A1B2C3D4E5F6071829304A65 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DC5D1CFA3062845E0033519A /* Build configuration list for PBXProject "Galchat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DC5D1D153062845F0033519A /* Debug */,
+				DC5D1D163062845F0033519A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DC5D1D123062845F0033519A /* Build configuration list for PBXNativeTarget "Galchat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DC5D1D133062845F0033519A /* Debug */,
+				DC5D1D143062845F0033519A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		E3E4B153D2AB06FC7383CDA1 /* XCLocalSwiftPackageReference "../Visyn" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Visyn;
+		};
+		E3E4B154D2AB06FC7383CDA2 /* XCLocalSwiftPackageReference "../Synapse" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Synapse;
+		};
+		E3E4B155D2AB06FC7383CDA3 /* XCLocalSwiftPackageReference "../SeeU" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SeeU;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1CDAF92EBDB25433A4A6C5C0 /* VisynCapture */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3E4B153D2AB06FC7383CDA1 /* XCLocalSwiftPackageReference "../Visyn" */;
+			productName = VisynCapture;
+		};
+		1CDAF92FBDB25433A4A6C5C1 /* Synapse */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3E4B154D2AB06FC7383CDA2 /* XCLocalSwiftPackageReference "../Synapse" */;
+			productName = Synapse;
+		};
+		1CDAF930BDB25433A4A6C5C2 /* SeeU */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3E4B155D2AB06FC7383CDA3 /* XCLocalSwiftPackageReference "../SeeU" */;
+			productName = SeeU;
+		};
+		F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3E4B153D2AB06FC7383CDA1 /* XCLocalSwiftPackageReference "../Visyn" */;
+			productName = VisynBroadcast;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DC5D1CF73062845E0033519A /* Project object */;
+}

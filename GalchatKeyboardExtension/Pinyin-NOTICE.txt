@@ -1,0 +1,20 @@
+Jarvis offline Pinyin dictionary
+
+pinyin.tsv is derived from rime/rime-pinyin-simp, pinyin_simp.dict.yaml.
+Source: https://github.com/rime/rime-pinyin-simp
+Source blob SHA: 6f2e996d2792416cb7f41bb49967a1dec7060c92
+Retrieved: 2026-09-24
+
+Upstream attribution:
+Derived from Android Pinyin IME (Apache License version 2.0).
+https://android.googlesource.com/platform/packages/inputmethods/PinyinIME/
+
+Modification: removed the YAML header and comments, retaining all 65,125
+dictionary rows as UTF-8 TSV (text, spaced Pinyin spelling, frequency).
+See Pinyin-LICENSE.txt for the Apache License, Version 2.0.
+
+The Swift lookup implementation is part of Jarvis. No Rime executable engine
+or third-party runtime is included. Input is processed locally. This keyboard
+supports full Pinyin with v for ü and apostrophes for syllable boundaries.
+It does not implement fuzzy Pinyin, abbreviation, personal learning, voice
+input, or Apple's predictive keyboard services.
