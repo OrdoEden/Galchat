@@ -103,7 +103,7 @@ enum SeeUChange {
 
 键盘弹起时内容上推，覆盖范围不会超过现有底边，所以这类帧天然会被跳过。
 
-### ⑥b MessageEventBatcher（Galchat，新文件 `Live/MessageEventBatcher.swift`）
+### ⑥b MessageEventBatcher（Galchat，新文件 `Live/Analysis/MessageEventBatcher.swift`）
 - 输入：Ledger 的 change 事件。
 - **对方** `newTail` → 开一个批次；静默窗口 2.5s（每来一条新消息就重新计时），最长 10s 强制提交。对方连发 5 条只会分析一次。
 - **我方** `newTail` → 立即作废在途的建议（说明用户已经回复了），更新上下文，默认不触发 Judge（可配置）。
