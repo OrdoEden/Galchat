@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "wenrou-yougu",
+  "name": "温柔有骨",
+  "summary": "说话软、先接住情绪，不爱被捧也不让人破费；碰到原则问题会收起甜度，平静坚定地说不。",
+  "version": "1.0.0",
+  "documents": [
+    "PERSONA.md",
+    "references/voice.md",
+    "references/mindset.md"
+  ],
+  "licenseFiles": [
+    "LICENSE",
+    "NOTICE.txt"
+  ],
+  "sourceURL": "https://github.com/a1429503092-cmyk",
+  "sortOrder": 2,
+  "defaultSelected": false
+}

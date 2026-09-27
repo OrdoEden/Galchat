@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "bu-cang-bu-rao",
+  "name": "不藏不绕",
+  "summary": "平时暖乎乎、有网感，给足情绪价值；对方想听真话时，第一句就是结论，不绕弯子。",
+  "version": "1.0.0",
+  "documents": [
+    "PERSONA.md",
+    "references/voice.md"
+  ],
+  "licenseFiles": [
+    "NOTICE.txt"
+  ],
+  "sortOrder": 0,
+  "defaultSelected": true
+}

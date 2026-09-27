@@ -136,14 +136,21 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
     private func importProfile() {
         guard !isImporting, presentedViewController == nil else { return }
         let markdown = UTType(filenameExtension: "md") ?? .plainText
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder, .json, markdown], asCopy: false)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.galchatPersonal, .folder, .json, markdown],
+                                                    asCopy: false)
         picker.delegate = self
         picker.allowsMultipleSelection = false
         present(picker, animated: true)
     }
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        guard let url = urls.first, !isImporting else { return }
+        guard let url = urls.first else { return }
+        importFile(at: url, picker: controller)
+    }
+
+    /// 从“文件”、隔空投送或浏览器下载中打开 `.personal` 时由场景代理调用，与“从文件导入”走同一流程。
+    func importFile(at url: URL, picker: UIDocumentPickerViewController? = nil) {
+        guard !isImporting else { return }
         isImporting = true
         navigationBar.rightButton.isEnabled = false
         tableView.isUserInteractionEnabled = false
@@ -153,7 +160,10 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
             do { result = .success(try await PersonaStore.shared.importPackage(from: url)) }
             catch { result = .failure(error) }
             guard let self else { return }
-            self.afterPickerCloses(controller) { [weak self] in
+            let finish: (@escaping () -> Void) -> Void = { completion in
+                if let picker { self.afterPickerCloses(picker, completion: completion) } else { completion() }
+            }
+            finish { [weak self] in
                 guard let self else { return }
                 self.isImporting = false
                 self.navigationBar.rightButton.isEnabled = true
@@ -195,7 +205,7 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
             alert.addAction(UIAlertAction(title: "替换", style: .destructive) { [weak self] _ in
                 self?.saveImported(profile)
             })
-            present(alert, animated: true)
+            alertHost.present(alert, animated: true)
         } else {
             saveImported(profile)
         }
@@ -209,7 +219,14 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
     private func showError(_ title: String, error: Error) {
         let alert = UIAlertController(title: title, message: error.localizedDescription, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "知道了", style: .default))
-        present(alert, animated: true)
+        alertHost.present(alert, animated: true)
+    }
+
+    /// 从外部打开人格文件时，页面上可能已有编辑页等弹窗；提示放在最上层，不打断也不丢弃它们。
+    private var alertHost: UIViewController {
+        var host: UIViewController = self
+        while let presented = host.presentedViewController, !presented.isBeingDismissed { host = presented }
+        return host
     }
 
     private func edit(_ profile: PersonaPackage) {

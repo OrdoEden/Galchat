@@ -95,7 +95,8 @@ final class AnalysisViewController: UIViewController {
                     route: models.judge
                 )
                 try Task.checkCancellation()
-                showCandidates(ranked)
+                // 排序用原文，展示用人格后处理后的文字。
+                showCandidates(models.replyTransform?.apply(ranked) ?? ranked)
                 setStatus("完成 · 判断耗时 \(analysis.latencyMs)ms", isError: false)
             } catch is CancellationError {
                 setStatus("已取消", isError: false)

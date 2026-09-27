@@ -10,6 +10,8 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+    /// 引导未完成时打开的人格文件，等进入主界面后再导入。
+    private var pendingPersonaURL: URL?
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -25,6 +27,23 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             }
         }
         window.makeKeyAndVisible()
+        openPersonaFile(from: connectionOptions.urlContexts)
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        openPersonaFile(from: URLContexts)
+    }
+
+    /// 只接管 `.personal` 人格文件；其余 URL 保持原样不处理。
+    private func openPersonaFile(from contexts: Set<UIOpenURLContext>) {
+        guard let url = contexts.map(\.url).first(where: {
+            $0.isFileURL && $0.pathExtension.lowercased() == PersonaPackage.fileExtension
+        }) else { return }
+        if let tabBar = window?.rootViewController as? MainTabBarController {
+            tabBar.importPersonaFile(at: url)
+        } else {
+            pendingPersonaURL = url
+        }
     }
 
     private func finishOnboarding() {
@@ -34,7 +53,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             with: window,
             duration: UIAccessibility.isReduceMotionEnabled ? 0 : 0.25,
             options: .transitionCrossDissolve,
-            animations: { window.rootViewController = MainTabBarController() }
+            animations: { window.rootViewController = MainTabBarController() },
+            completion: { [weak self] _ in
+                guard let self, let url = self.pendingPersonaURL,
+                      let tabBar = window.rootViewController as? MainTabBarController else { return }
+                self.pendingPersonaURL = nil
+                tabBar.importPersonaFile(at: url)
+            }
         )
     }
 

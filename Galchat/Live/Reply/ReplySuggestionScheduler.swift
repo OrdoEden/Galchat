@@ -81,6 +81,8 @@ final class ReplySuggestionScheduler {
     private func finish(_ request: AnalysisRequest, _ replies: [RankedReply], _ unranked: Bool, _ error: String?) {
         guard accepts(request) else { return }
         task = nil
+        // 排序用原文，展示和键盘用人格后处理后的文字。
+        let replies = request.models.replyTransform?.apply(replies) ?? replies
         outcome = Outcome(request: request, replies: replies, repliesUnranked: unranked,
                           error: error, completedAt: Date())
         setPhase(.ready)

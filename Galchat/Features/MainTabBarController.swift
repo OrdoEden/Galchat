@@ -80,6 +80,13 @@ final class MainTabBarController: UITabBarController, UITabBarControllerDelegate
         view.setNeedsLayout()
     }
 
+    /// 从外部打开 `.personal` 人格文件：切到“人格”页，按“从文件导入”的流程确认后保存。
+    func importPersonaFile(at url: URL) {
+        select(.persona)
+        let root = (selectedViewController as? UINavigationController)?.viewControllers.first
+        (root as? PersonaViewController)?.importFile(at: url)
+    }
+
     private func navigation(
         for root: UIViewController, tab: Tab, title: String, image: String
     ) -> UINavigationController {

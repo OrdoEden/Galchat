@@ -1,13 +1,11 @@
 江南深情
 
-Based on tong-jincheng-skill by hotcoffeeshake.
-Source: https://github.com/hotcoffeeshake/tong-jincheng-skill
-Revision: c9caaa9a6576f581c29d016c60bbe935908e20d5
-Copyright (c) 2026 hotcoffeeshake
-License: MIT; see LICENSE.
+本人格为虚构的性格原型，不代表、不模仿任何真实人物，也不暗示任何人认可。
 
-SKILL.md and the six references/research files are preserved verbatim.
-All eight documents listed in manifest.json are loaded in full as persona
-context. PERSONA.md supplies the Galchat reply-assistance adaptation.
-This persona does not represent the real person or imply endorsement.
-Research claims and uncertainties are those of the upstream author.
+部分判断框架改写自 hotcoffeeshake 以 MIT 许可发布的开源人格资料
+（作者主页：https://github.com/hotcoffeeshake ，基于固定版本
+c9caaa9a6576f581c29d016c60bbe935908e20d5）。
+Galchat 已重写全部文字：删除了真实人物的姓名、称号、经历、伴侣、
+合作方、平台、时间线与外部评价，只保留抽象的思考方式与表达节奏。
+
+Copyright (c) 2026 hotcoffeeshake — MIT License，全文见 LICENSE。

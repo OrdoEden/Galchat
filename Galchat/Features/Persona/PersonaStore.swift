@@ -26,6 +26,10 @@ final class PersonaStore {
         guard loadError == nil else { return "" }
         return profiles.first(where: { $0.id == activeID })?.prompt ?? ""
     }
+    var replyTransform: PersonaPackage.ReplyTransform? {
+        guard loadError == nil else { return nil }
+        return profiles.first(where: { $0.id == activeID })?.manifest.replyTransform
+    }
 
     private init() {
         do {
@@ -99,7 +103,7 @@ final class PersonaStore {
             }.value
         }
         catch let error as PersonaPackage.PackageError { throw error }
-        catch { throw failure("无法读取这份人格。请选择完整的人格文件夹、导出的 JSON 或 Markdown 说明。\(error.localizedDescription)") }
+        catch { throw failure("无法读取这份人格。请选择 .personal 人格文件、完整的人格文件夹、旧版导出的 JSON 或 Markdown 说明。\(error.localizedDescription)") }
     }
 
     func exportPackage(id: String) throws -> URL {
@@ -107,7 +111,12 @@ final class PersonaStore {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("PersonaExports", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let url = directory.appendingPathComponent("\(package.id).json")
+        // 文件名用人格名称，方便分享后辨认；去掉路径分隔等不安全字符，取不到时退回标识。
+        let unsafe = CharacterSet(charactersIn: "/\\:?%*|\"<>").union(.controlCharacters).union(.newlines)
+        let name = package.manifest.name.components(separatedBy: unsafe).joined()
+            .trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "."))
+        let url = directory.appendingPathComponent(name.isEmpty ? package.id : name)
+            .appendingPathExtension(PersonaPackage.fileExtension)
         try write(package, to: url)
         return url
     }

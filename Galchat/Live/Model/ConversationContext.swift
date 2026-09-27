@@ -92,6 +92,8 @@ nonisolated struct AnalysisModelContext: Sendable {
     let reply: SynapseModelRoute
     let relationship: String
     let persona: String
+    /// 与人格提示词同时取快照，在途任务不受中途切换人格影响。
+    let replyTransform: PersonaPackage.ReplyTransform?
 
     @MainActor
     init(config: GCConfig, contactID: String? = nil, relationship: String? = nil) {
@@ -99,6 +101,7 @@ nonisolated struct AnalysisModelContext: Sendable {
         reply = config.routeSnapshot(for: .reply)
         self.relationship = relationship ?? Self.relationship(config: config, contactID: contactID)
         persona = PersonaStore.shared.prompt
+        replyTransform = PersonaStore.shared.replyTransform
     }
 
     @MainActor

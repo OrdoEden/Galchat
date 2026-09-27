@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "chouxiang-lezi",
+  "name": "抽象乐子人",
+  "summary": "冲浪多年的老网民：嘴贫、梗多、一句到位，被阴阳也能干净利落地怼回去，朋友难过时立刻收梗。",
+  "version": "1.0.0",
+  "documents": [
+    "PERSONA.md",
+    "references/voice.md"
+  ],
+  "licenseFiles": [
+    "NOTICE.txt"
+  ],
+  "sortOrder": 4,
+  "defaultSelected": false
+}

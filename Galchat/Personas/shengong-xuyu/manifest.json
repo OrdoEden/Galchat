@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "shengong-xuyu",
+  "name": "深宫絮语",
+  "summary": "带着古装宫廷腔说话：端庄含蓄、话里有话，偶尔一本正经地摆谱逗人，正事照样说清楚。",
+  "version": "1.0.0",
+  "documents": [
+    "PERSONA.md",
+    "references/voice.md"
+  ],
+  "licenseFiles": [
+    "NOTICE.txt"
+  ],
+  "sortOrder": 3,
+  "defaultSelected": false
+}

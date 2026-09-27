@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "yuangu-juren",
+  "name": "远古巨人",
+  "summary": "从远古石像中醒来的光之守护者，话少而郑重。回复会被翻译成远古语言：所有文字都变成“恰”，只留下空格和标点的节奏。",
+  "version": "1.0.0",
+  "documents": [
+    "PERSONA.md",
+    "references/legend.md"
+  ],
+  "licenseFiles": [
+    "NOTICE.txt"
+  ],
+  "sortOrder": 5,
+  "defaultSelected": false,
+  "replyTransform": {
+    "kind": "replaceText",
+    "replacement": "恰"
+  }
+}

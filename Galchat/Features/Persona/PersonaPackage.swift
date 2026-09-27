@@ -1,4 +1,10 @@
 import Foundation
+import UniformTypeIdentifiers
+
+extension UTType {
+    /// `.personal`：单文件人格包，内容是 UTF-8 JSON `{"manifest": …, "files": …}`，格式见 docs/persona-file-format.md。
+    nonisolated static let galchatPersonal = UTType(exportedAs: "com.heself.galchat.personal", conformingTo: .json)
+}
 
 /// 人格只包含文字文件；导入不会执行脚本，也不会读取包外的文件。
 nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
@@ -24,6 +30,41 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
         // 旧默认值也由包声明，应用无需认识任何具体人格。
         var legacyProfiles: [LegacyProfile]?
         var legacyInstallationKeys: [String]?
+        /// 可选的候选回复后处理，由包声明；应用只认识通用的变换种类，不认识具体人格。
+        var replyTransform: ReplyTransform?
+    }
+
+    /// 候选回复生成并排序后，在展示和发给键盘前统一改写文字。
+    struct ReplyTransform: Codable, Equatable, Sendable {
+        /// 目前只支持 `replaceText`：每个文字（字母、汉字、数字）换成 `replacement`，保留空格、标点和表情。
+        var kind: String
+        var replacement: String
+
+        static let replaceText = "replaceText"
+        /// 撞车时依次补在末尾的标点，让三条候选仍然互不相同（键盘要求三条不同）。
+        private static let distinctSuffixes = ["！", "～", "…", "？", "!!", "~~", "……"]
+
+        var isValid: Bool {
+            kind == Self.replaceText && replacement.count == 1
+                && replacement.unicodeScalars.allSatisfy { !CharacterSet.whitespacesAndNewlines.contains($0) }
+        }
+
+        func apply(_ text: String) -> String {
+            String(text.map { $0.isLetter || $0.isNumber ? Character(replacement) : $0 })
+        }
+
+        /// 逐条改写，保持顺序与概率；改写后重复的候选补上不同的结尾标点。
+        func apply(_ replies: [RankedReply]) -> [RankedReply] {
+            var seen = Set<String>()
+            return replies.map { reply in
+                var text = apply(reply.text)
+                var suffixes = Self.distinctSuffixes.makeIterator()
+                let base = text
+                while seen.contains(text), let suffix = suffixes.next() { text = base + suffix }
+                seen.insert(text)
+                return RankedReply(text: text, probability: reply.probability)
+            }
+        }
     }
 
     enum PackageError: LocalizedError, Sendable {
@@ -33,6 +74,7 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
         }
     }
 
+    static let fileExtension = "personal"
     static let maximumBytes = 1_000_000
     static let maximumPromptBytes = 128_000
     var manifest: Manifest
@@ -73,6 +115,9 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
               manifest.name.count <= 50, manifest.summary.count <= 500,
               !manifest.version.isEmpty, manifest.version.count <= 100 else {
             throw PackageError.message("人格名称最多 50 字，简介最多 500 字，并需要有效的标识和版本。")
+        }
+        if let transform = manifest.replyTransform, !transform.isValid {
+            throw PackageError.message("这个人格的回复后处理暂不支持，可能需要更新 App。")
         }
         let paths = manifest.documents + (manifest.licenseFiles ?? [])
         guard !manifest.documents.isEmpty, paths.count <= 64,
