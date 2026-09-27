@@ -179,7 +179,11 @@ final class LiveChatCoordinator {
         let engine = engine
         let generation = captureGeneration
         let epoch = screenshotEpoch
-        let exclusion = AppFrameExclusion.policy(overlayContentSize: pictureInPictureContentSize)
+        let overlaySize = pictureInPictureContentSize
+        let recorder = FrameRecorder.shared
+        recorder.record(jpeg: frame.jpegData, frameID: frame.id, sessionID: frame.sessionID, capturedAt: frame.capturedAt)
+        let exclusion = recorder.wrap({ AppFrameExclusion.exclude($0, frameSize: $1, overlayContentSize: overlaySize) },
+                                      frameID: frame.id, sessionID: frame.sessionID, capturedAt: frame.capturedAt)
         Task { [weak self] in
             let output: EngineOutput?
             do {
@@ -252,7 +256,9 @@ final class LiveChatCoordinator {
                                    revision: update.revision, sourceTitle: update.title ?? "当前会话",
                                    sourceConfirmed: update.confirmed, frameID: update.frameID,
                                    observedAt: observedAt,
-                                   messages: stickers.merge(into: messages, conversationID: conversationID))
+                                   messages: stickers.merge(into: messages, conversationID: conversationID),
+                                   isLiveTail: update.viewingLiveTail,
+                                   isIsolated: update.currentContextIsIsolated)
     }
 
     /// 表情包位置或含义变化后，用最近一次 SeeU 输出重建上下文并重新调度分析。

@@ -31,7 +31,10 @@ final class LiveAnalysisScheduler {
         var isContextRefresh: Bool { request.isContextRefresh }
     }
 
-    static let debounce: Duration = .milliseconds(800)
+    /// 批处理静默窗口：对方连发时每来一条重新计时，安静 2.5 秒后合成一批分析；
+    /// 从第一条算起最多等 10 秒，持续刷屏也会按时出结果。
+    static let batchQuiet: TimeInterval = 2.5
+    static let batchMaximum: TimeInterval = 10
     static let contextSettle: Duration = .milliseconds(1500)
     static let autoRunsPerMinute = 6
     static let maxContextRefreshes = 2
@@ -59,6 +62,13 @@ final class LiveAnalysisScheduler {
     private var refreshes = 0
     private var runTimes = [Date]()
     private var nonScoringTail: String?
+    /// 当前批次第一条新消息出现的时间。
+    private var batchStartedAt: Date?
+    /// 本会话已经分析过的尾部。误识别条目被删掉、尾部退回旧消息时不重复分析。
+    private var analyzedTails = Set<String>()
+    /// 已分析尾部当时的文字；同一条消息的文字被大幅纠正时允许重分析一次。
+    private var analyzedTailText: [String: String] = [:]
+    private var correctedTails = Set<String>()
     private static let autoKey = "Galchat.live.autoAnalyze"
 
     var isRefreshingContext: Bool { phase == .analyzing && currentRequest?.isContextRefresh == true }
@@ -87,6 +97,10 @@ final class LiveAnalysisScheduler {
             invalidate()
             refreshes = 0
             fingerprints.removeAll()
+            batchStartedAt = nil
+            analyzedTails.removeAll()
+            analyzedTailText.removeAll()
+            correctedTails.removeAll()
         }
         guard !context.tailSignature.isEmpty, context.messages.contains(where: {
             !$0.isGap && !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -100,21 +114,54 @@ final class LiveAnalysisScheduler {
             handledTail = context.tailSignature
             return setPhase(.skipped("上下文已更新，可手动分析或等待新消息"))
         }
-        if context.tailSignature == handledTail {
+        // 语义闸门：没确认聊天页、画面没接上记录、在翻历史时只更新上下文，不动已有结论，也不调用模型。
+        if let hold = context.semanticHoldReason {
+            if debounceTask != nil {
+                debounceTask?.cancel()
+                debounceTask = nil
+                handledTail = nil
+            }
+            if phase != .analyzing { setPhase(.skipped(hold)) }
+            return
+        }
+        let correction = isSignificantCorrection(context)
+        if context.tailSignature == handledTail && !correction {
+            // 从闸门暂停回到最新消息、尾部没变：恢复原结论的展示。
+            if case .skipped = phase, let outcome, !outcome.stale,
+               outcome.request.context.tailSignature == context.tailSignature {
+                setPhase(.ready)
+            }
             considerRefresh(context)
             return
         }
+        // 尾部退回已分析过的消息（误识别条目被删、翻上去又回来）：不是新消息。
+        if analyzedTails.contains(context.tailSignature) && !correction {
+            handledTail = context.tailSignature
+            if outcome?.request.context.tailSignature == context.tailSignature, outcome?.stale == false {
+                return setPhase(.ready)
+            }
+            return setPhase(.skipped("没有新消息，可手动分析"))
+        }
+        if correction { correctedTails.insert(context.tailSignature) }
         invalidate()
         refreshes = 0
         fingerprints.removeAll()
         guard autoAnalyze else { return setPhase(.skipped("自动分析已关闭，可手动分析")) }
         guard canRun() else { return setPhase(.skipped("自动分析过于频繁，等待一分钟额度恢复")) }
         handledTail = context.tailSignature
+        let now = Date()
+        // 被闸门打断后遗留的旧批次（很久以前开始）不能让新消息立即触发。
+        let started = batchStartedAt.flatMap {
+            now.timeIntervalSince($0) <= Self.batchMaximum + Self.batchQuiet ? $0 : nil
+        } ?? now
+        batchStartedAt = started
+        let delay = max(0, min(Self.batchQuiet, Self.batchMaximum - now.timeIntervalSince(started)))
         setPhase(.debouncing)
         debounceTask = Task { [weak self] in
-            try? await Task.sleep(for: Self.debounce)
+            try? await Task.sleep(for: .milliseconds(Int(delay * 1000)))
             guard !Task.isCancelled, let self, self.autoAnalyze,
-                  let latest = self.latest, self.matches(latest, context) else { return }
+                  let latest = self.latest, self.matches(latest, context),
+                  latest.semanticHoldReason == nil else { return }
             self.debounceTask = nil
             guard self.canRun() else {
                 self.handledTail = nil
@@ -123,6 +170,32 @@ final class LiveAnalysisScheduler {
             self.runTimes.append(Date())
             self.run(latest, limit: self.config.contextMessageCount)
         }
+    }
+
+    /// 已分析过的最后一条消息，文字被纠正得面目全非（不是个别字的抖动），且这条还没因纠正重跑过。
+    private func isSignificantCorrection(_ context: ConversationContext) -> Bool {
+        let key = context.tailSignature
+        guard analyzedTails.contains(key), !correctedTails.contains(key),
+              let before = analyzedTailText[key] else { return false }
+        return Self.similarity(before, context.tailText) < 0.5
+    }
+
+    /// 规范化后的字符二元组 Dice 相似度（0...1）。
+    static func similarity(_ a: String, _ b: String) -> Double {
+        func clean(_ text: String) -> [Character] {
+            Array(text.lowercased().filter { $0.isLetter || $0.isNumber })
+        }
+        let x = clean(a), y = clean(b)
+        if x == y { return 1 }
+        guard x.count >= 2, y.count >= 2 else { return x.isEmpty || y.isEmpty ? 0 : (Set(x) == Set(y) ? 1 : 0) }
+        var grams: [String: Int] = [:]
+        for i in 0..<(x.count - 1) { grams[String(x[i...i + 1]), default: 0] += 1 }
+        var hits = 0
+        for i in 0..<(y.count - 1) {
+            let key = String(y[i...i + 1])
+            if let n = grams[key], n > 0 { hits += 1; grams[key] = n - 1 }
+        }
+        return 2 * Double(hits) / Double(x.count + y.count - 2)
     }
 
     func analyzeNow() {
@@ -186,12 +259,17 @@ final class LiveAnalysisScheduler {
         outcome = nil
         refreshes = 0
         fingerprints.removeAll()
+        batchStartedAt = nil
+        analyzedTails.removeAll()
+        analyzedTailText.removeAll()
+        correctedTails.removeAll()
         setPhase(.idle)
     }
 
     func captureStopped() {
         invalidate()
         latest = nil
+        batchStartedAt = nil
         setPhase(.idle)
     }
 
@@ -217,6 +295,9 @@ final class LiveAnalysisScheduler {
                                       allowsAffectionScoring: nonScoringTail != scoringKey(context))
         currentRequest = request
         fingerprints.insert(request.version.windowFingerprint)
+        batchStartedAt = nil
+        analyzedTails.insert(context.tailSignature)
+        analyzedTailText[context.tailSignature] = context.tailText
         markStale()
         setPhase(.analyzing)
         // 候选订阅独立于判断配置与完成时间，两个分支只共享输入版本。

@@ -10,6 +10,7 @@ final class LiveSessionViewController: UIViewController {
     private let analysisLabel = makeFootnoteLabel("")
     private let statsLabel = makeFootnoteLabel("")
     private let autoSwitch = UISwitch()
+    private let recordSwitch = UISwitch()
     private let analyzeButton = UIButton(configuration: .filled())
     private let longShotButton = UIButton(configuration: .tinted())
     private let clearButton = UIButton(configuration: .plain())
@@ -212,6 +213,20 @@ final class LiveSessionViewController: UIViewController {
         autoRow.alignment = .center
         autoRow.spacing = 12
 
+        recordSwitch.isOn = FrameRecorder.shared.isEnabled
+        recordSwitch.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            FrameRecorder.shared.isEnabled = recordSwitch.isOn
+        }, for: .valueChanged)
+        let recordLabel = UILabel()
+        recordLabel.text = "录制识别帧（调试）"
+        recordLabel.font = .preferredFont(forTextStyle: .body)
+        recordLabel.numberOfLines = 0
+        let recordRow = UIStackView(arrangedSubviews: [recordLabel, recordSwitch])
+        recordRow.alignment = .center
+        recordRow.spacing = 12
+        let recordNote = makeFootnoteLabel("打开后，送去识别的每一帧会保存到“文件 → 我的 iPhone → Galchat → SeeUReplay”，每次录屏一个文件夹、最多 \(FrameRecorder.frameLimit) 帧。截图含聊天内容，只存本机，用于回放复现识别问题，用完请关闭并删除。")
+
         analyzeButton.configuration?.title = "立即分析"
         analyzeButton.configuration?.image = UIImage(systemName: "sparkles")
         analyzeButton.configuration?.baseBackgroundColor = .galchatPinkStrong
@@ -239,7 +254,7 @@ final class LiveSessionViewController: UIViewController {
         transcriptLabel.numberOfLines = 0
 
         let stack = UIStackView(arrangedSubviews: [
-            statusLabel, analysisLabel, statsLabel, autoRow, buttons,
+            statusLabel, analysisLabel, statsLabel, autoRow, recordRow, recordNote, buttons,
             makeFootnoteLabel("判断结论显示在画中画里；三条候选回复会发到 Jarvis 键盘。首次使用请在“设置 → 通用 → 键盘 → 键盘 → 添加新键盘”里添加 Jarvis 键盘，聊天时用地球键切换过去。键盘不联网、不需要“完全访问”。"),
             makeSectionLabel("判断结果"), judgeLabel,
             makeSectionLabel("候选回复"), replyNoteLabel, candidatesStack,

@@ -14,8 +14,8 @@ import Foundation
 /// 为什么不用现成的 `tailSignature` 或 `windowFingerprint`：
 /// - `windowFingerprint` 是窗口（limit + 内容）的函数，`check_history` 刷新用 limit 50、
 ///   常规用 10，每次滑动都变。它标记的是"这次输入"，而恰恰是这个单位不该被计分。
-/// - `tailSignature` 嵌了消息文本，OCR 漂移（同条消息 `clipped` 翻转）会给已计分的
-///   消息造出新签名，导致重复计分。
+/// - `tailSignature` 现在只含 id 与发言方，但尾部可能是我方消息；计分只关心对方最新一条，
+///   且需要窗口内所有对方消息 id 一起入账。
 @MainActor
 final class AffectionCommitter {
     static let shared = AffectionCommitter()

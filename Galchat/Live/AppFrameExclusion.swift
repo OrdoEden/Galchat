@@ -10,7 +10,7 @@ nonisolated enum AppFrameExclusion {
         }
     }
 
-    private static func exclude(
+    static func exclude(
         _ lines: [OCRLine], frameSize: CGSize, overlayContentSize: CGSize
     ) -> FrameExclusion {
         let keyboardHeader = lines

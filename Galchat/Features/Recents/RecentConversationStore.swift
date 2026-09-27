@@ -134,7 +134,9 @@ final class RecentConversationStore {
             recordingSessionID = context.sessionID
         }
         let id = Self.identifier(context)
-        guard !deletedIDs.contains(id), context.messages.contains(where: { !$0.isGap }) else { return }
+        // 未对齐的单屏不知道和已存记录的先后，不写入，避免把历史片段追加到末尾。
+        guard !deletedIDs.contains(id), !context.isIsolated,
+              context.messages.contains(where: { !$0.isGap }) else { return }
         var candidate = document
         let existing = conversation(id: id)
         var entry = existing ?? Conversation(
@@ -145,6 +147,7 @@ final class RecentConversationStore {
         entry.sourceConfirmed = context.sourceConfirmed
         if !entry.userBound { entry.contactID = contactID ?? entry.contactID }
         let incoming = Array(context.messages.suffix(Self.messageCapacity))
+        Self.dropRetracted(from: &entry.messages, incoming: incoming)
         var indices = Dictionary(uniqueKeysWithValues: entry.messages.enumerated().map { ($0.element.id, $0.offset) })
         for (position, source) in incoming.enumerated() {
             let oldIndex = indices[source.id]
@@ -179,6 +182,21 @@ final class RecentConversationStore {
         catch { report(error) }
     }
 
+    /// SeeU 会删除误识别条目、把同一位置的重复条目并成一条。已存记录里夹在本次上下文首尾之间、
+    /// 却不在本次上下文中的消息就是被撤回的误识别，删掉；用户纠正过的消息保留。
+    static func dropRetracted(from messages: inout [Message], incoming: [ContextMessage]) {
+        let ids = Set(incoming.map(\.id))
+        guard let first = incoming.first(where: { !$0.isGap })?.id,
+              let last = incoming.last(where: { !$0.isGap })?.id,
+              let lower = messages.firstIndex(where: { $0.id == first }),
+              let upper = messages.lastIndex(where: { $0.id == last }), lower < upper else { return }
+        let removable = Set(messages[lower...upper].filter {
+            !ids.contains($0.id) && $0.correction == nil && !$0.isGap
+        }.map(\.id))
+        guard !removable.isEmpty else { return }
+        messages.removeAll { removable.contains($0.id) }
+    }
+
     func applyingCorrections(to context: ConversationContext) -> ConversationContext {
         guard let entry = conversation(id: Self.identifier(context)) else { return context }
         let corrections = Dictionary(uniqueKeysWithValues: entry.messages.compactMap { message in
@@ -195,7 +213,8 @@ final class RecentConversationStore {
             sourceTitle: context.sourceTitle, sourceConfirmed: context.sourceConfirmed,
             frameID: context.frameID, observedAt: context.observedAt, messages: messages,
             contactID: ContactsStore.shared.contact(id: entry.contactID)?.id
-                ?? ContactsStore.shared.contact(id: context.contactID)?.id)
+                ?? ContactsStore.shared.contact(id: context.contactID)?.id,
+            isLiveTail: context.isLiveTail, isIsolated: context.isIsolated)
     }
 
     func correct(conversationID: String, messageID: UUID, speaker: Speaker, text: String) throws {

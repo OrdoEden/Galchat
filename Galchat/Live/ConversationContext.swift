@@ -26,10 +26,26 @@ nonisolated struct ConversationContext: Sendable {
     let observedAt: Date
     let messages: [ContextMessage]
     var contactID: String? = nil
+    /// 画面停在最新消息附近（不是在翻历史）。只有这时新出现的尾部才代表“对方刚发来”。
+    var isLiveTail: Bool = true
+    /// 当前屏还没和已知消息链对齐，上下文只有这一屏，不能据此判断“有新消息”。
+    var isIsolated: Bool = false
 
+    /// 尾部身份：最后一条消息的稳定 ID 与发言方。**不含文字**——
+    /// 同一条消息被 OCR 读成不同写法时不算新消息；文字纠正由 `tailText` 单独判断。
     var tailSignature: String {
         guard let last = messages.last(where: { !$0.isGap }) else { return "" }
-        return "\(last.id.uuidString)|\(last.speaker.rawValue)|\(last.text)"
+        return "\(last.id.uuidString)|\(last.speaker.rawValue)"
+    }
+
+    var tailText: String { messages.last(where: { !$0.isGap })?.text ?? "" }
+
+    /// 自动分析的放行条件；不满足时只更新上下文，不调用模型。
+    var semanticHoldReason: String? {
+        if !sourceConfirmed { return "等待确认聊天页" }
+        if isIsolated { return "当前画面还没接上聊天记录，等待对齐" }
+        if !isLiveTail { return "正在查看历史消息，回到最新消息后再分析" }
+        return nil
     }
 
     func snapshot(limit: Int) -> ChatSnapshot {
