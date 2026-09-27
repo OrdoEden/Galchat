@@ -7,17 +7,35 @@
 		<key>Galchat.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>6</integer>
+			<integer>2</integer>
 		</dict>
 		<key>GalchatBroadcastExtension.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>5</integer>
+			<integer>0</integer>
 		</dict>
 		<key>GalchatKeyboardExtension.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>4</integer>
+			<integer>1</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>A1B2C3D4E5F6071829304A5B</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>C11AACE318D6317B3D01FD74</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>DC5D1CFE3062845E0033519A</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>
