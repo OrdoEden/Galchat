@@ -5,6 +5,13 @@ import VisynCapture
 /// 立绘（头像淡出到主题色）和心跳动图由 Visyn 渲染，这里只传图片与颜色。
 @MainActor
 final class GCPiPView: UIView {
+    /// 好感度变化方向对应的动图：上升动心、下降心碎、持平心跳。三者首帧与静止位置一致。
+    private static let heartAnimations: [Int: VisynAnimatedImage] = [
+        0: "heartbeat", 1: "heartflutter", -1: "heartbreak"
+    ].compactMapValues { name in
+        Bundle.main.url(forResource: name, withExtension: "gif").flatMap { VisynAnimatedImage(url: $0) }
+    }
+
     private let portraitView = VisynPortraitView()
     private let header = UILabel()
     private let identity = UILabel()
@@ -32,8 +39,7 @@ final class GCPiPView: UIView {
         heart.contentMode = .scaleAspectFit
         heart.tintColor = .galchatPink
         heart.fallbackImage = UIImage(systemName: "heart.fill")
-        heart.animation = Bundle.main.url(forResource: "heartbeat", withExtension: "gif")
-            .flatMap { VisynAnimatedImage(url: $0) }
+        heart.animation = Self.heartAnimations[0]
         addSubview(heart)
         for label in [identity, header, footer, title, score, emotion, advice, progress] {
             label.textColor = UIColor(red: 0.17, green: 0.22, blue: 0.20, alpha: 1)
@@ -130,6 +136,9 @@ final class GCPiPView: UIView {
         progress.text = progressText
         affectionTotal = affection.map { min(100, max(0, $0.total)) }
         score.text = affectionTotal.map { String($0) } ?? "—"
+        let trend = displayedStep.signum()
+        let animation = Self.heartAnimations[trend] ?? Self.heartAnimations[0]
+        if heart.animation !== animation { heart.animation = animation }
         heart.playsAnimation = isLive && affection != nil && affection?.ruptured == false
         heart.alpha = affection == nil ? 0.35 : 1
         fill.backgroundColor = affection?.ruptured == true ? .systemRed : .galchatPink

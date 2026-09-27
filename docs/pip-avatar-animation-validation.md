@@ -23,7 +23,7 @@ Visyn 采帧 → SeeU 引擎（OCR / 版式 / 会话）→ LongScreenshotInput
 - 头像来自与长图存档同一帧的 SeeU 提取结果，不再单独渲染长图局部。条件：已确认来源、单聊（`showsSenderNames` 为 false）、对方一侧、同一头像至少出现在 2 个不同消息位置。
 - `PiPPortrait` 把主色按 `rgb × 0.28 + 0.72` 浅化成主题色；未提取到时用默认人物占位和薄荷浅色。结果仅在内存，不上传、不覆盖联系人手动头像。
 - 横屏头像在左向右淡出，竖屏头像在上向下淡出；立绘位置用 `GCPiPLayout.avatarFrame` 传给 Visyn，与"好感度"锚点同一套几何。
-- `Galchat/Resources/heartbeat.gif` 由 `VisynAnimatedImageView` 播放（15 fps），当前有效聊天且已关联好感度时播放；停止、暂停、关系破裂或"减弱动态效果"时停在首帧。
+- `Galchat/Resources/heartbeat.gif` 由 `VisynAnimatedImageView` 播放（15 fps），当前有效聊天且已关联好感度时播放；好感度上升时换成 `heartflutter.gif`（动心），下降时换成 `heartbreak.gif`（心碎），见 `docs/affection-heart-animations.md`；停止、暂停、关系破裂或"减弱动态效果"时停在首帧。
 - OCR 仍用 `Galchat`、`AI 估计`、`好感度` 三个锚点推算整个小窗遮挡区。
 
 ### 表情包
@@ -50,7 +50,7 @@ Visyn 采帧 → SeeU 引擎（OCR / 版式 / 会话）→ LongScreenshotInput
 
 ## 真机步骤
 
-1. 用 Xcode 打开本工程，确认相邻 Visyn / SeeU 使用本地更新源码；检查主 App Copy Bundle Resources 含 `heartbeat.gif`。
+1. 用 Xcode 打开本工程，确认相邻 Visyn / SeeU 使用本地更新源码；检查主 App Copy Bundle Resources 含 `heartbeat.gif`、`heartflutter.gif`、`heartbreak.gif`。
 2. 开始采集并进入单聊，露出标题和至少两条对方消息的完整头像。确认取到的是左侧对方头像，右侧自己的头像不参与；背景随头像主色变化。
 3. 用真人、猫咪、卡通、黑白头像分别检查；单个头像、纯色头像、群聊、头像被 PiP 遮挡时应回退或保留当前可信图，不能拿消息图片冒充头像。
 4. 选横屏 414×80：头像位于左边，向右平滑融入底色，分数、情绪、短建议和底部当前状态可读。选竖屏 90×195（Visyn 预设，微信同款 9 : 19.5）：头像位于顶部并向下融入底色，名称、心跳、分数、情绪与进度纵向排列；不能只是横图旋转或缩小。
