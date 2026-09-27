@@ -8,7 +8,7 @@ final class PiPSizeControlsView: UIView {
         didSet { updateEnabledState() }
     }
 
-    // 比例预设统一由 Visyn 提供；竖屏为微信同款 9 : 19.5。
+    // 比例预设统一由 Visyn 提供：横屏长条与竖屏 9 : 19.5，不提供方形。
     private let presets = UISegmentedControl(items: VisynPictureInPictureSize.presets.map(\.title))
     private let presetSizes = VisynPictureInPictureSize.presets.map(\.size)
     private let ratioLabel = UILabel()
@@ -20,10 +20,10 @@ final class PiPSizeControlsView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         let title = UILabel()
-        title.text = "画中画形状"
+        title.text = "画中画方向"
         title.font = .preferredFont(forTextStyle: .headline)
         title.accessibilityTraits.insert(.header)
-        presets.accessibilityLabel = "画中画形状预设"
+        presets.accessibilityLabel = "画中画方向预设"
         presets.addTarget(self, action: #selector(selectPreset), for: .valueChanged)
         var inputs: [UIView] = []
         for (field, name) in [(widthField, "宽"), (heightField, "高")] {
@@ -51,7 +51,7 @@ final class PiPSizeControlsView: UIView {
         inputError.textColor = .systemRed
         inputError.isHidden = true
         let hint = UILabel()
-        hint.text = "小窗形状只由宽和高的比例决定，数值大小不会让小窗变大或变小；例如 90 × 195 与 180 × 390 效果相同。小窗实际大小由 iOS 决定，打开后可双指缩小到系统最小档。宽高可填 1–640，应用后自动保存。"
+        hint.text = "小窗形状只由宽和高的比例决定，数值大小不会让小窗变大或变小；例如 90 × 195 与 180 × 390 效果相同。小窗打开后的大小由 iOS 按比例决定，可双指调整。宽高可填 1–640，应用后自动保存。"
         hint.font = .preferredFont(forTextStyle: .footnote)
         hint.textColor = .secondaryLabel
         ratioLabel.font = .preferredFont(forTextStyle: .footnote)
@@ -118,7 +118,7 @@ final class PiPSizeControlsView: UIView {
         guard size.width > 0, size.height > 0 else { return "" }
         let long = Double(max(size.width, size.height) / min(size.width, size.height))
         let value = long.formatted(FloatingPointFormatStyle<Double>.number.precision(.fractionLength(0...2)))
-        if size.width == size.height { return "当前形状：方形 1 : 1" }
+        if size.width == size.height { return "当前形状：正方形 1 : 1" }
         return size.height > size.width ? "当前形状：竖向，宽 : 高 = 1 : \(value)"
                                         : "当前形状：横向，宽 : 高 = \(value) : 1"
     }
