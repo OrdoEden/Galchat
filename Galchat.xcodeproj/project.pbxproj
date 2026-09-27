@@ -94,6 +94,9 @@
 			exceptions = (
 				DC5D1D113062845F0033519A /* Exceptions for "Galchat" folder in "Galchat" target */,
 			);
+			explicitFolders = (
+				Personas,
+			);
 			path = Galchat;
 			sourceTree = "<group>";
 		};

@@ -1,0 +1,13 @@
+江南深情
+
+Based on tong-jincheng-skill by hotcoffeeshake.
+Source: https://github.com/hotcoffeeshake/tong-jincheng-skill
+Revision: c9caaa9a6576f581c29d016c60bbe935908e20d5
+Copyright (c) 2026 hotcoffeeshake
+License: MIT; see LICENSE.
+
+SKILL.md and the six references/research files are preserved verbatim.
+All eight documents listed in manifest.json are loaded in full as persona
+context. PERSONA.md supplies the Galchat reply-assistance adaptation.
+This persona does not represent the real person or imply endorsement.
+Research claims and uncertainties are those of the upstream author.
