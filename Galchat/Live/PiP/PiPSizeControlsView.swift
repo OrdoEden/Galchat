@@ -4,6 +4,8 @@ import VisynCapture
 @MainActor
 final class PiPSizeControlsView: UIView {
     var onApply: ((CGSize) -> Void)?
+    /// 画中画路线：标准路线可后台常驻，通话式路线没有播放控件、能定小窗尺寸。
+    var onRouteChange: ((VisynPictureInPictureRoute) -> Void)?
     var isEnabled = false {
         didSet { updateEnabledState() }
     }
@@ -11,6 +13,8 @@ final class PiPSizeControlsView: UIView {
     // 比例预设统一由 Visyn 提供：横屏长条与竖屏 9 : 19.5，不提供方形。
     private let presets = UISegmentedControl(items: VisynPictureInPictureSize.presets.map(\.title))
     private let presetSizes = VisynPictureInPictureSize.presets.map(\.size)
+    private let routeControl = UISegmentedControl(items: VisynPictureInPictureRoute.presets.map(\.title))
+    private let routeSizes = VisynPictureInPictureRoute.presets.map(\.route)
     private let ratioLabel = UILabel()
     private let widthField = UITextField()
     private let heightField = UITextField()
@@ -25,6 +29,8 @@ final class PiPSizeControlsView: UIView {
         title.accessibilityTraits.insert(.header)
         presets.accessibilityLabel = "画中画方向预设"
         presets.addTarget(self, action: #selector(selectPreset), for: .valueChanged)
+        routeControl.accessibilityLabel = "画中画路线"
+        routeControl.addTarget(self, action: #selector(selectRoute), for: .valueChanged)
         var inputs: [UIView] = []
         for (field, name) in [(widthField, "宽"), (heightField, "高")] {
             let label = UILabel()
@@ -51,7 +57,7 @@ final class PiPSizeControlsView: UIView {
         inputError.textColor = .systemRed
         inputError.isHidden = true
         let hint = UILabel()
-        hint.text = "小窗形状只由宽和高的比例决定，数值大小不会让小窗变大或变小；例如 90 × 195 与 180 × 390 效果相同。小窗打开后的大小由 iOS 按比例决定，可双指调整。宽高可填 1–640，应用后自动保存。"
+        hint.text = "标准路线的形状只由宽和高的比例决定，小窗实际大小由 iOS 决定，可双指调整。通话式路线没有播放控件，宽高直接决定小窗尺寸与比例，但需要系统认作通话，被拒绝时自动退回标准路线。宽高可填 1–640，应用后自动保存；路线改完重新开启画中画生效。"
         hint.font = .preferredFont(forTextStyle: .footnote)
         hint.textColor = .secondaryLabel
         ratioLabel.font = .preferredFont(forTextStyle: .footnote)
@@ -60,7 +66,8 @@ final class PiPSizeControlsView: UIView {
             label.numberOfLines = 0
             label.adjustsFontForContentSizeCategory = true
         }
-        let stack = UIStackView(arrangedSubviews: [title, presets, fields, ratioLabel, applyButton, inputError, hint])
+        let stack = UIStackView(arrangedSubviews: [title, presets, fields, ratioLabel, applyButton,
+                                                   routeControl, inputError, hint])
         stack.axis = .vertical
         stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -71,10 +78,12 @@ final class PiPSizeControlsView: UIView {
             stack.topAnchor.constraint(equalTo: topAnchor),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
             presets.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            routeControl.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             widthField.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             heightField.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
         ])
         setAppliedSize(VisynPictureInPictureSize.landscape)
+        setRoute(VisynPictureInPictureRoute.load() ?? .sampleBuffer)
         updateEnabledState()
     }
 
@@ -86,6 +95,16 @@ final class PiPSizeControlsView: UIView {
         presets.selectedSegmentIndex = presetSizes.firstIndex(of: size) ?? UISegmentedControl.noSegment
         ratioLabel.text = Self.ratioDescription(size)
         inputError.isHidden = true
+    }
+
+    func setRoute(_ route: VisynPictureInPictureRoute) {
+        routeControl.selectedSegmentIndex = routeSizes.firstIndex(of: route) ?? UISegmentedControl.noSegment
+    }
+
+    @objc private func selectRoute() {
+        guard isEnabled, routeSizes.indices.contains(routeControl.selectedSegmentIndex) else { return }
+        endEditing(true)
+        onRouteChange?(routeSizes[routeControl.selectedSegmentIndex])
     }
 
     @objc private func selectPreset() {
@@ -125,6 +144,7 @@ final class PiPSizeControlsView: UIView {
 
     private func updateEnabledState() {
         presets.isEnabled = isEnabled
+        routeControl.isEnabled = isEnabled
         widthField.isEnabled = isEnabled
         heightField.isEnabled = isEnabled
         applyButton.isEnabled = isEnabled

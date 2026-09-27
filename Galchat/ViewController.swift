@@ -1,4 +1,5 @@
 import UIKit
+import VisynCapture
 import VisynTransport
 
 final class ViewController: UIViewController {
@@ -63,6 +64,13 @@ final class ViewController: UIViewController {
         }
     }
 
+    private func applyPictureInPictureRoute(_ route: VisynPictureInPictureRoute) {
+        captureSession.applyRoute(route)
+        pipSizeControls.setRoute(route)
+        UIAccessibility.post(notification: .announcement,
+                             argument: route == .videoCall ? "已选择通话式画中画，重新开启后生效。" : "已选择标准画中画。")
+    }
+
     private func applyPictureInPictureContentSize(_ size: CGSize) {
         captureSession.applyContentSize(size)
         pipSizeControls.setAppliedSize(captureSession.contentSize)
@@ -75,6 +83,7 @@ final class ViewController: UIViewController {
         view.backgroundColor = .systemBackground
         view.tintColor = .galchatPink
         pipSizeControls.onApply = { [weak self] size in self?.applyPictureInPictureContentSize(size) }
+        pipSizeControls.onRouteChange = { [weak self] route in self?.applyPictureInPictureRoute(route) }
 
         let subtitleLabel = UILabel()
         subtitleLabel.text = "调整画中画尺寸，管理当前录屏。日常使用可点底部“快速开启”。"

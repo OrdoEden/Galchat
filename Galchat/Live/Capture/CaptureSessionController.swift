@@ -45,7 +45,8 @@ final class CaptureSessionController {
             let controller = try VisynCaptureController(
                 configuration: .load(), pictureInPictureContent: live.makePiPContent(),
                 pictureInPictureContentSize: contentSize,
-                pictureInPictureFramesPerSecond: 15
+                pictureInPictureFramesPerSecond: 15,
+                pictureInPictureRoute: VisynPictureInPictureRoute.load() ?? .sampleBuffer
             )
             capture = controller
             live.pictureInPictureContentSizeDidChange(controller.pictureInPictureContentSize)
@@ -110,6 +111,15 @@ final class CaptureSessionController {
         guard prepareIfNeeded() else { return }
         errorMessage = nil
         capture?.togglePictureInPicture()
+        notify()
+    }
+
+    /// 路线只能在下次创建控制器时生效，所以改完先拆掉当前控制器。
+    func applyRoute(_ route: VisynPictureInPictureRoute) {
+        route.save()
+        guard capture != nil else { return }
+        capture?.stopPictureInPicture()
+        capture = nil
         notify()
     }
 
