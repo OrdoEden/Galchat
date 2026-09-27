@@ -58,7 +58,8 @@ final class LiveAnalysisScheduler {
     private var fingerprints = Set<String>()
     private var refreshes = 0
     private var runTimes = [Date]()
-    private static let autoKey = "jarvis.live.autoAnalyze"
+    private var nonScoringTail: String?
+    private static let autoKey = "Galchat.live.autoAnalyze"
 
     var isRefreshingContext: Bool { phase == .analyzing && currentRequest?.isContextRefresh == true }
     var autoAnalyze: Bool {
@@ -81,7 +82,8 @@ final class LiveAnalysisScheduler {
             invalidate()
             return setPhase(.idle)
         }
-        if old?.sessionID != context.sessionID || old?.conversationID != context.conversationID {
+        if old?.sessionID != context.sessionID || old?.conversationID != context.conversationID
+            || old?.contactID != context.contactID {
             invalidate()
             refreshes = 0
             fingerprints.removeAll()
@@ -91,6 +93,12 @@ final class LiveAnalysisScheduler {
         }) else {
             invalidate()
             return setPhase(.waitingContent)
+        }
+        if nonScoringTail == scoringKey(context) {
+            if let currentRequest, matches(context, currentRequest.context) { return }
+            if currentRequest != nil { invalidate() }
+            handledTail = context.tailSignature
+            return setPhase(.skipped("上下文已更新，可手动分析或等待新消息"))
         }
         if context.tailSignature == handledTail {
             considerRefresh(context)
@@ -187,12 +195,26 @@ final class LiveAnalysisScheduler {
         setPhase(.idle)
     }
 
+    /// 修改档案或纠正已有文字只作废旧结果；保存本身不触发模型请求和计分。
+    func contextWasEdited(_ context: ConversationContext?) {
+        invalidate()
+        latest = context
+        handledTail = context?.tailSignature
+        nonScoringTail = context.map(scoringKey)
+        setPhase(.skipped("上下文已更新，可手动分析或等待新消息"))
+    }
+
+    private func scoringKey(_ context: ConversationContext) -> String {
+        "\(context.sessionID)|\(context.conversationID)|\(context.messages.last(where: { !$0.isGap })?.id.uuidString ?? "")"
+    }
+
     private func run(_ context: ConversationContext, limit: Int, contextRefresh: Bool = false) {
         judgeTask?.cancel()
         let snapshot = context.snapshot(limit: limit)
         let request = AnalysisRequest(id: UUID(), context: context, version: context.version(for: snapshot),
-                                      snapshot: snapshot, models: AnalysisModelContext(config: config),
-                                      startedAt: Date(), isContextRefresh: contextRefresh)
+                                      snapshot: snapshot, models: AnalysisModelContext(config: config, contactID: context.contactID),
+                                      startedAt: Date(), isContextRefresh: contextRefresh,
+                                      allowsAffectionScoring: nonScoringTail != scoringKey(context))
         currentRequest = request
         fingerprints.insert(request.version.windowFingerprint)
         markStale()
@@ -231,7 +253,8 @@ final class LiveAnalysisScheduler {
     }
 
     private func matches(_ a: ConversationContext, _ b: ConversationContext) -> Bool {
-        a.sessionID == b.sessionID && a.conversationID == b.conversationID && a.tailSignature == b.tailSignature
+        a.sessionID == b.sessionID && a.conversationID == b.conversationID
+            && a.contactID == b.contactID && a.tailSignature == b.tailSignature
     }
 
     private func invalidate() {

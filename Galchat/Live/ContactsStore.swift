@@ -12,6 +12,8 @@ import Foundation
 @MainActor
 final class ContactsStore {
     static let shared = ContactsStore()
+    static let changed = Notification.Name("Galchat.ContactsStore.changed")
+    static let profileChanged = Notification.Name("Galchat.ContactsStore.profileChanged")
 
     static let fileName = "contacts.json"
     /// 台账保留条数。必须大于 `LiveAnalysisScheduler.historyContextLimit`（50），
@@ -21,9 +23,28 @@ final class ContactsStore {
     static let ledgerRetention: TimeInterval = 24 * 60 * 60
 
     private(set) var document: Document
+    private var persisted: Document
+    private(set) var lastError: String?
+    private var loadError: String?
 
     private init() {
-        document = GalchatSharedFile.read(Document.self, named: Self.fileName) ?? Document()
+        var loaded = Document()
+        var failure: String?
+        if let url = GalchatSharedFile.fileURL(named: Self.fileName) {
+            if FileManager.default.fileExists(atPath: url.path) {
+                do {
+                    loaded = try GalchatSharedFile.decoder.decode(Document.self, from: Data(contentsOf: url))
+                } catch {
+                    failure = "联系人数据无法读取，已保留原文件并暂停保存。\(error.localizedDescription)"
+                }
+            }
+        } else {
+            failure = "无法访问联系人共享存储，请检查 App Group 配置后重新打开应用。"
+        }
+        document = loaded
+        persisted = loaded
+        loadError = failure
+        lastError = failure
         prune()
     }
 
@@ -75,6 +96,9 @@ final class ContactsStore {
         var lastCommitAt: Date?
         let createdAt: Date
         var ledger: [ScoredTurn]
+        var note: String? = nil
+        var persona: String? = nil
+        var avatarData: Data? = nil
     }
 
     /// 一条已计分记录。用来防止同一轮对话被反复计分。
@@ -100,7 +124,7 @@ final class ContactsStore {
     // MARK: - 变更
 
     @discardableResult
-    func createContact(displayName: String, alias: String?) -> Contact {
+    func createContact(displayName: String, alias: String?, activate: Bool = true) -> Contact {
         let contact = Contact(
             id: UUID().uuidString,
             displayName: displayName,
@@ -112,7 +136,7 @@ final class ContactsStore {
             ledger: []
         )
         document.contacts.append(contact)
-        setActiveContact(contact.id)
+        if activate { document.activeContactID = contact.id }
         save()
         return contact
     }
@@ -124,15 +148,15 @@ final class ContactsStore {
 
     /// 把一个 OCR 标题绑到既有联系人。标题同时从其他联系人上摘掉——
     /// 否则同一次会话会在两个人之间来回摇摆。
-    func bind(alias rawAlias: String, to contactID: String) {
+    func bind(alias rawAlias: String, to contactID: String, activate: Bool = true) {
         let alias = Self.normalize(rawAlias)
-        guard !alias.isEmpty else { return }
+        guard !alias.isEmpty, document.contacts.contains(where: { $0.id == contactID }) else { return }
         for index in document.contacts.indices {
             document.contacts[index].aliases.removeAll { $0 == alias }
         }
         guard let index = document.contacts.firstIndex(where: { $0.id == contactID }) else { return }
         document.contacts[index].aliases.append(alias)
-        document.activeContactID = contactID
+        if activate { document.activeContactID = contactID }
         save()
     }
 
@@ -142,10 +166,79 @@ final class ContactsStore {
         save()
     }
 
+    /// 只修改档案字段；编辑期间新写入的计分台账与实时联系人绑定保持最新。
+    func edit(contactID: String, displayName: String, note: String, persona: String,
+              aliases: [String], total: Int?, avatarData: Data?) throws {
+        let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw EditError.message("请输入联系人名称。") }
+        guard name.count <= 100, note.count <= 2000, persona.count <= 4000,
+              aliases.count <= 30, aliases.allSatisfy({ $0.count <= 100 }) else {
+            throw EditError.message("内容过长：名称与单条别名最多 100 字，备注 2000 字，人设 4000 字，别名最多 30 条。")
+        }
+        guard avatarData == nil || avatarData!.count <= 100_000 else {
+            throw EditError.message("头像过大，请重新选择。")
+        }
+        guard total == nil || (0...100).contains(total!) else {
+            throw EditError.message("好感度应在 0 到 100 之间。")
+        }
+        let normalized = Array(Set(aliases.map(Self.normalize).filter { !$0.isEmpty })).sorted()
+        let identifiers = Set(normalized + [Self.normalize(name)])
+        if let conflict = document.contacts.first(where: {
+            $0.id != contactID && !identifiers.isDisjoint(with: Set($0.aliases.map(Self.normalize) + [Self.normalize($0.displayName)]))
+        }) {
+            throw EditError.message("名称或识别别名与“\(conflict.displayName)”重复，请修改后保存。")
+        }
+        guard let index = document.contacts.firstIndex(where: { $0.id == contactID }) else {
+            throw EditError.message("此联系人已不存在。")
+        }
+        document.contacts[index].displayName = name
+        document.contacts[index].note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        document.contacts[index].persona = persona.trimmingCharacters(in: .whitespacesAndNewlines)
+        document.contacts[index].aliases = normalized
+        document.contacts[index].avatarData = avatarData
+        if let total { document.contacts[index].total = total }
+        guard save() else { throw EditError.message(lastError ?? "联系人保存失败。") }
+        NotificationCenter.default.post(name: Self.profileChanged, object: self, userInfo: ["contactID": contactID])
+    }
+
+    enum EditError: LocalizedError {
+        case message(String)
+        var errorDescription: String? {
+            if case .message(let text) = self { return text }
+            return nil
+        }
+    }
+
+    func createProfile(displayName: String, alias: String?) throws -> Contact {
+        let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 100, (alias?.count ?? 0) <= 100 else {
+            throw EditError.message("联系人名称须为 1 到 100 字。")
+        }
+        let keys = Set(([name] + (alias.map { [$0] } ?? [])).map(Self.normalize).filter { !$0.isEmpty })
+        if let conflict = document.contacts.first(where: {
+            !keys.isDisjoint(with: Set(($0.aliases + [$0.displayName]).map(Self.normalize)))
+        }) {
+            throw EditError.message("名称或识别别名与“\(conflict.displayName)”重复，请修改后保存。")
+        }
+        let created = createContact(displayName: name, alias: alias, activate: false)
+        guard contact(id: created.id) != nil else {
+            throw EditError.message(lastError ?? "联系人保存失败。")
+        }
+        return created
+    }
+
     func delete(contactID: String) {
         document.contacts.removeAll { $0.id == contactID }
         if document.activeContactID == contactID { document.activeContactID = nil }
-        save()
+        if save() {
+            NotificationCenter.default.post(name: Self.profileChanged, object: self, userInfo: ["contactID": contactID])
+        }
+    }
+
+    func deleteProfile(contactID: String) throws {
+        guard contact(id: contactID) != nil else { throw EditError.message("此联系人已不存在。") }
+        delete(contactID: contactID)
+        if let lastError { throw EditError.message(lastError) }
     }
 
     // MARK: - 台账
@@ -206,10 +299,24 @@ final class ContactsStore {
         document.contacts[index].ledger = ledger
     }
 
-    func save() {
+    @discardableResult
+    func save() -> Bool {
+        if let loadError {
+            document = persisted
+            lastError = loadError
+            return false
+        }
         prune()
         document.updatedAt = Date()
-        GalchatSharedFile.write(document, named: Self.fileName)
+        guard GalchatSharedFile.write(document, named: Self.fileName) else {
+            document = persisted
+            lastError = "联系人保存失败，修改尚未保存。请检查设备存储空间后重试。"
+            return false
+        }
+        persisted = document
+        lastError = nil
+        NotificationCenter.default.post(name: Self.changed, object: self)
+        return true
     }
 
     // MARK: - 归一化

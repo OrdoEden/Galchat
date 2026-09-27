@@ -11,6 +11,7 @@
 		4D32167C53586A298C10431E /* Synapse in Frameworks */ = {isa = PBXBuildFile; productRef = 1CDAF92FBDB25433A4A6C5C1 /* Synapse */; };
 		4D32167D53586A298C10431F /* SeeU in Frameworks */ = {isa = PBXBuildFile; productRef = 1CDAF930BDB25433A4A6C5C2 /* SeeU */; };
 		5CE9A6C1F7FA282FED7F5CBC /* GalchatBroadcastExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DC0E29E5CA688E24A8B5242A /* GalchatBroadcastExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		77DF653630680B8500678096 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 77DF653530680B8500678096 /* SnapKit */; };
 		A1B2C3D4E5F6071829304A5D /* GalchatKeyboardExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B46138095F5795515E07FE18 /* VisynBroadcast in Frameworks */ = {isa = PBXBuildFile; productRef = F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */; };
 		FD6A89AD749CB351767FC831 /* SampleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB1659D065D75EF7E9FAB88 /* SampleHandler.swift */; };
@@ -53,7 +54,7 @@
 		98DC5746B0605AFEB74F5256 /* GalchatBroadcastExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = GalchatBroadcastExtension.entitlements; sourceTree = "<group>"; };
 		A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GalchatKeyboardExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC0E29E5CA688E24A8B5242A /* GalchatBroadcastExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GalchatBroadcastExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		DC5D1CFF3062845E0033519A /* Galchat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Galchat.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC5D1CFF3062845E0033519A /* Galchat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Galchat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAB1659D065D75EF7E9FAB88 /* SampleHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -93,7 +94,7 @@
 			exceptions = (
 				DC5D1D113062845F0033519A /* Exceptions for "Galchat" folder in "Galchat" target */,
 			);
-			path = "Galchat";
+			path = Galchat;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -119,6 +120,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D32167B53586A298C10431D /* VisynCapture in Frameworks */,
+				77DF653630680B8500678096 /* SnapKit in Frameworks */,
 				4D32167C53586A298C10431E /* Synapse in Frameworks */,
 				4D32167D53586A298C10431F /* SeeU in Frameworks */,
 			);
@@ -221,13 +223,14 @@
 				A1B2C3D4E5F6071829304A68 /* GalchatShared */,
 				DC5D1D013062845E0033519A /* Galchat */,
 			);
-			name = "Galchat";
+			name = Galchat;
 			packageProductDependencies = (
 				1CDAF92EBDB25433A4A6C5C0 /* VisynCapture */,
 				1CDAF92FBDB25433A4A6C5C1 /* Synapse */,
 				1CDAF930BDB25433A4A6C5C2 /* SeeU */,
+				77DF653530680B8500678096 /* SnapKit */,
 			);
-			productName = "Galchat";
+			productName = Galchat;
 			productReference = DC5D1CFF3062845E0033519A /* Galchat.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -282,6 +285,7 @@
 				E3E4B153D2AB06FC7383CDA1 /* XCLocalSwiftPackageReference "../Visyn" */,
 				E3E4B154D2AB06FC7383CDA2 /* XCLocalSwiftPackageReference "../Synapse" */,
 				E3E4B155D2AB06FC7383CDA3 /* XCLocalSwiftPackageReference "../SeeU" */,
+				77DF653430680B8500678096 /* XCRemoteSwiftPackageReference "SnapKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC5D1D003062845E0033519A /* Products */;
@@ -372,7 +376,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 录屏";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).BroadcastExtension";
+				PRODUCT_BUNDLE_IDENTIFIER = com.heself.galchat.BroadcastExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -395,7 +399,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 录屏";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).BroadcastExtension";
+				PRODUCT_BUNDLE_IDENTIFIER = com.heself.galchat.BroadcastExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -421,7 +425,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).KeyboardExtension";
+				PRODUCT_BUNDLE_IDENTIFIER = com.heself.galchat.KeyboardExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -449,7 +453,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER).KeyboardExtension";
+				PRODUCT_BUNDLE_IDENTIFIER = com.heself.galchat.KeyboardExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -466,16 +470,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Galchat/Galchat.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Galchat/Galchat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 43MJ7CT2NR;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Galchat/Info.plist";
+				INFOPLIST_FILE = Galchat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Galchat;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
@@ -484,7 +487,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.heself.galchat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -501,16 +504,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Galchat/Galchat.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Galchat/Galchat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 43MJ7CT2NR;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Galchat/Info.plist";
+				INFOPLIST_FILE = Galchat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Galchat;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
@@ -519,7 +521,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(VISYN_APP_BUNDLE_IDENTIFIER)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.heself.galchat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -592,8 +594,6 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				VISYN_APP_BUNDLE_IDENTIFIER = "com.heself.galchat";
-				VISYN_APP_GROUP = "group.$(VISYN_APP_BUNDLE_IDENTIFIER)";
 			};
 			name = Debug;
 		};
@@ -651,8 +651,6 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
-				VISYN_APP_BUNDLE_IDENTIFIER = "com.heself.galchat";
-				VISYN_APP_GROUP = "group.$(VISYN_APP_BUNDLE_IDENTIFIER)";
 			};
 			name = Release;
 		};
@@ -712,6 +710,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		77DF653430680B8500678096 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		1CDAF92EBDB25433A4A6C5C0 /* VisynCapture */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -727,6 +736,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E3E4B155D2AB06FC7383CDA3 /* XCLocalSwiftPackageReference "../SeeU" */;
 			productName = SeeU;
+		};
+		77DF653530680B8500678096 /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 77DF653430680B8500678096 /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
 		};
 		F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */ = {
 			isa = XCSwiftPackageProductDependency;

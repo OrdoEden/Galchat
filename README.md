@@ -12,7 +12,7 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 |---|---|---|
 | Visyn | `../Visyn` | 录屏、帧传输和 PiP，继续使用原有独立仓库 |
 | SeeU | [`../SeeU`](../SeeU/README.md) | OCR、聊天版式、跨图消息合并、长图和结构化对话 JSON |
-| Synapse | [`../Synapse`](../Synapse/README.md) | BYOK 凭据、模型路由、Jev/Chat Completions 协议与 Alamofire 传输 |
+| Synapse | [`../Synapse`](../Synapse/README.md) | BYOK 模型配置与凭据管理、请求快照、Jev/Chat Completions 协议与 Alamofire 传输 |
 
 SeeU 与 Synapse 各自提供一个公开模块，可独立接入其他项目；两者互不依赖。好感度、联系人、人设、情绪判断题、候选生成策略及键盘发布属于 App 业务，未引入两个库。当前没有新增 Realm 或联系人数据库。
 

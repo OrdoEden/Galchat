@@ -26,6 +26,10 @@ final class ReplyBundlePublisher {
 
     init() { write(.invalid(note: "Jarvis 已启动，等待回复候选")) }
 
+    func contextWasEdited() {
+        invalidate("上下文或人设已更新，请重新分析")
+    }
+
     func refresh(context: ConversationContext?, currentRequest: AnalysisRequest?,
                  judge: LiveAnalysisScheduler.Outcome?, replies: ReplySuggestionScheduler.Outcome?,
                  replyPhase: ReplySuggestionScheduler.Phase, capturing: Bool, captureNote: String) {
@@ -49,6 +53,7 @@ final class ReplyBundlePublisher {
         guard let request = currentRequest, let replies, !replies.stale,
               replies.request.id == request.id, replies.request.version == request.version,
               request.version.sessionID == context.sessionID, request.version.conversationID == context.conversationID,
+              request.context.contactID == context.contactID,
               request.version.tailSignature == context.tailSignature else {
             return invalidate("当前聊天已更新，等待新的回复候选")
         }

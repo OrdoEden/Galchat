@@ -207,7 +207,7 @@ final class KeyboardViewController: UIInputViewController {
             button.alpha = confirmed ? 1 : 0.5
             button.accessibilityLabel = "回复建议\(index + 1)：\(candidate.text)"
             if candidate.rank == 3 {
-                button.backgroundColor = UIColor.systemIndigo.withAlphaComponent(0.18)
+                button.backgroundColor = UIColor.galchatPink.withAlphaComponent(0.18)
                 button.accessibilityHint = "优先推荐，点击插入输入框"
             }
             button.addAction(UIAction { [weak self] _ in
@@ -493,7 +493,7 @@ final class KeyboardViewController: UIInputViewController {
                 let title = layout == .letters ? (chinese ? "分词" : "⇧") : (layout == .numbers ? "#+=" : "123")
                 let control = makeKey(title, fontSize: 15)
                 if !chinese && uppercase && layout == .letters {
-                    control.backgroundColor = UIColor.systemIndigo.withAlphaComponent(0.2)
+                    control.backgroundColor = UIColor.galchatPink.withAlphaComponent(0.2)
                 }
                 control.accessibilityLabel = layout == .letters ? (chinese ? "拼音分隔符" : "切换大小写") : "切换数字符号"
                 control.addAction(UIAction { [weak self] _ in

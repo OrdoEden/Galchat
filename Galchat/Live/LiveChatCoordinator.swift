@@ -18,6 +18,7 @@ final class LiveChatCoordinator {
     private(set) var framesReceived = 0
     private(set) var framesDropped = 0
     private(set) var currentContext: ConversationContext?
+    private var rawContext: ConversationContext?
     private(set) var longScreenshotSummary: [UUID: LongScreenshotSummary] = [:]
     private(set) var isSavingLongScreenshot = false
     private(set) var recognitionError: String?
@@ -44,7 +45,7 @@ final class LiveChatCoordinator {
     private var pictureInPictureContentSize = VisynPictureInPictureSize.landscape
     private var acceptFramesAfter = Date.distantPast
     private let publisher = ReplyBundlePublisher()
-    private let affection = AffectionProjectionPublisher()
+    private let affection = AffectionProjectionPublisher.shared
     private let committer = AffectionCommitter()
 
     private init() {
@@ -60,6 +61,21 @@ final class LiveChatCoordinator {
             forName: JarvisConfig.liveSettingsDidChange, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.applyLadderCapacity() }
+        }
+        for name in [RecentConversationStore.editsChanged, PersonaStore.changed, ContactsStore.profileChanged] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    if name == RecentConversationStore.editsChanged {
+                        guard let context = self.rawContext,
+                              note.userInfo?["conversationID"] as? String == "\(context.sessionID.uuidString):\(context.conversationID.uuidString)" else { return }
+                    } else if name == ContactsStore.profileChanged {
+                        guard let editedID = note.userInfo?["contactID"] as? String,
+                              editedID == self.currentContext?.contactID else { return }
+                    }
+                    self.contextWasEdited()
+                }
+            }
         }
     }
 
@@ -83,13 +99,17 @@ final class LiveChatCoordinator {
             if presentationTimer == nil {
                 // 即使没有新帧也更新过期提示；发布器只允许新 frameID 延长来源有效期。
                 presentationTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-                    MainActor.assumeIsolated { self?.notify() }
+                    MainActor.assumeIsolated {
+                        self?.consumeContactDecision()
+                        self?.notify()
+                    }
                 }
             }
         case .paused:
             captureGeneration += 1
             pending = nil
             currentContext = nil
+            rawContext = nil
             scheduler.captureStopped()
             presentationTimer?.invalidate()
             presentationTimer = nil
@@ -100,6 +120,7 @@ final class LiveChatCoordinator {
             pending = nil
             currentSession = nil
             currentContext = nil
+            rawContext = nil
             framesReceived = 0
             framesDropped = 0
             scheduler.captureStopped()
@@ -118,6 +139,7 @@ final class LiveChatCoordinator {
             latest = nil
             recognitionError = nil
             currentContext = nil
+            rawContext = nil
             resetLongScreenshots()
             scheduler.reset()
         }
@@ -134,6 +156,7 @@ final class LiveChatCoordinator {
         latest = nil
         recognitionError = nil
         currentContext = nil
+        rawContext = nil
         completedPresentation = nil
         resetLongScreenshots()
         scheduler.reset()
@@ -163,6 +186,7 @@ final class LiveChatCoordinator {
                     self.recognitionError = error.localizedDescription
                     self.latest = nil
                     self.currentContext = nil
+                    self.rawContext = nil
                     self.scheduler.update(nil)
                     self.notify()
                 }
@@ -176,10 +200,7 @@ final class LiveChatCoordinator {
                 let update = output.update
                 self.recognitionError = nil
                 self.latest = update
-                self.currentContext = self.makeContext(from: update, observedAt: frame.capturedAt)
-                // 先让投影知道现在在跟谁聊（可能触发自动绑定或确认提示），再跑分析。
-                self.affection.resolveContact(title: update.title ?? "当前会话")
-                self.affection.consumeKeyboardDecision()
+                self.installContext(self.makeContext(from: update, observedAt: frame.capturedAt))
                 self.scheduler.update(self.currentContext)
                 self.notify()
             }
@@ -222,6 +243,101 @@ final class LiveChatCoordinator {
                                    revision: update.revision, sourceTitle: update.title ?? "当前会话",
                                    sourceConfirmed: update.confirmed, frameID: update.frameID,
                                    observedAt: observedAt, messages: messages)
+    }
+
+    private func installContext(_ context: ConversationContext?) {
+        guard var context else {
+            rawContext = nil
+            currentContext = nil
+            affection.resolveContact(title: "当前会话")
+            return
+        }
+        let contacts = ContactsStore.shared
+        let recents = RecentConversationStore.shared
+        if recents.isDeleted(context) {
+            rawContext = nil
+            currentContext = nil
+            affection.resolveContact(title: "当前会话")
+            return
+        }
+        let archived = recents.conversation(id: "\(context.sessionID.uuidString):\(context.conversationID.uuidString)")
+        if let removedID = archived?.contactID, contacts.contact(id: removedID) == nil {
+            // 删除档案后，本次已有会话保持未关联，不能在下一帧自动建回同名档案。
+            affection.currentTitle = context.sourceTitle
+            if contacts.activeContact != nil {
+                contacts.setActiveContact(nil)
+                affection.publishImmediately()
+            }
+        } else if let savedID = recents.contactID(for: context), contacts.contact(id: savedID) != nil {
+            // 已确认的会话归属优先于标题匹配，避免先发布另一个人的键盘投影。
+            affection.currentTitle = context.sourceTitle
+            if contacts.activeContact?.id != savedID {
+                contacts.setActiveContact(savedID)
+                affection.publishImmediately()
+            }
+        } else {
+            affection.resolveContact(title: context.sourceTitle)
+            if context.sourceConfirmed, ContactMatcher.isTrusted(context.sourceTitle),
+               !ContactMatcher.normalize(context.sourceTitle).isEmpty {
+                let match = ContactMatcher.match(title: context.sourceTitle, subjects: contacts.contacts().map {
+                    ContactMatcher.Subject(id: $0.id, displayName: $0.displayName, aliases: $0.aliases)
+                })
+                if case .unknown = match,
+                   let created = try? contacts.createProfile(displayName: context.sourceTitle, alias: context.sourceTitle) {
+                    contacts.setActiveContact(created.id)
+                    affection.publishImmediately()
+                }
+            }
+        }
+        context.contactID = contacts.activeContact?.id
+        rawContext = context
+        recents.record(context, contactID: context.contactID)
+        currentContext = recents.applyingCorrections(to: context)
+        consumeContactDecision()
+        affection.publish()
+    }
+
+    private func consumeContactDecision() {
+        guard captureState == .broadcasting, var context = rawContext,
+              affection.consumeKeyboardDecision() else { return }
+        let contacts = ContactsStore.shared
+        guard let contactID = contacts.activeContact?.id else { return }
+        do {
+            try RecentConversationStore.shared.bindCurrent(context, to: contactID)
+        } catch {
+            // 确认必须与会话归属一起落盘，否则恢复原归属，避免键盘和模型各认一人。
+            contacts.setActiveContact(currentContext?.contactID)
+            affection.publishImmediately()
+            return
+        }
+        context.contactID = contactID
+        rawContext = context
+        currentContext = RecentConversationStore.shared.applyingCorrections(to: context)
+        scheduler.contextWasEdited(currentContext)
+        publisher.contextWasEdited()
+        completedPresentation = nil
+    }
+
+    private func contextWasEdited() {
+        if var context = rawContext {
+            if RecentConversationStore.shared.isDeleted(context) {
+                rawContext = nil
+                currentContext = nil
+                affection.resolveContact(title: "当前会话")
+            } else {
+                context.contactID = RecentConversationStore.shared.contactID(for: context)
+                rawContext = context
+                currentContext = RecentConversationStore.shared.applyingCorrections(to: context)
+                if ContactsStore.shared.activeContact?.id != context.contactID {
+                    ContactsStore.shared.setActiveContact(context.contactID)
+                }
+            }
+        }
+        completedPresentation = nil
+        scheduler.contextWasEdited(currentContext)
+        publisher.contextWasEdited()
+        affection.publishImmediately()
+        notify()
     }
 
     private func resetLongScreenshots() {
@@ -335,7 +451,7 @@ final class LiveChatCoordinator {
         case .ready:
             if scheduler.outcome?.stale == true { return "会话有更新，结论可能已过时" }
             return "Jev 判断已完成 · \(replyLine)"
-        case .failed(let reason): return reason
+        case .failed(let reason): return "判断失败：\(reason)"
         case .skipped(let reason): return reason
         }
     }
@@ -366,9 +482,6 @@ final class LiveChatCoordinator {
             replyPhase: replyScheduler.phase, capturing: captureState == .broadcasting,
             captureNote: captureState == .paused ? "录屏已暂停" : "录屏已停止"
         )
-        // 键盘回传的联系人确认要在这里也消费一次：用户点确认时屏幕内容可能没变，
-        // 不会有新帧来触发 `receive`，只在帧路径处理会一直不生效。
-        affection.consumeKeyboardDecision()
         updatePiP()
         for handler in observers.values { handler() }
     }
@@ -425,7 +538,7 @@ final class LiveChatCoordinator {
             progress = publisher.isReady ? "Jarvis 候选已就绪 · Jev 判断仍在分析中…"
                 : "Jarvis Jev 分析中 · \(replyLine)"
         } else if case .failed(let reason) = scheduler.phase {
-            progress = publisher.isReady ? "Jarvis Jev 判断失败 · 候选可在键盘选用" : "Jarvis 判断：\(reason) · \(replyLine)"
+            progress = publisher.isReady ? "Jarvis Jev 判断失败 · 候选可在键盘选用" : "Jarvis 判断失败：\(reason) · \(replyLine)"
         } else if case .skipped(let reason) = scheduler.phase {
             progress = "Jarvis \(reason)"
         } else if currentResult {

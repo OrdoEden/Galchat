@@ -38,13 +38,13 @@ final class ReplySuggestionScheduler {
             let candidates: [String]
             do {
                 candidates = try await self.replyClient.draft(snapshot: request.snapshot, relationship: relationship,
-                                                             route: request.models.reply)
+                                                             route: request.models.reply, persona: request.models.persona)
             } catch is CancellationError {
                 return
             } catch {
                 guard self.accepts(request) else { return }
                 self.task = nil
-                return self.setPhase(.failed(error.localizedDescription))
+                return self.setPhase(.failed("回复生成失败：\(error.localizedDescription)"))
             }
             guard self.accepts(request) else { return }
             guard request.models.judge.isConfigured else {

@@ -12,8 +12,8 @@
 		<string>RPBroadcastProcessModeSampleBuffer</string>
 	</dict>
 	<key>VisynAppGroupIdentifier</key>
-	<string>$(VISYN_APP_GROUP)</string>
+	<string>group.com.heself.galchat</string>
 	<key>VisynExtensionIdentifier</key>
-	<string>$(VISYN_APP_BUNDLE_IDENTIFIER).BroadcastExtension</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 </dict>
 </plist>

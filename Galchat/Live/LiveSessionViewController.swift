@@ -22,10 +22,24 @@ final class LiveSessionViewController: UIViewController {
         super.viewDidLoad()
         title = "实时会话"
         view.backgroundColor = .systemBackground
-        view.tintColor = .systemIndigo
+        view.tintColor = .galchatPink
         buildLayout()
-        observer = coordinator.observe { [weak self] in self?.render() }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if observer == nil {
+            observer = coordinator.observe { [weak self] in self?.render() }
+        }
         render()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if let observer {
+            coordinator.removeObserver(observer)
+            self.observer = nil
+        }
     }
 
     deinit {
@@ -140,7 +154,7 @@ final class LiveSessionViewController: UIViewController {
                 let (label, color): (String, UIColor) = {
                     switch message.side {
                     case .me: return ("我", .systemGreen)
-                    case .other: return (message.senderName ?? "对方", .systemIndigo)
+                    case .other: return (message.senderName ?? "对方", .galchatPink)
                     case .unknown: return ("未知", .systemOrange)
                     }
                 }()
@@ -200,6 +214,8 @@ final class LiveSessionViewController: UIViewController {
 
         analyzeButton.configuration?.title = "立即分析"
         analyzeButton.configuration?.image = UIImage(systemName: "sparkles")
+        analyzeButton.configuration?.baseBackgroundColor = .galchatPinkStrong
+        analyzeButton.configuration?.baseForegroundColor = .white
         analyzeButton.addAction(UIAction { [weak self] _ in self?.coordinator.scheduler.analyzeNow() }, for: .touchUpInside)
         longShotButton.configuration?.title = "查看长截图"
         longShotButton.configuration?.image = UIImage(systemName: "rectangle.stack")

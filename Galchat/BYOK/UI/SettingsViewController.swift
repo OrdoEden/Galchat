@@ -1,4 +1,5 @@
 import UIKit
+import Synapse
 
 /// BYOK 配置页：三路 provider / baseURL / model / key，每路一个连通性测试。
 final class SettingsViewController: UIViewController {
@@ -7,7 +8,7 @@ final class SettingsViewController: UIViewController {
     private let replyClient = ReplyClient()
 
     private let providerControl = UISegmentedControl(
-        items: JudgeProvider.allCases.map(\.displayName)
+        items: SynapseProvider.allCases.map(\.displayName)
     )
     private let judgeBase = ConfigFieldView(title: "判断接口地址", placeholder: "https://openrouter.ai/api")
     private let judgeModel = ConfigFieldView(title: "判断模型", placeholder: "typesafe/jev-1.13")
@@ -47,7 +48,7 @@ final class SettingsViewController: UIViewController {
         super.viewDidLoad()
         title = "BYOK 设置"
         view.backgroundColor = .systemBackground
-        view.tintColor = .systemIndigo
+        view.tintColor = .galchatPink
         buildLayout()
         loadConfig()
         refreshEndpointLabels()
@@ -62,17 +63,17 @@ final class SettingsViewController: UIViewController {
 
     private func loadConfig() {
         providerControl.selectedSegmentIndex =
-            JudgeProvider.allCases.firstIndex(of: config.judgeProvider) ?? 0
-        judgeBase.text = config.judgeBaseURL
-        judgeModel.text = config.judgeModel
-        judgeKey.text = config.secrets.key(for: .judge)
-        replyBase.text = config.replyBaseURL
-        replyModel.text = config.replyModel
-        replyKey.text = config.secrets.key(for: .reply)
+            SynapseProvider.allCases.firstIndex(of: config.judge.provider) ?? 0
+        judgeBase.text = config.judge.baseURL
+        judgeModel.text = config.judge.model
+        judgeKey.text = config.judge.apiKey
+        replyBase.text = config.reply.baseURL
+        replyModel.text = config.reply.model
+        replyKey.text = config.reply.apiKey
         visionSwitch.isOn = config.visionEnabled
-        visionBase.text = config.visionBaseURL
-        visionModel.text = config.visionModel
-        visionKey.text = config.secrets.key(for: .vision)
+        visionBase.text = config.vision.baseURL
+        visionModel.text = config.vision.model
+        visionKey.text = config.vision.apiKey
         relationshipField.text = config.relationship
         contextRow.value = config.contextMessageCount
         ladderRow.value = config.ladderCapacity
@@ -80,43 +81,31 @@ final class SettingsViewController: UIViewController {
     }
 
     private func saveConfig() {
-        let previousJudgeKey = config.secrets.key(for: .judge)
-        let previousReplyKey = config.secrets.key(for: .reply)
-        let previousVisionKey = config.secrets.key(for: .vision)
-        config.judgeBaseURL = judgeBase.text
-        config.judgeModel = judgeModel.text
-        clearInvalidatedKey(judgeKey, previous: previousJudgeKey, route: .judge)
-        config.secrets.setKey(judgeKey.text, for: .judge)
-        config.replyBaseURL = replyBase.text
-        config.replyModel = replyModel.text
-        clearInvalidatedKey(replyKey, previous: previousReplyKey, route: .reply)
-        config.secrets.setKey(replyKey.text, for: .reply)
+        config.judge.save(baseURL: judgeBase.text, model: judgeModel.text, apiKey: judgeKey.text)
+        config.reply.save(baseURL: replyBase.text, model: replyModel.text, apiKey: replyKey.text)
+        config.vision.save(baseURL: visionBase.text, model: visionModel.text, apiKey: visionKey.text)
+        judgeKey.text = config.judge.apiKey
+        replyKey.text = config.reply.apiKey
+        visionKey.text = config.vision.apiKey
         config.visionEnabled = visionSwitch.isOn
-        config.visionBaseURL = visionBase.text
-        config.visionModel = visionModel.text
-        clearInvalidatedKey(visionKey, previous: previousVisionKey, route: .vision)
-        config.secrets.setKey(visionKey.text, for: .vision)
         config.relationship = relationshipField.text
         if config.contextMessageCount != contextRow.value { config.contextMessageCount = contextRow.value }
         if config.ladderCapacity != ladderRow.value { config.ladderCapacity = ladderRow.value }
     }
 
-    /// 改服务地址后，不能把输入框里原服务的密钥自动保存回新服务。
-    private func clearInvalidatedKey(_ field: ConfigFieldView, previous: String, route: APIRoute) {
-        guard !previous.isEmpty, config.secrets.key(for: route).isEmpty,
-              field.text.trimmingCharacters(in: .whitespacesAndNewlines) == previous else { return }
-        field.text = ""
-    }
-
     private func refreshEndpointLabels() {
-        let provider = JudgeProvider.allCases[providerControl.selectedSegmentIndex]
-        let judgeURL = provider.endpoint(baseURL: judgeBase.text)
+        let provider = SynapseProvider.allCases[providerControl.selectedSegmentIndex]
+        let judgeBaseURL = judgeBase.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let judgeURL = provider.decisionsEndpoint(
+            baseURL: judgeBaseURL.isEmpty ? provider.defaultDecisionsBaseURL : judgeBaseURL
+        )
         judgeEndpointLabel.text = judgeURL.isEmpty
             ? "实际请求地址：请填写完整地址"
             : "实际请求地址：\(judgeURL)"
-        let replyURL = replyBase.text.isEmpty
-            ? JarvisConfig.Defaults.replyBaseURL.trimmedTrailingSlash + "/chat/completions"
-            : replyBase.text.trimmedTrailingSlash + "/chat/completions"
+        let replyBaseURL = replyBase.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let replyURL = SynapseProvider.chatEndpoint(
+            baseURL: replyBaseURL.isEmpty ? JarvisConfig.Defaults.replyBaseURL : replyBaseURL
+        )
         replyEndpointLabel.text = "实际请求地址：\(replyURL)"
     }
 
@@ -182,7 +171,7 @@ final class SettingsViewController: UIViewController {
             case .success(let message):
                 show(route, text: message, isError: false)
             case .failure(let error):
-                show(route, text: error.localizedDescription, isError: true)
+                show(route, text: "\(route.displayName)测试失败：\(error.localizedDescription)", isError: true)
             }
         }
     }
@@ -198,11 +187,11 @@ final class SettingsViewController: UIViewController {
     private func buildLayout() {
         providerControl.addAction(UIAction { [weak self] _ in
             guard let self else { return }
-            let provider = JudgeProvider.allCases[providerControl.selectedSegmentIndex]
-            config.applyJudgeProvider(provider)
-            judgeBase.text = config.judgeBaseURL
-            judgeModel.text = config.judgeModel
-            judgeKey.text = config.secrets.key(for: .judge)
+            let provider = SynapseProvider.allCases[providerControl.selectedSegmentIndex]
+            config.judge.applyProvider(provider)
+            judgeBase.text = config.judge.baseURL
+            judgeModel.text = config.judge.model
+            judgeKey.text = config.judge.apiKey
             refreshEndpointLabels()
         }, for: .valueChanged)
 

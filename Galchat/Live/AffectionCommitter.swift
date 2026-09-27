@@ -38,15 +38,15 @@ final class AffectionCommitter {
     func commit(request: AnalysisRequest, analysis: Analysis) {
         // 历史刷新永远不提交：`considerRefresh` 的守卫要求尾部不变，
         // 所以它不可能带来新的尾部消息。显式短路是为了可读性。
-        guard !request.isContextRefresh else { return }
+        guard !request.isContextRefresh, request.allowsAffectionScoring else { return }
 
-        guard let contactID = store.document.activeContactID,
+        guard let contactID = request.context.contactID,
               let contact = store.contact(id: contactID) else { return }
 
         // 提交键：窗口内最新的对方非 gap 消息。
         guard let newestOther = request.context.messages.last(where: {
             !$0.isGap && $0.speaker == .other
-        }) else { return }
+        }), !newestOther.isUserCorrected else { return }
 
         let existing = store.scoredTurn(contactID: contactID, messageID: newestOther.id)
 

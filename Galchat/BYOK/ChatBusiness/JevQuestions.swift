@@ -3,15 +3,12 @@ import Synapse
 
 /// 固定的 Jev 题目集，逐字移植自安卓参考实现（已通过校准的措辞）。
 /// instructions/criteria 用英文，聊天正文保持中文。
-///
-/// 需要显式 import Synapse：`JSONValue` 是 `JSONValue.swift` 里的 typealias，
-/// 而 typealias 不会把被导入的模块再导出给本文件。
 enum JevQuestions {
 
     /// 附加到每道题后面，让 background 字段被当作已知上下文而不是跑题内容。
     static let backgroundNote = " Facts given in background are provided context, not off-topic."
 
-    private static func noul(_ instructions: String, trueCase: String, falseCase: String) -> JSONValue {
+    private static func noul(_ instructions: String, trueCase: String, falseCase: String) -> SynapseJSONValue {
         [
             "type": "noul",
             "instructions": .string(instructions + backgroundNote),
@@ -19,8 +16,8 @@ enum JevQuestions {
         ]
     }
 
-    private static func choice(_ instructions: String, criteria: [(String, String)]) -> JSONValue {
-        var dict: [String: JSONValue] = [:]
+    private static func choice(_ instructions: String, criteria: [(String, String)]) -> SynapseJSONValue {
+        var dict: [String: SynapseJSONValue] = [:]
         for (key, value) in criteria { dict[key] = .string(value) }
         return [
             "type": "choice",
@@ -29,7 +26,7 @@ enum JevQuestions {
         ]
     }
 
-    private static func score(_ instructions: String, levels: [String]) -> JSONValue {
+    private static func score(_ instructions: String, levels: [String]) -> SynapseJSONValue {
         [
             "type": "score",
             "instructions": .string(instructions + backgroundNote),
@@ -43,7 +40,7 @@ enum JevQuestions {
     /// 它们是已校准的移植。新题只问"最新一轮相对之前的情绪位移"，
     /// 是单步边际值而不是窗口求和，这样重叠窗口对同一尾部会产出同一个值，
     /// 上层才能按消息 id 精确去重（见 `AffectionCommitter`）。
-    static func judge() -> [String: JSONValue] {
+    static func judge() -> [String: SynapseJSONValue] {
         [
             "literal_question": noul(
                 "Is the other person's latest message meant purely literally, with no subtext? "
@@ -196,10 +193,10 @@ enum JevQuestions {
     }
 
     /// 对 3 条候选排序的题目。
-    static func rankQuestion(candidates: [String]) -> [String: JSONValue] {
+    static func rankQuestion(candidates: [String]) -> [String: SynapseJSONValue] {
         precondition(candidates.count == 3, "rankQuestion 需要恰好 3 条候选")
         let keys = ["reply_a", "reply_b", "reply_c"]
-        var criteria: [String: JSONValue] = [:]
+        var criteria: [String: SynapseJSONValue] = [:]
         for (index, key) in keys.enumerated() { criteria[key] = .string(candidates[index]) }
         return [
             "best_reply": [
@@ -221,10 +218,10 @@ enum JevQuestions {
     static let rankKeys = ["reply_a", "reply_b", "reply_c"]
 
     /// 由快照构造 Jev state。
-    static func buildState(snapshot: ChatSnapshot, relationship: String) -> JSONValue {
+    static func buildState(snapshot: ChatSnapshot, relationship: String) -> SynapseJSONValue {
         let recent = snapshot.recentMessages
         let messages = recent.map { message in
-            JSONValue.object([
+            SynapseJSONValue.object([
                 "from": .string(message.speaker.rawValue),
                 "text": .string(message.text)
             ])

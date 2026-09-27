@@ -38,14 +38,16 @@ struct JudgeClient {
         route: SynapseModelRoute? = nil
     ) async throws -> [RankedReply] {
         guard candidates.count == JevQuestions.rankKeys.count else {
-            throw APIError(route: .judge, status: nil, detail: "排序需要恰好 3 条候选")
+            throw ChatBusinessError.invalidRankingCandidateCount(
+                expected: JevQuestions.rankKeys.count, actual: candidates.count
+            )
         }
         let answers = try await send(
             state: JevQuestions.buildState(snapshot: snapshot, relationship: relationship),
             questions: JevQuestions.rankQuestion(candidates: candidates), route: route ?? config.routeSnapshot(for: .judge)
         )
         guard let best = answers["best_reply"], let probabilities = best.probabilities else {
-            throw APIError(route: .judge, status: nil, detail: "排序接口未返回 best_reply 概率")
+            throw ChatBusinessError.missingRankingProbabilities
         }
         let ranked = candidates.enumerated().map { index, text in
             RankedReply(text: text, probability: probabilities[JevQuestions.rankKeys[index]] ?? 0)
@@ -53,12 +55,8 @@ struct JudgeClient {
         return ranked.sorted { $0.probability > $1.probability }
     }
 
-    private func send(state: JSONValue, questions: [String: JSONValue], route: SynapseModelRoute) async throws -> [String: SynapseDecisionsResponse.Answer] {
-        do {
-            return try await gateway.decide(state: state, questions: questions, using: route).answers
-        } catch let error as SynapseError {
-            throw APIError(route: .judge, status: error.status, detail: error.detail)
-        }
+    private func send(state: SynapseJSONValue, questions: [String: SynapseJSONValue], route: SynapseModelRoute) async throws -> [String: SynapseDecisionsResponse.Answer] {
+        try await gateway.decide(state: state, questions: questions, using: route).answers
     }
 
     private static func parseChoice(_ answer: SynapseDecisionsResponse.Answer?) -> Choice? {

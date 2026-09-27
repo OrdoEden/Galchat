@@ -1,0 +1,7 @@
+{
+  "images" : [
+    { "filename" : "tabbar_quick.svg", "idiom" : "universal" }
+  ],
+  "properties" : { "preserves-vector-representation" : true, "template-rendering-intent" : "template" },
+  "info" : { "author" : "xcode", "version" : 1 }
+}

@@ -110,8 +110,16 @@ final class AffectionProjectionPublisher {
 
     /// 每帧识别后调用，把 OCR 标题匹配到联系人。
     func resolveContact(title: String) {
+        let changedTitle = ContactsStore.normalize(currentTitle) != ContactsStore.normalize(title)
         currentTitle = title
-        guard ContactMatcher.isTrusted(title) else { return }
+        if changedTitle, store.activeContact != nil {
+            store.setActiveContact(nil)
+        }
+        guard ContactMatcher.isTrusted(title) else {
+            if store.activeContact != nil { store.setActiveContact(nil) }
+            publish()
+            return
+        }
         let normalized = ContactsStore.normalize(title)
         guard !ignoredTitles.contains(normalized) else { return }
 
@@ -126,14 +134,14 @@ final class AffectionProjectionPublisher {
             store.bind(alias: title, to: match.contactID)
             publishImmediately()
         case .ambiguous(let candidates):
-            guard store.document.activeContactID == nil else { return }
-            publishImmediately(suggestions: candidates.map {
+            if store.activeContact != nil { store.setActiveContact(nil) }
+            publish(suggestions: candidates.map {
                 AffectionProjection.Suggestion(id: $0.contactID, displayName: $0.displayName, score: $0.score)
             })
         case .unknown:
-            guard store.document.activeContactID == nil else { return }
+            if store.activeContact != nil { store.setActiveContact(nil) }
             // 没有匹配时仍然要给键盘一个"新建"的机会，所以发一份空候选的投影。
-            publishImmediately()
+            publish()
         }
     }
 }

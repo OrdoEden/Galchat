@@ -23,6 +23,7 @@ final class JarvisPiPView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        overrideUserInterfaceStyle = .light
         backgroundColor = .white
         badge.layer.cornerRadius = 4
         affectionTrack.clipsToBounds = true
@@ -95,7 +96,7 @@ final class JarvisPiPView: UIView {
         case .danger: color = .systemRed
         }
         badge.backgroundColor = color
-        actionLabel.textColor = prompt ? .systemBlue : .black
+        actionLabel.textColor = prompt ? .galchatPink : .black
         actionIsPrompt = prompt
         affectionTotal = affection?.total ?? AffectionScoring.initial
         if let affection {

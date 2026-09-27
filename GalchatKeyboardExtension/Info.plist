@@ -21,6 +21,6 @@
 		<string>$(PRODUCT_MODULE_NAME).KeyboardViewController</string>
 	</dict>
 	<key>VisynAppGroupIdentifier</key>
-	<string>$(VISYN_APP_GROUP)</string>
+	<string>group.com.heself.galchat</string>
 </dict>
 </plist>
