@@ -3,7 +3,7 @@ import Synapse
 
 /// BYOK 配置页：三路 provider / baseURL / model / key，每路一个连通性测试。
 final class SettingsViewController: UIViewController {
-    private let config = JarvisConfig.shared
+    private let config = GCConfig.shared
     private let judgeClient = JudgeClient()
     private let replyClient = ReplyClient()
 
@@ -17,27 +17,27 @@ final class SettingsViewController: UIViewController {
     private let judgeStatus = makeFootnoteLabel("")
     private let judgeTestButton = UIButton(configuration: .tinted())
 
-    private let replyBase = ConfigFieldView(title: "回复接口地址", placeholder: JarvisConfig.Defaults.replyBaseURL)
-    private let replyModel = ConfigFieldView(title: "回复模型", placeholder: JarvisConfig.Defaults.replyModel)
+    private let replyBase = ConfigFieldView(title: "回复接口地址", placeholder: GCConfig.Defaults.replyBaseURL)
+    private let replyModel = ConfigFieldView(title: "回复模型", placeholder: GCConfig.Defaults.replyModel)
     private let replyKey = ConfigFieldView(title: "回复接口 API Key", placeholder: "sk-...", isSecure: true)
     private let replyEndpointLabel = makeFootnoteLabel("")
     private let replyStatus = makeFootnoteLabel("")
     private let replyTestButton = UIButton(configuration: .tinted())
 
     private let visionSwitch = UISwitch()
-    private let visionBase = ConfigFieldView(title: "视觉接口地址", placeholder: JarvisConfig.Defaults.visionBaseURL)
-    private let visionModel = ConfigFieldView(title: "视觉模型", placeholder: JarvisConfig.Defaults.visionModel)
+    private let visionBase = ConfigFieldView(title: "视觉接口地址", placeholder: GCConfig.Defaults.visionBaseURL)
+    private let visionModel = ConfigFieldView(title: "视觉模型", placeholder: GCConfig.Defaults.visionModel)
     private let visionKey = ConfigFieldView(title: "视觉接口 API Key", placeholder: "sk-...", isSecure: true)
     private let visionFields = UIStackView()
 
-    private let relationshipField = ConfigFieldView(title: "关系描述", placeholder: JarvisConfig.Defaults.relationship)
+    private let relationshipField = ConfigFieldView(title: "关系描述", placeholder: GCConfig.Defaults.relationship)
     private let contextRow = StepperRowView(
-        title: "分析上下文条数", range: JarvisConfig.Defaults.contextMessageRange,
+        title: "分析上下文条数", range: GCConfig.Defaults.contextMessageRange,
         format: { "\($0) 条" },
         note: { "每次分析把长图里最新的 \($0) 条聊天（不含时间分隔线）发给判断和回复模型。条数越多理解越完整，token 消耗也越多。" }
     )
     private let ladderRow = StepperRowView(
-        title: "长截图保留张数", range: JarvisConfig.Defaults.ladderCapacityRange,
+        title: "长截图保留张数", range: GCConfig.Defaults.ladderCapacityRange,
         format: { "\($0) 张" },
         note: { "实时拼接时保留最近 \($0) 张不重复的画面，超出后最早的一端移出长图（文字记录仍保留）。每张约 100 KB，只存在内存里。" }
     )
@@ -104,7 +104,7 @@ final class SettingsViewController: UIViewController {
             : "实际请求地址：\(judgeURL)"
         let replyBaseURL = replyBase.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let replyURL = SynapseProvider.chatEndpoint(
-            baseURL: replyBaseURL.isEmpty ? JarvisConfig.Defaults.replyBaseURL : replyBaseURL
+            baseURL: replyBaseURL.isEmpty ? GCConfig.Defaults.replyBaseURL : replyBaseURL
         )
         replyEndpointLabel.text = "实际请求地址：\(replyURL)"
     }
@@ -240,7 +240,7 @@ final class SettingsViewController: UIViewController {
             replyEndpointLabel, replyTestButton, replyStatus,
 
             visionHeader,
-            makeFootnoteLabel("默认关闭。开启后才会把图片发往远端。"),
+            makeFootnoteLabel("默认关闭。开启后会把聊天中的表情包（压缩后的小图）发往视觉模型，解读含义后用于判断和回复；关闭时只标记为“[表情包]”，不上传图片。"),
             visionFields,
 
             makeSectionLabel("分析上下文"),

@@ -8,10 +8,10 @@ final class PiPSizeControlsView: UIView {
         didSet { updateEnabledState() }
     }
 
-    private let presets = UISegmentedControl(items: ["横屏", "竖屏", "矩形"])
-    private let presetSizes = [VisynPictureInPictureSize.landscape,
-                               VisynPictureInPictureSize.portrait,
-                               VisynPictureInPictureSize.rectangle]
+    // 比例预设统一由 Visyn 提供；竖屏为微信同款 9 : 19.5。
+    private let presets = UISegmentedControl(items: VisynPictureInPictureSize.presets.map(\.title))
+    private let presetSizes = VisynPictureInPictureSize.presets.map(\.size)
+    private let ratioLabel = UILabel()
     private let widthField = UITextField()
     private let heightField = UITextField()
     private let applyButton = UIButton(configuration: .tinted())
@@ -20,15 +20,15 @@ final class PiPSizeControlsView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         let title = UILabel()
-        title.text = "画中画内容尺寸"
+        title.text = "画中画形状"
         title.font = .preferredFont(forTextStyle: .headline)
         title.accessibilityTraits.insert(.header)
-        presets.accessibilityLabel = "画中画尺寸预设"
+        presets.accessibilityLabel = "画中画形状预设"
         presets.addTarget(self, action: #selector(selectPreset), for: .valueChanged)
         var inputs: [UIView] = []
         for (field, name) in [(widthField, "宽"), (heightField, "高")] {
             let label = UILabel()
-            label.text = "\(name)（点）"
+            label.text = name
             label.font = .preferredFont(forTextStyle: .subheadline)
             label.adjustsFontForContentSizeCategory = true
             field.borderStyle = .roundedRect
@@ -36,7 +36,7 @@ final class PiPSizeControlsView: UIView {
             field.adjustsFontForContentSizeCategory = true
             field.keyboardType = .decimalPad
             field.placeholder = "1–640"
-            field.accessibilityLabel = "画中画\(name)度，单位点"
+            field.accessibilityLabel = "画中画宽高比中的\(name)"
             let column = UIStackView(arrangedSubviews: [label, field])
             column.axis = .vertical
             column.spacing = 4
@@ -45,20 +45,22 @@ final class PiPSizeControlsView: UIView {
         let fields = UIStackView(arrangedSubviews: inputs)
         fields.spacing = 12
         fields.distribution = .fillEqually
-        applyButton.configuration?.title = "应用尺寸"
+        applyButton.configuration?.title = "应用比例"
         applyButton.addTarget(self, action: #selector(applyInput), for: .touchUpInside)
         inputError.font = .preferredFont(forTextStyle: .footnote)
         inputError.textColor = .systemRed
         inputError.isHidden = true
         let hint = UILabel()
-        hint.text = "输入内容宽高（1–640 点），应用后自动保存。系统小窗的实际大小由 iOS 控制，可双指缩放。"
+        hint.text = "小窗形状只由宽和高的比例决定，数值大小不会让小窗变大或变小；例如 90 × 195 与 180 × 390 效果相同。小窗实际大小由 iOS 决定，打开后可双指缩小到系统最小档。宽高可填 1–640，应用后自动保存。"
         hint.font = .preferredFont(forTextStyle: .footnote)
         hint.textColor = .secondaryLabel
-        for label in [title, inputError, hint] {
+        ratioLabel.font = .preferredFont(forTextStyle: .footnote)
+        ratioLabel.textColor = .secondaryLabel
+        for label in [title, ratioLabel, inputError, hint] {
             label.numberOfLines = 0
             label.adjustsFontForContentSizeCategory = true
         }
-        let stack = UIStackView(arrangedSubviews: [title, presets, fields, applyButton, inputError, hint])
+        let stack = UIStackView(arrangedSubviews: [title, presets, fields, ratioLabel, applyButton, inputError, hint])
         stack.axis = .vertical
         stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -82,6 +84,7 @@ final class PiPSizeControlsView: UIView {
         widthField.text = String(Int(size.width))
         heightField.text = String(Int(size.height))
         presets.selectedSegmentIndex = presetSizes.firstIndex(of: size) ?? UISegmentedControl.noSegment
+        ratioLabel.text = Self.ratioDescription(size)
         inputError.isHidden = true
     }
 
@@ -108,6 +111,16 @@ final class PiPSizeControlsView: UIView {
         endEditing(true)
         // 范围校验和取整由 Visyn 统一处理。
         onApply?(CGSize(width: width, height: height))
+    }
+
+    /// 以短边为 1 描述形状，例如 90 × 195 → “竖向 1 : 2.17”。
+    private static func ratioDescription(_ size: CGSize) -> String {
+        guard size.width > 0, size.height > 0 else { return "" }
+        let long = Double(max(size.width, size.height) / min(size.width, size.height))
+        let value = long.formatted(FloatingPointFormatStyle<Double>.number.precision(.fractionLength(0...2)))
+        if size.width == size.height { return "当前形状：方形 1 : 1" }
+        return size.height > size.width ? "当前形状：竖向，宽 : 高 = 1 : \(value)"
+                                        : "当前形状：横向，宽 : 高 = \(value) : 1"
     }
 
     private func updateEnabledState() {

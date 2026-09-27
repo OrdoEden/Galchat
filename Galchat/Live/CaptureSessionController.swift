@@ -44,7 +44,8 @@ final class CaptureSessionController {
         do {
             let controller = try VisynCaptureController(
                 configuration: .load(), pictureInPictureContent: live.makePiPContent(),
-                pictureInPictureContentSize: contentSize
+                pictureInPictureContentSize: contentSize,
+                pictureInPictureFramesPerSecond: 15
             )
             capture = controller
             live.pictureInPictureContentSizeDidChange(controller.pictureInPictureContentSize)

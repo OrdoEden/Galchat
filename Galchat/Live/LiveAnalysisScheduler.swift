@@ -37,7 +37,7 @@ final class LiveAnalysisScheduler {
     static let maxContextRefreshes = 2
     static let historyContextLimit = 50
 
-    private let config = JarvisConfig.shared
+    private let config = GCConfig.shared
     private let judgeClient = JudgeClient()
     private(set) var phase: Phase = .idle
     private(set) var outcome: Outcome?

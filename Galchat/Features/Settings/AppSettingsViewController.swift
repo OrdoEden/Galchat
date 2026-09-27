@@ -125,7 +125,7 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
         content.directionalLayoutMargins.bottom = 16
 
         if item == .models {
-            let config = JarvisConfig.shared
+            let config = GCConfig.shared
             let judge = config.isConfigured(.judge) ? "已配置" : "待配置"
             let reply = config.isConfigured(.reply) ? "已配置" : "待配置"
             content.secondaryText = "判断模型：\(judge)\n回复模型：\(reply)"

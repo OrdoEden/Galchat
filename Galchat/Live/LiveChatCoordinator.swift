@@ -33,15 +33,22 @@ final class LiveChatCoordinator {
     private var screenshotResetTask: Task<Void, Never>?
     private var observers: [UUID: () -> Void] = [:]
     private var presentationTimer: Timer?
+    private let avatars = PiPAvatarTracker()
+    private let stickers = StickerTracker()
+    /// SeeU 按 Galchat 需要的类别提取图片：对方头像做立绘，表情包进入语义上下文。
+    private let images = SeeUImageHarvester(request: SeeUImageRequest(kinds: [.avatar, .sticker]))
+    private var latestObservedAt: Date?
 
     /// 正在分析的数据与最后完成的展示分开，滚动/新消息不会先清空 PiP。
     private struct CompletedPresentation {
         let outcome: LiveAnalysisScheduler.Outcome
         let sourceTitle: String
+        var portrait: PiPPortrait?
+        var affection: GCPiPView.AffectionDisplay?
     }
     private var completedPresentation: CompletedPresentation?
 
-    private let pipView = JarvisPiPView()
+    private let pipView = GCPiPView()
     private var pictureInPictureContentSize = VisynPictureInPictureSize.landscape
     private var acceptFramesAfter = Date.distantPast
     private let publisher = ReplyBundlePublisher()
@@ -56,9 +63,10 @@ final class LiveChatCoordinator {
             self?.committer.commit(request: request, analysis: analysis)
         }
         replyScheduler.onChange = { [weak self] in self?.notify() }
+        stickers.onChange = { [weak self] in self?.rebuildContext() }
         applyLadderCapacity()
         NotificationCenter.default.addObserver(
-            forName: JarvisConfig.liveSettingsDidChange, object: nil, queue: .main
+            forName: GCConfig.liveSettingsDidChange, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.applyLadderCapacity() }
         }
@@ -80,7 +88,7 @@ final class LiveChatCoordinator {
     }
 
     private func applyLadderCapacity() {
-        let capacity = JarvisConfig.shared.ladderCapacity
+        let capacity = GCConfig.shared.ladderCapacity
         let store = longScreenshots
         Task { await store.setCapacity(capacity) }
     }
@@ -200,6 +208,7 @@ final class LiveChatCoordinator {
                 let update = output.update
                 self.recognitionError = nil
                 self.latest = update
+                self.latestObservedAt = frame.capturedAt
                 self.installContext(self.makeContext(from: update, observedAt: frame.capturedAt))
                 self.scheduler.update(self.currentContext)
                 self.notify()
@@ -242,7 +251,16 @@ final class LiveChatCoordinator {
         return ConversationContext(sessionID: update.sessionID, conversationID: conversationID,
                                    revision: update.revision, sourceTitle: update.title ?? "当前会话",
                                    sourceConfirmed: update.confirmed, frameID: update.frameID,
-                                   observedAt: observedAt, messages: messages)
+                                   observedAt: observedAt,
+                                   messages: stickers.merge(into: messages, conversationID: conversationID))
+    }
+
+    /// 表情包位置或含义变化后，用最近一次 SeeU 输出重建上下文并重新调度分析。
+    private func rebuildContext() {
+        guard captureState == .broadcasting, let latest, let observedAt = latestObservedAt else { return }
+        installContext(makeContext(from: latest, observedAt: observedAt))
+        scheduler.update(currentContext)
+        notify()
     }
 
     private func installContext(_ context: ConversationContext?) {
@@ -345,11 +363,14 @@ final class LiveChatCoordinator {
         pendingScreenshot = nil
         pendingScreenshotMerges = []
         longScreenshotSummary = [:]
-        let store = longScreenshots, epoch = screenshotEpoch
+        avatars.reset()
+        stickers.reset()
+        let store = longScreenshots, harvester = images, epoch = screenshotEpoch
         let previousReset = screenshotResetTask
         screenshotResetTask = Task {
             await previousReset?.value
             await store.reset(to: epoch)
+            await harvester.reset()
         }
     }
 
@@ -360,7 +381,7 @@ final class LiveChatCoordinator {
         let epoch = screenshotEpoch
         let merges = pendingScreenshotMerges
         pendingScreenshotMerges = []
-        let store = longScreenshots, reset = screenshotResetTask
+        let store = longScreenshots, harvester = images, reset = screenshotResetTask
         Task { [weak self] in
             await reset?.value
             guard let self else { return }
@@ -371,6 +392,14 @@ final class LiveChatCoordinator {
                 let summary = await store.summary()
                 if self.screenshotEpoch == epoch {
                     self.longScreenshotSummary = summary
+                    // 与存档同一帧提取头像和表情包；旧录屏代次或已停止时丢弃结果。
+                    let generation = self.captureGeneration
+                    let harvest = await harvester.harvest(input)
+                    if self.screenshotEpoch == epoch, self.captureGeneration == generation,
+                       self.captureState == .broadcasting, !harvest.regions.isEmpty {
+                        self.avatars.ingest(harvest, context: self.currentContext)
+                        if self.stickers.ingest(harvest, context: self.currentContext) { self.rebuildContext() }
+                    }
                 }
             }
             self.isSavingLongScreenshot = false
@@ -409,7 +438,7 @@ final class LiveChatCoordinator {
         return UIImage(data: data)
     }
 
-    /// 画中画内容视图。Visyn 每 0.5 秒重新光栅化一次，改文字即可刷新。
+    /// Visyn 在每个视频帧前调用视图的 GIF 选帧回调。
     func makePiPContent() -> UIView { pipView }
 
     func pictureInPictureContentSizeDidChange(_ size: CGSize) {
@@ -417,7 +446,7 @@ final class LiveChatCoordinator {
         pictureInPictureContentSize = size
         pending = nil
         captureGeneration += 1
-        // Visyn 每 0.5 秒出一帧，留出两帧时间让系统完成比例重排。
+        // 给系统窗口和 OCR 遮挡几何一秒时间完成比例重排。
         acceptFramesAfter = Date().addingTimeInterval(1)
     }
 
@@ -467,6 +496,7 @@ final class LiveChatCoordinator {
     }
 
     private func notify() {
+        avatars.contextDidChange(currentContext)
         if captureState == .broadcasting, scheduler.phase == .ready,
            let outcome = scheduler.outcome, !outcome.stale,
            let context = currentContext,
@@ -474,7 +504,14 @@ final class LiveChatCoordinator {
            outcome.conversationID == context.conversationID,
            outcome.signature == context.tailSignature,
            completedPresentation?.outcome.requestID != outcome.requestID {
-            completedPresentation = CompletedPresentation(outcome: outcome, sourceTitle: outcome.request.context.sourceTitle)
+            completedPresentation = CompletedPresentation(outcome: outcome, sourceTitle: outcome.request.context.sourceTitle,
+                                                          portrait: avatars.portrait, affection: makeAffectionDisplay())
+        }
+        if let context = currentContext,
+           let outcome = completedPresentation?.outcome,
+           PiPIdentity(outcome.request.context) == PiPIdentity(context) {
+            completedPresentation?.portrait = avatars.portrait
+            completedPresentation?.affection = makeAffectionDisplay()
         }
         publisher.refresh(
             context: currentContext, currentRequest: scheduler.currentRequest,
@@ -491,88 +528,60 @@ final class LiveChatCoordinator {
 
     /// Jev 完成即可替换判断，回复候选和长图进度独立展示。
     private func updatePiP() {
-        let displayed = completedPresentation
+        // 切换聊天时不能把旧结论和当前联系人的头像、分数拼在一起。
+        let displayed = completedPresentation.flatMap { presentation -> CompletedPresentation? in
+            guard let context = currentContext else { return presentation }
+            return PiPIdentity(presentation.outcome.request.context) == PiPIdentity(context) ? presentation : nil
+        }
         let outcome = displayed?.outcome
         let analysis = outcome?.analysis
         let matchesCurrent = outcome != nil && outcome?.conversationID == currentContext?.conversationID
             && outcome?.request.version.sessionID == currentContext?.sessionID
             && outcome?.signature == currentContext?.tailSignature
-        let currentResult = matchesCurrent && scheduler.phase == .ready
+        let currentResult = captureState == .broadcasting && matchesCurrent && scheduler.phase == .ready
             && outcome?.requestID == scheduler.outcome?.requestID && scheduler.outcome?.stale == false
-        let source = displayed?.sourceTitle ?? latest?.title ?? "当前会话"
-        let count = outcome?.analyzedCount ?? latest?.liveMessages.filter { $0.kind == .message }.count ?? 0
-        var status = "Jarvis · \(source.prefix(8))"
-        if displayed != nil && !currentResult { status += " · 上次结果" }
-        var tone: JarvisPiPView.Tone = .neutral
+        let source = currentContext?.sourceTitle ?? displayed?.sourceTitle ?? latest?.title ?? "当前会话"
+        let affectionState = currentContext == nil ? displayed?.affection : makeAffectionDisplay()
+        pipView.setPortrait(currentContext == nil ? displayed?.portrait : avatars.portrait)
+
+        var tone: GCPiPView.Tone = .neutral
+        var emotion = "等待分析"
         if let danger = analysis?.dangerLevel {
             let level = max(0, min(danger.maxLevel, Int(danger.score.rounded())))
-            status += " · \(JudgeLabels.emotion(level: level, maxLevel: danger.maxLevel)) \(level)/\(danger.maxLevel)"
+            emotion = JudgeLabels.emotion(level: level, maxLevel: danger.maxLevel)
             let scaled = Double(level) * 9 / Double(max(danger.maxLevel, 1))
             tone = scaled >= 6 ? .danger : (scaled >= 3 ? .warn : .calm)
+        } else if outcome?.judgeError != nil {
+            emotion = "判断失败"
         }
-        // 好感度读数取代"· N 条"：状态行只有一行，两个都放会截断掉危险度，
-        // 而危险度是 JudgeLabels.emotion 的输入，不能丢。条数信息在详情页仍有。
-        let affectionState = makeAffectionDisplay()
-        if let affectionState {
-            status += " · \(affectionState.text)"
-        } else {
-            status += " · \(count) 条"
-        }
-        let judge: String
-        if let analysis {
-            judge = "Jarvis 意图：\(JudgeLabels.intentSummary(analysis))"
-        } else if let error = outcome?.judgeError {
-            judge = "Jarvis 判断失败：\(error)"
-        } else {
-            judge = "Jarvis 识别到一屏聊天即可分析，无需凑满条数"
-        }
-        let advice = analysis.map { "Jarvis 建议：\(JudgeLabels.advice($0))" }
-            ?? "Jarvis 分析完成后显示需求、行动与情绪信息"
-        var prompt = false
+        let advice = analysis.map { JudgeLabels.advice($0) } ?? "打开聊天，等待分析"
         let progress: String
         if captureState != .broadcasting {
-            progress = "Jarvis \(statusLine)" + (displayed == nil ? "" : " · 保留上次结果")
+            progress = statusLine + (displayed == nil ? "" : " · 保留上次结果")
         } else if latest?.detection != .chat {
-            progress = "Jarvis 等待聊天画面 · 已暂停分析与候选插入"
+            progress = "等待聊天画面"
         } else if scheduler.phase == .analyzing || scheduler.phase == .debouncing {
-            progress = publisher.isReady ? "Jarvis 候选已就绪 · Jev 判断仍在分析中…"
-                : "Jarvis Jev 分析中 · \(replyLine)"
-        } else if case .failed(let reason) = scheduler.phase {
-            progress = publisher.isReady ? "Jarvis Jev 判断失败 · 候选可在键盘选用" : "Jarvis 判断失败：\(reason) · \(replyLine)"
+            progress = "Jev 分析中"
+        } else if case .failed = scheduler.phase {
+            progress = publisher.isReady ? "判断失败 · 候选可用" : "判断失败 · 等待重试"
         } else if case .skipped(let reason) = scheduler.phase {
-            progress = "Jarvis \(reason)"
+            progress = reason
         } else if currentResult {
-            let candidates = publisher.isReady ? "候选已就绪 · " : ""
-            if latest?.currentContextIsIsolated == true {
-                progress = publisher.isReady ? "Jarvis 已单屏分析 · 候选已就绪，历史尚未接上"
-                    : "Jarvis 已单屏分析 · \(publisher.unavailableReason)"
-                prompt = true
-            } else {
-                switch scheduler.contextNeed {
-                case .history:
-                    progress = "Jarvis \(candidates)可上滑补充历史；键盘选回复"
-                    prompt = true
-                case .short(let have, let want):
-                    progress = "Jarvis \(candidates)已分析 \(have) 条，可上滑补至 \(want) 条"
-                    prompt = true
-                case .none:
-                    progress = publisher.isReady ? "Jarvis 三条候选已就绪 · 切键盘确认会话后插入"
-                        : "Jarvis \(publisher.unavailableReason)"
-                }
-            }
+            progress = publisher.isReady ? "候选已就绪 · 在键盘选回复" : "分析完成"
         } else {
-            progress = "Jarvis \(analysisLine.isEmpty ? "等待可分析的聊天内容" : analysisLine)"
+            progress = displayed == nil ? "等待分析" : "上次结果"
         }
-        pipView.show(status: status, judge: judge, advice: advice, action: progress, tone: tone,
-                     prompt: prompt, affection: affectionState)
+        pipView.show(name: source, emotion: emotion, advice: advice, progress: progress,
+                     tone: tone, affection: affectionState,
+                     isLive: captureState == .broadcasting && currentContext != nil)
     }
 
     /// 当前该显示的好感度状态。没绑定联系人时返回 nil——还没认人之前不显示分数，
     /// 否则会把多个人的分数混在一起展示。
-    private func makeAffectionDisplay() -> JarvisPiPView.AffectionDisplay? {
+    private func makeAffectionDisplay() -> GCPiPView.AffectionDisplay? {
         guard let contact = ContactsStore.shared.activeContact else { return nil }
         // ± 读数只在刚刚算完一轮时显示，避免旧数字被当成当前变化。
-        return JarvisPiPView.AffectionDisplay(total: contact.total,
+        return GCPiPView.AffectionDisplay(total: contact.total,
                                               step: affection.currentStep() ?? 0,
                                               ruptured: contact.rupturedUntilResolved)
     }

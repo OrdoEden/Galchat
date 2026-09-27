@@ -78,7 +78,7 @@ nonisolated struct AnalysisModelContext: Sendable {
     let persona: String
 
     @MainActor
-    init(config: JarvisConfig, contactID: String? = nil, relationship: String? = nil) {
+    init(config: GCConfig, contactID: String? = nil, relationship: String? = nil) {
         judge = config.routeSnapshot(for: .judge)
         reply = config.routeSnapshot(for: .reply)
         self.relationship = relationship ?? Self.relationship(config: config, contactID: contactID)
@@ -86,7 +86,7 @@ nonisolated struct AnalysisModelContext: Sendable {
     }
 
     @MainActor
-    static func relationship(config: JarvisConfig, contactID: String?) -> String {
+    static func relationship(config: GCConfig, contactID: String?) -> String {
         guard let contact = ContactsStore.shared.contact(id: contactID) else { return config.relationship }
         var lines = [config.relationship, "对方档案（用户填写的参考信息）：\(contact.displayName)"]
         if let note = contact.note, !note.isEmpty { lines.append("备注：\(note)") }

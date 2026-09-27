@@ -18,7 +18,7 @@ nonisolated struct ChatMessage: Sendable {
 nonisolated struct ChatSnapshot: Sendable {
     let messages: [ChatMessage]
     /// 发给模型的最近消息条数（判断、生成、排序共用）。默认 10 条，和安卓参考实现一致；可在设置里调整。
-    var contextLimit: Int = JarvisConfig.Defaults.contextMessageCount
+    var contextLimit: Int = GCConfig.Defaults.contextMessageCount
 
     var recentMessages: [ChatMessage] {
         let limit = max(1, contextLimit)

@@ -3,8 +3,8 @@ import Synapse
 
 /// Galchat 产品设置，以及三条业务路线的模型配置入口。
 @MainActor
-final class JarvisConfig {
-    static let shared = JarvisConfig()
+final class GCConfig {
+    static let shared = GCConfig()
 
     private let defaults: UserDefaults
     let judge: SynapseModelConfiguration
@@ -51,7 +51,7 @@ final class JarvisConfig {
         get { Self.clamp(defaults.object(forKey: Keys.ladderCapacity) as? Int, Defaults.ladderCapacity, Defaults.ladderCapacityRange) }
         set {
             defaults.set(Self.clamp(newValue, Defaults.ladderCapacity, Defaults.ladderCapacityRange), forKey: Keys.ladderCapacity)
-            NotificationCenter.default.post(name: JarvisConfig.liveSettingsDidChange, object: self)
+            NotificationCenter.default.post(name: GCConfig.liveSettingsDidChange, object: self)
         }
     }
 
@@ -60,7 +60,7 @@ final class JarvisConfig {
         get { Self.clamp(defaults.object(forKey: Keys.contextMessageCount) as? Int, Defaults.contextMessageCount, Defaults.contextMessageRange) }
         set {
             defaults.set(Self.clamp(newValue, Defaults.contextMessageCount, Defaults.contextMessageRange), forKey: Keys.contextMessageCount)
-            NotificationCenter.default.post(name: JarvisConfig.liveSettingsDidChange, object: self)
+            NotificationCenter.default.post(name: GCConfig.liveSettingsDidChange, object: self)
         }
     }
 

@@ -244,7 +244,7 @@ final class LiveSessionViewController: UIViewController {
             makeSectionLabel("判断结果"), judgeLabel,
             makeSectionLabel("候选回复"), replyNoteLabel, candidatesStack,
             makeSectionLabel("拼接的聊天记录"),
-            makeFootnoteLabel("逐屏识别并按重叠消息对齐、去重拼接；长图保留最近 \(JarvisConfig.shared.ladderCapacity) 张不重复的画面（可在设置里调整）。只保存在内存中，停止录屏后保留到下次录屏或手动清空。"),
+            makeFootnoteLabel("逐屏识别并按重叠消息对齐、去重拼接；长图保留最近 \(GCConfig.shared.ladderCapacity) 张不重复的画面（可在设置里调整）。只保存在内存中，停止录屏后保留到下次录屏或手动清空。"),
             transcriptLabel, clearButton
         ])
         stack.axis = .vertical

@@ -3,10 +3,10 @@ import Synapse
 
 /// Jev 判断路线：7 道判断题和候选排序题。判断与排序共用同一套凭据。
 struct JudgeClient {
-    private let config: JarvisConfig
+    private let config: GCConfig
     private let gateway: SynapseGateway
 
-    init(config: JarvisConfig = .shared, gateway: SynapseGateway = .shared) {
+    init(config: GCConfig = .shared, gateway: SynapseGateway = .shared) {
         self.config = config
         self.gateway = gateway
     }

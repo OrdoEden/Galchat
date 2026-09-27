@@ -3,10 +3,10 @@ import Synapse
 
 /// 生成路线：任意 OpenAI 兼容 `/chat/completions`。
 struct ReplyClient {
-    private let config: JarvisConfig
+    private let config: GCConfig
     private let gateway: SynapseGateway
 
-    init(config: JarvisConfig = .shared, gateway: SynapseGateway = .shared) {
+    init(config: GCConfig = .shared, gateway: SynapseGateway = .shared) {
         self.config = config
         self.gateway = gateway
     }

@@ -45,7 +45,7 @@ App 从结构化条目派生模型输入，缺口提示与“部分可见”等�
 
 Jev 的 `model/state/questions/answers` 属于协议；七道情绪/意图问题、关系背景和 `Analysis` 映射属于 App。Chat Completions 的消息请求/响应属于协议；恰好三条候选、去重、排序解释和键盘校验属于 App。
 
-2026-09-26 配置层继续下沉：`SynapseModelConfiguration` 按宿主提供的用途 ID 管理 provider/baseURL/model、凭据失效与请求快照。App 的 `JarvisConfig` 只组装三路配置对象、提供产品默认值，并保存关系描述、视觉开关、上下文条数、截图容量及业务通知。`APIRoute` 保留业务用途；服务商直接使用 `SynapseProvider`，`SecretStore` 和 `JSONValue` 别名已移除，题目直接使用 `SynapseJSONValue`。
+2026-09-26 配置层继续下沉：`SynapseModelConfiguration` 按宿主提供的用途 ID 管理 provider/baseURL/model、凭据失效与请求快照。App 的 `GCConfig` 只组装三路配置对象、提供产品默认值，并保存关系描述、视觉开关、上下文条数、截图容量及业务通知。`APIRoute` 保留业务用途；服务商直接使用 `SynapseProvider`，`SecretStore` 和 `JSONValue` 别名已移除，题目直接使用 `SynapseJSONValue`。
 
 错误按职责分开：通用请求错误直接透传 `SynapseError`，不再由 App 复制 HTTP 状态和错误说明，`APIError` 已删除。候选不足、候选过长、排序候选数量错误和排序概率缺失由 `ChatBusiness/ChatBusinessError` 表达。手动分析页区分判断、回复生成和排序阶段；设置页、实时状态及键盘候选状态按当前操作补充失败文案。取消处理、旧结果隔离和排序失败时保留未排序候选的行为不变。
 

@@ -18,34 +18,40 @@ nonisolated enum AppFrameExclusion {
             .filter { $0.rect.midY > 0.4 * frameSize.height }
             .min { $0.rect.minY < $1.rect.minY }
         let candidates = lines.filter { line in
-            let text = line.text.trimmingCharacters(in: .whitespaces)
-            return (text.hasPrefix("Jarvis ") || text.hasPrefix("Jarvis·"))
-                && line != keyboardHeader
+            line != keyboardHeader
                 && (keyboardHeader.map { line.rect.maxY < $0.rect.minY } ?? true)
         }
+        let layout = GCPiPLayout(size: overlayContentSize)
         var regions: [CGRect] = []
-        for header in candidates where header.text.hasPrefix("Jarvis ·") || header.text.hasPrefix("Jarvis·") {
-            let lineHeight = max(header.rect.height, 1)
-            let rows = candidates.filter { line in
-                line.rect.minY >= header.rect.maxY
-                    && line.rect.minY - header.rect.maxY < lineHeight * 5
-                    && abs(line.rect.minX - header.rect.minX) < lineHeight * 0.8
-                    && line.rect.height >= lineHeight * 0.65
-                    && line.rect.height <= lineHeight * 1.25
-            }.sorted { $0.rect.minY < $1.rect.minY }
-            guard rows.count >= 2 else { continue }
-            let first = rows[0], second = rows[1]
-            let firstLabels = ["Jarvis 意图", "Jarvis 判断", "Jarvis 识别到", "Jarvis 打开"]
-            let secondLabels = ["Jarvis 建议", "Jarvis 分析完成后", "Jarvis 显示情绪"]
-            guard firstLabels.contains(where: { first.text.hasPrefix($0) }),
-                  secondLabels.contains(where: { second.text.hasPrefix($0) }) else { continue }
-            let firstStep = first.rect.midY - header.rect.midY
-            let secondStep = second.rect.midY - first.rect.midY
-            guard firstStep >= lineHeight, firstStep <= lineHeight * 2.2,
-                  abs(firstStep - secondStep) < lineHeight * 0.6 else { continue }
-            let layout = JarvisPiPLayout(size: overlayContentSize)
-            let region = layout.occlusionRegion(header: header.rect, second: second.rect)
-            regions.append(region.intersection(CGRect(origin: .zero, size: frameSize)))
+        for header in candidates {
+            let text = header.text.replacingOccurrences(of: " ", with: "")
+            guard text == "Galchat" || text.hasPrefix("Galchat·") else { continue }
+            for footer in candidates {
+                let footerText = footer.text.replacingOccurrences(of: " ", with: "")
+                guard footerText == "AI估计" || footerText.hasPrefix("AI估计·"),
+                      footer.rect.minY > header.rect.maxY,
+                      abs(footer.rect.minX - header.rect.minX) < max(header.rect.height, footer.rect.height),
+                      footer.rect.height >= header.rect.height * 0.5,
+                      footer.rect.height <= header.rect.height * 2,
+                      let region = layout.occlusionRegion(header: header.rect, footer: footer.rect) else { continue }
+                let scale = region.width / max(overlayContentSize.width, 1)
+                // OCR 字框小于 UILabel；用预期字号限制错误的跨消息配对。
+                let expectedHeight = layout.markerFontSize * scale
+                guard header.rect.height >= expectedHeight * 0.45,
+                      header.rect.height <= expectedHeight * 1.5,
+                      region.width <= frameSize.width * 1.05, region.height <= frameSize.height * 1.05 else { continue }
+                // 第三个锚点在头像上，与文案列有独立的横向/纵向关系；普通聊天提品牌名不算 PiP。
+                let identity = layout.identityFrame
+                let expectedX = region.minX + identity.minX * scale
+                let expectedY = region.minY + identity.midY * scale
+                guard candidates.contains(where: {
+                    $0.text.replacingOccurrences(of: " ", with: "") == "好感度"
+                        && abs($0.rect.minX - expectedX) <= expectedHeight
+                        && abs($0.rect.midY - expectedY) <= expectedHeight * 0.7
+                }) else { continue }
+                regions.append(region.insetBy(dx: -2, dy: -2)
+                    .intersection(CGRect(origin: .zero, size: frameSize)))
+            }
         }
         let kept = lines.filter { line in
             if let keyboardHeader, line.rect.minY >= keyboardHeader.rect.minY - 2 { return false }

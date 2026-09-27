@@ -4,7 +4,7 @@ import UIKit
 ///
 /// 首版由用户明确触发一次分析，不做自动分析，避免没有新消息时重复计费。
 final class AnalysisViewController: UIViewController {
-    private let config = JarvisConfig.shared
+    private let config = GCConfig.shared
     private let judgeClient = JudgeClient()
     private let replyClient = ReplyClient()
 
