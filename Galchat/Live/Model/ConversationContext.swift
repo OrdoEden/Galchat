@@ -43,6 +43,9 @@ nonisolated struct ConversationContext: Sendable {
     /// 自动分析的放行条件；不满足时只更新上下文，不调用模型。
     var semanticHoldReason: String? {
         if !sourceConfirmed { return "等待确认聊天页" }
+        // 无名会话（读不到标题，只有"当前会话"兜底）不自动分析：这类画面常是被误判成聊天页的
+        // 其它 App 页面（订单、详情页），而且认不出是谁，分析结果也没法归到联系人。手动分析不受影响。
+        if !ContactMatcher.isTrusted(sourceTitle) { return "没有读到聊天标题，可手动分析" }
         if isIsolated { return "当前画面还没接上聊天记录，等待对齐" }
         if !isLiveTail { return "正在查看历史消息，回到最新消息后再分析" }
         return nil

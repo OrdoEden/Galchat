@@ -136,7 +136,7 @@ Galchat `LiveChatCoordinator.pump`：只有 `update.detection == .chat` 的帧�
 
 | 限制 | 说明 | 什么情况下要处理 |
 |---|---|---|
-| **读不到标题的其它 App 页面会成为无名会话** | 「骑手订单页」这类被误判为聊天页、又读不出标题的画面，会得到一个随机 id 的无名会话。它不会并入任何有名会话（§3.2a），Galchat 侧标题是"当前会话"，不绑联系人、不建档，但**会触发分析** | 若真机上这类画面长时间停留导致误分析，给 Galchat 闸门加"无名会话不自动分析" |
+| **读不到标题的聊天不会自动分析** | 无名会话（`sourceTitle` 为"当前会话"兜底）被 `ConversationContext.semanticHoldReason` 挡住，只能手动分析。这是为了挡住被误判成聊天页、又读不出标题的其它 App 页面（骑手订单页等） | 某个 App 的标题**始终**读不出来，导致它永远不自动分析时：先修 `ChatLayoutParser` 的标题行定位，不要放开这道闸门 |
 | **标题读不出来时的归属** | 沿用原会话。若确实切到了新聊天、但标题一直读不出来，内容会成为孤立段（不分析、不计分、不写记录） | 标题始终读不出的 App |
 | **输入栏逃生的阈值是按本案数据调的** | `edgeRatio <= 0.15`、`messages.count >= 10` 来自这一批截图 | 换 App / 换机型后误判变多时，用 §5 的探针重量 |
 | **`hasReliableSingleFrameEvidence` 不再参与标题切换** | 单帧证据充分也不再立刻切会话，必须两帧 | 如果某些 App 切聊天后只稳定一帧，需要给它单独放宽 |
@@ -235,7 +235,7 @@ cd ../SeeU && TEST_RUNNER_SEEU_REPLAY_DIR=/path/to/那一目录 \
 | 两个聊天的记录混在一起 | 有没有新的"找段"路径绕过了 `claimable`（§3.2a）；`absorbOverlappingSegments` 的循环条件 |
 | 切回某个聊天后一直"正在查看历史" | `switchChain` 是否被调用、`chains` 是否存对了（§3.2a） |
 | 稍一滑动结果就清空 | Galchat `pump` 的 `detection == .chat` 守卫是否还在；`scheduler.update(nil)` 有没有被重新加回来 |
-| 我发完最后一句不出结果 | 上下文的尾部是否 `textConfirmed`（§3.5）；`semanticHoldReason` 卡在哪一条；每分钟 6 次的额度是否被抖动耗光 |
+| 我发完最后一句不出结果 | PiP 是否显示"没有读到聊天标题"（无名会话闸门，§4）；上下文的尾部是否 `textConfirmed`（§3.5）；`semanticHoldReason` 卡在哪一条；每分钟 6 次的额度是否被抖动耗光 |
 | 向上翻历史拼不进来 | 是否走成 `newSegment` 且方向丢失（§5.3，需回放）；`textConfirmed` 是否一直不成立 |
 | 别的 App 画面被当成聊天页 | `ChatLayoutParser` 的输入栏否决与 `strongLayout`（§3.6） |
 | 画面一抖就重置 | 标题两帧确认那一帧是否又在丢弃内容（§3.4） |
@@ -244,6 +244,5 @@ cd ../SeeU && TEST_RUNNER_SEEU_REPLAY_DIR=/path/to/那一目录 \
 
 ## 8. 下一步（按性价比）
 
-1. **无名会话不自动分析**（见 §4），等真机证据再做。
-2. **确认规则的第二道门槛**：`observations >= 2` 放行了被裁切的条目，如果回放里出现图片小字混入上下文，给 `clipped` 加文字相似度门槛（代码里已标 `ponytail:`）。
-3. **`ImageAligner` 的 offset 符号**：见 §4，等回放给出证据再定。
+1. **确认规则的第二道门槛**：`observations >= 2` 放行了被裁切的条目，如果回放里出现图片小字混入上下文，给 `clipped` 加文字相似度门槛（代码里已标 `ponytail:`）。
+2. **`ImageAligner` 的 offset 符号**：见 §4，等回放给出证据再定。
