@@ -107,10 +107,7 @@ final class LiveChatCoordinator {
             if presentationTimer == nil {
                 // 即使没有新帧也更新过期提示；发布器只允许新 frameID 延长来源有效期。
                 presentationTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-                    MainActor.assumeIsolated {
-                        self?.consumeContactDecision()
-                        self?.notify()
-                    }
+                    MainActor.assumeIsolated { self?.notify() }
                 }
             }
         case .paused:
@@ -180,9 +177,14 @@ final class LiveChatCoordinator {
         let generation = captureGeneration
         let epoch = screenshotEpoch
         let overlaySize = pictureInPictureContentSize
+        // 屏幕点尺寸按当前展示方向取；候选条比例由它和键盘候选条高度推导。
+        // 比例是横向比值（高度/高度），所以横竖屏换算到像素帧后同样成立。
+        let screenSize = UIScreen.main.bounds.size
         let recorder = FrameRecorder.shared
         recorder.record(jpeg: frame.jpegData, frameID: frame.id, sessionID: frame.sessionID, capturedAt: frame.capturedAt)
-        let exclusion = recorder.wrap({ AppFrameExclusion.exclude($0, frameSize: $1, overlayContentSize: overlaySize) },
+        let exclusion = recorder.wrap({ AppFrameExclusion.exclude($0, frameSize: $1,
+                                                                  overlayContentSize: overlaySize,
+                                                                  screenSize: screenSize) },
                                       frameID: frame.id, sessionID: frame.sessionID, capturedAt: frame.capturedAt)
         Task { [weak self] in
             let output: EngineOutput?
@@ -195,11 +197,8 @@ final class LiveChatCoordinator {
                 guard let self else { return }
                 self.processing = false
                 if self.captureState == .broadcasting, generation == self.captureGeneration {
+                    // 只报告错误。一帧识别失败不是"换人了"，清空上下文会让联系人和好感度一起丢。
                     self.recognitionError = error.localizedDescription
-                    self.latest = nil
-                    self.currentContext = nil
-                    self.rawContext = nil
-                    self.scheduler.update(nil)
                     self.notify()
                 }
                 self.pump()
@@ -212,9 +211,13 @@ final class LiveChatCoordinator {
                 let update = output.update
                 self.recognitionError = nil
                 self.latest = update
-                self.latestObservedAt = frame.capturedAt
-                self.installContext(self.makeContext(from: update, observedAt: frame.capturedAt))
-                self.scheduler.update(self.currentContext)
+                // 看不清的帧（键盘过渡、弹窗、整屏图片）只更新状态行：不动上下文、
+                // 不动联系人，也不作废已有结论。换聊天由新的 conversationID 表达。
+                if update.detection == .chat {
+                    self.latestObservedAt = frame.capturedAt
+                    self.installContext(self.makeContext(from: update, observedAt: frame.capturedAt))
+                    self.scheduler.update(self.currentContext)
+                }
                 self.notify()
             }
             // 旧采集 generation 不得启动模型，但同 epoch 的已识别图片和合并事件必须存完。
@@ -263,7 +266,8 @@ final class LiveChatCoordinator {
 
     /// 表情包位置或含义变化后，用最近一次 SeeU 输出重建上下文并重新调度分析。
     private func rebuildContext() {
-        guard captureState == .broadcasting, let latest, let observedAt = latestObservedAt else { return }
+        guard captureState == .broadcasting, let latest, latest.detection == .chat,
+              let observedAt = latestObservedAt else { return }
         installContext(makeContext(from: latest, observedAt: observedAt))
         scheduler.update(currentContext)
         notify()
@@ -317,29 +321,7 @@ final class LiveChatCoordinator {
         rawContext = context
         recents.record(context, contactID: context.contactID)
         currentContext = recents.applyingCorrections(to: context)
-        consumeContactDecision()
         affection.publish()
-    }
-
-    private func consumeContactDecision() {
-        guard captureState == .broadcasting, var context = rawContext,
-              affection.consumeKeyboardDecision() else { return }
-        let contacts = ContactsStore.shared
-        guard let contactID = contacts.activeContact?.id else { return }
-        do {
-            try RecentConversationStore.shared.bindCurrent(context, to: contactID)
-        } catch {
-            // 确认必须与会话归属一起落盘，否则恢复原归属，避免键盘和模型各认一人。
-            contacts.setActiveContact(currentContext?.contactID)
-            affection.publishImmediately()
-            return
-        }
-        context.contactID = contactID
-        rawContext = context
-        currentContext = RecentConversationStore.shared.applyingCorrections(to: context)
-        scheduler.contextWasEdited(currentContext)
-        publisher.contextWasEdited()
-        completedPresentation = nil
     }
 
     private func contextWasEdited() {
