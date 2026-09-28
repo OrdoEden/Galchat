@@ -78,6 +78,26 @@ Galchat: LiveChatCoordinator.installContext
 
 **为什么**：`ChatStitcher` 本来就有多片段并存和 `bestOtherSegment` 重连，切走时丢掉是浪费，也是"A 聊到一半切 B 再切回来历史没了"的根因。
 
+### 3.2a 片段只能被自己的会话认领，每个会话一条链
+
+片段跨会话保留后，三件事都要按会话隔离：
+
+- **认领**：`ChatStitcher.ingest(_:bitmap:belongsToFrame:)` 的闭包由引擎按 `segmentOwner` 提供。
+  视觉位移续接、`rejoin`（`bestOtherSegment`）、`absorbOverlappingSegments` 合并都先问它。
+  没登记归属的段（会话首帧）视为本会话的。
+- **链**：`switchChain(to:parked:)`。每个会话一条链，不在前台的存在引擎的 `chains` 里。
+  链首 = 含最新消息的段，`isViewingLiveTail` 靠它。
+- **淘汰**：`maxSegments = 6` 只算当前会话的段；`parked`（别的会话的段）不参与，
+  由"最近 8 个会话"的身份淘汰统一回收（`keepSegments`）。
+
+**为什么**：两个群里常出现同一句话；`absorb` 一旦跨会话合并，两段记录就永久混在一起。
+全局一条链时，切到 B 会挤掉 A 的链首，切回 A 后闸门误报"正在查看历史"，又是"不出结果"。
+
+**无名会话**（首帧读不到标题，随机 id）：它自己的段必须算活跃，不能被回收；
+第一次读到标题时**切换**到那个标题的身份，而不是原地改名——无名期间的画面可能是别的 App。
+
+**破坏方式**：新增一条"找段"路径却不走 `claimable`；让回收判定只看标题映射（会删掉无名会话自己的段）。
+
 ### 3.3 看不清的帧不改状态
 
 Galchat `LiveChatCoordinator.pump`：只有 `update.detection == .chat` 的帧才走 `installContext` + `scheduler.update`。
@@ -116,7 +136,7 @@ Galchat `LiveChatCoordinator.pump`：只有 `update.detection == .chat` 的帧�
 
 | 限制 | 说明 | 什么情况下要处理 |
 |---|---|---|
-| **孤立段的误识别清理在截图数据集上不生效** | 「骑手订单页」被误判为聊天页时，因为它能读出画面文字，会被算进上一个会话。真实录屏里这类画面只出现 1~2 帧，会被 `misses >= 3 && misses >= observations` 清掉；数据集每张图只出现一次，清理不触发 | 若真实录屏里也出现长时间停留的"像聊天页的其它 App 页面"，需要给 `segmentOwner` 加重复核：`rejoin` 认回旧段时核对归属 |
+| **读不到标题的其它 App 页面会成为无名会话** | 「骑手订单页」这类被误判为聊天页、又读不出标题的画面，会得到一个随机 id 的无名会话。它不会并入任何有名会话（§3.2a），Galchat 侧标题是"当前会话"，不绑联系人、不建档，但**会触发分析** | 若真机上这类画面长时间停留导致误分析，给 Galchat 闸门加"无名会话不自动分析" |
 | **标题读不出来时的归属** | 沿用原会话。若确实切到了新聊天、但标题一直读不出来，内容会成为孤立段（不分析、不计分、不写记录） | 标题始终读不出的 App |
 | **输入栏逃生的阈值是按本案数据调的** | `edgeRatio <= 0.15`、`messages.count >= 10` 来自这一批截图 | 换 App / 换机型后误判变多时，用 §5 的探针重量 |
 | **`hasReliableSingleFrameEvidence` 不再参与标题切换** | 单帧证据充分也不再立刻切会话，必须两帧 | 如果某些 App 切聊天后只稳定一帧，需要给它单独放宽 |
@@ -199,7 +219,7 @@ cd ../SeeU && TEST_RUNNER_SEEU_REPLAY_DIR=/path/to/那一目录 \
 改识别相关代码后，按顺序跑：
 
 1. `cd ../SeeU && xcodebuild -scheme SeeU -destination 'generic/platform=iOS' build` —— 编译；
-2. 全量测试：`-only-testing:SeeUTests`（43 项，含 3 项需环境变量、默认跳过）；
+2. 全量测试：`-only-testing:SeeUTests`（44 项，含 3 项需环境变量、默认跳过）；
    其中 `DatasetTests` 会跑 59 张图的 OCR，整轮约 2 分钟，其余测试不到 1 秒。
 3. 数据集回归：上面的 `DatasetTests`，对比 `dataset-report.txt` 的会话分布与拒绝原因；
 4. Galchat 编译：`xcodebuild -scheme Galchat -destination 'generic/platform=iOS' build`；
@@ -212,6 +232,8 @@ cd ../SeeU && TEST_RUNNER_SEEU_REPLAY_DIR=/path/to/那一目录 \
 | 症状 | 先查 |
 |---|---|
 | 联系人丢失、好感度重算 | Galchat `installContext` / `AffectionProjectionPublisher.resolveContact`；SeeU 的 `identity(for:)` 是否在乱变 |
+| 两个聊天的记录混在一起 | 有没有新的"找段"路径绕过了 `claimable`（§3.2a）；`absorbOverlappingSegments` 的循环条件 |
+| 切回某个聊天后一直"正在查看历史" | `switchChain` 是否被调用、`chains` 是否存对了（§3.2a） |
 | 稍一滑动结果就清空 | Galchat `pump` 的 `detection == .chat` 守卫是否还在；`scheduler.update(nil)` 有没有被重新加回来 |
 | 我发完最后一句不出结果 | 上下文的尾部是否 `textConfirmed`（§3.5）；`semanticHoldReason` 卡在哪一条；每分钟 6 次的额度是否被抖动耗光 |
 | 向上翻历史拼不进来 | 是否走成 `newSegment` 且方向丢失（§5.3，需回放）；`textConfirmed` 是否一直不成立 |
@@ -222,7 +244,6 @@ cd ../SeeU && TEST_RUNNER_SEEU_REPLAY_DIR=/path/to/那一目录 \
 
 ## 8. 下一步（按性价比）
 
-1. **`rejoin` 时核对片段归属**：`segmentOwner` 已经记了"片段归哪个会话"，但 `rejoin` 还没用它做否决。这是目前"误判页面被算进上一个会话"的唯一残留路径。
-2. **每个片段带上归属，按会话分别组装上下文**：现在是只组装当前会话的上下文。如果要做"在 A 里也能看到 B 的最新消息"这类功能，需要这一步。
-3. **确认规则的第二道门槛**：`observations >= 2` 放行了被裁切的条目，如果回放里出现图片小字混入上下文，给 `clipped` 加文字相似度门槛（代码里已标 `ponytail:`）。
-4. **`ImageAligner` 的 offset 符号**：见 §4，等回放给出证据再定。
+1. **无名会话不自动分析**（见 §4），等真机证据再做。
+2. **确认规则的第二道门槛**：`observations >= 2` 放行了被裁切的条目，如果回放里出现图片小字混入上下文，给 `clipped` 加文字相似度门槛（代码里已标 `ponytail:`）。
+3. **`ImageAligner` 的 offset 符号**：见 §4，等回放给出证据再定。
