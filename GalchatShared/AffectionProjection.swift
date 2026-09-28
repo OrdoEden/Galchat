@@ -19,7 +19,7 @@ nonisolated struct AffectionProjection: Codable, Equatable, Sendable {
 
     /// 好感度的起评分与范围。
     ///
-    /// 这几个常量放在共享层而不是 `AffectionScoring`：键盘只编译 `JarvisShared`，
+    /// 这几个常量放在共享层而不是 `AffectionScoring`：键盘只编译共享层，
     /// 引用不到 App target 的类型。`AffectionScoring` 里有一份同值引用，两边必须一致。
     static let initialTotal = 50
     static let minimumTotal = 0
@@ -101,7 +101,11 @@ nonisolated enum Hearts {
     }
 }
 
-/// 读写投影文件。主 App 写；键盘只读 `load()` + 写 `writeDecision(_:)`。
+/// 读写投影文件。主 App 单方写；键盘只读 `load()`。
+///
+/// 键盘不写共享容器（`RequestsOpenAccess = NO`），原「键盘 → 主 App 的联系人确认回传」
+/// 已于 2026-09-28 随键盘顶部确认行一并移除。匿名会话的联系人绑定由主 App 侧的
+/// `AffectionProjectionPublisher.resolveContact` 完成。
 nonisolated enum AffectionProjectionStore {
     static func load() -> AffectionProjection? {
         guard let projection = GalchatSharedFile.read(AffectionProjection.self,
@@ -119,50 +123,5 @@ nonisolated enum AffectionProjectionStore {
     @discardableResult
     static func write(_ projection: AffectionProjection) -> Bool {
         GalchatSharedFile.write(projection, named: AffectionProjection.fileName)
-    }
-
-    // MARK: - 键盘 → 主 App 的确认回传
-
-    /// 键盘唯一会写的东西。主 App 下次轮询时消费并删除。
-    ///
-    /// 键盘在架构上仍然是"只读候选、不联网、不持密钥"的；这里回传的是一个
-    /// 用户点选结果，不含聊天内容，也不改变键盘的能力边界。
-    nonisolated struct ContactDecision: Codable, Equatable, Sendable {
-        static let currentSchema = 1
-        static let fileName = "kb-contact-decision.json"
-
-        enum Resolution: String, Codable, Sendable {
-            /// 绑定到已有联系人。
-            case existing
-            /// 新建联系人。
-            case create
-            /// 本次不绑定。
-            case ignore
-        }
-
-        var schemaVersion = ContactDecision.currentSchema
-        var resolution: Resolution
-        /// `resolution == .existing` 时为目标联系人 id，否则为空。
-        var contactID: String?
-        /// 决策针对的 OCR 标题，主 App 用它校验是不是同一次会话。
-        var sourceTitle: String
-        var decidedAt: Date
-    }
-
-    @discardableResult
-    static func writeDecision(_ decision: ContactDecision) -> Bool {
-        GalchatSharedFile.write(decision, named: ContactDecision.fileName)
-    }
-
-    static func loadDecision() -> ContactDecision? {
-        guard let decision = GalchatSharedFile.read(ContactDecision.self,
-                                                   named: ContactDecision.fileName),
-              decision.schemaVersion == ContactDecision.currentSchema
-        else { return nil }
-        return decision
-    }
-
-    static func clearDecision() {
-        GalchatSharedFile.remove(named: ContactDecision.fileName)
     }
 }

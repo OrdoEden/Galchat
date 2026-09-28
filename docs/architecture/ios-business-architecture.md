@@ -1,10 +1,10 @@
-# Jarvis iOS 业务架构设计
+# Galchat iOS 业务架构设计
 
 > 文档状态：设计稿
 >
 > 资料核对日期：2026-09-22。系统版本、SDK 和库实现均为此次核对的快照，实施时需复核。
 >
-> 适用范围：`jev-chat-jarvis-ios`、本地 `Visyn` Swift Package，以及安卓参考项目 `jev-chat-jarvis`
+> 适用范围：`Galchat`、本地 `Visyn` Swift Package，以及安卓参考项目
 >
 > 本文同时保留原始设计基线和后续实现说明。BYOK、OCR、实时分析、画中画和键盘已有代码；2026-09-24 更新离线全拼键盘及候选状态链路，尚需按 `docs/keyboard-validation.md` 完成 Xcode/真机验收。
 
@@ -12,7 +12,7 @@
 
 ## 1. 目标与平台边界
 
-Jarvis iOS 的目标是：用户在聊天 App 中阅读消息时，授权 Jarvis 采集屏幕，识别当前会话，生成三条候选回复，并通过 Jarvis 键盘让用户选择一条插入当前输入框。消息最终仍由用户检查和发送。
+Galchat iOS 的目标是：用户在聊天 App 中阅读消息时，授权 Galchat 采集屏幕，识别当前会话，生成三条候选回复，并通过 Galchat 键盘让用户选择一条插入当前输入框。消息最终仍由用户检查和发送。
 
 安卓参考项目的实际链路是“无障碍节点采集或单次截图 OCR → 消息序列合并 → Jev 判断 → 回复生成与排序”。它不是连续录屏后拼接成长图。iOS 应继承消息模型和模型协议，重写采集、OCR、浮窗和文本填入部分。
 
@@ -23,15 +23,15 @@ Jarvis iOS 的目标是：用户在聊天 App 中阅读消息时，授权 Jarvis
 - 根据文字块、位置、时间和重叠关系合并连续屏幕中的聊天消息。
 - 使用三条独立的 BYOK 模型路线：Jev 判断、回复生成、可选的云视觉补充。
 - 使用 Visyn PiP 显示只读的摘要、状态和一条推荐结果。
-- 提供 Jarvis 自定义中文键盘，顶部横排三个回复候选，下方保留离线拼音、英文、数字和符号输入。
+- 提供 Galchat 自定义中文键盘，顶部横排三个回复候选，下方保留离线拼音、英文、数字和符号输入。
 
 ### 1.2 不可按安卓方式实现的能力
 
 - 不能通过公开 iOS API 读取微信、飞书等其他 App 的无障碍节点树。
 - 不能可靠获得当前前台 App 的包名、联系人或聊天窗口标识。
 - 不能替其他 App 自动滚动、点击发送按钮或调用类似 Android `ACTION_SET_TEXT` 的无障碍动作。
-- 不能把候选回复写入 Apple 系统键盘或搜狗等其他输入法的 QuickType 候选栏。Jarvis 键盘只能自己绘制候选区。
-- PiP 内容是视频像素，不是可交互的安卓式悬浮窗；候选选择和复制放在 Jarvis 键盘或主 App。
+- 不能把候选回复写入 Apple 系统键盘或搜狗等其他输入法的 QuickType 候选栏。Galchat 键盘只能自己绘制候选区。
+- PiP 内容是视频像素，不是可交互的安卓式悬浮窗；候选选择和复制放在 Galchat 键盘或主 App。
 
 ## 2. 当前工程事实
 
@@ -64,7 +64,7 @@ flowchart LR
     J --> H[主 App 判断区]
     J --> I[PiP 情绪与意图]
     R --> K[ReplyBundlePublisher: 键盘共享文件]
-    K --> W[Jarvis Keyboard Extension]
+    K --> W[Galchat Keyboard Extension]
     W --> X[textDocumentProxy.insertText]
     X --> Y[用户检查并发送]
 ```
@@ -95,7 +95,7 @@ Storage
 Presentation
 ├── MainAppViewController            // 设置、状态、识别结果、复制
 ├── VisynPictureInPicturePresenter   // 只读摘要
-└── JarvisKeyboardViewController     // 三个回复候选、离线拼音和普通输入
+└── GalchatKeyboardViewController     // 三个回复候选、离线拼音和普通输入
 ```
 
 每层只处理一种责任。主 App 页面不直接调用 Vision 或模型网络；键盘扩展不读取屏幕帧、不持有 API Key、不执行 OCR。上述名称表示职责边界，不要求每项都创建独立框架或协议；判断与排序共用 `JevJudgeClient`，不引入数据库或向量检索。键盘的拼音选词使用随扩展打包的本地词库。
@@ -208,7 +208,7 @@ OCR 只负责“有哪些文字以及在哪里”，不负责判断谁说的。`
 
 ### 5.3 防止键盘反馈循环
 
-屏幕采集可能包含 Jarvis 键盘。处理流程应：
+屏幕采集可能包含 Galchat 键盘。处理流程应：
 
 1. 结合版式和输入区识别键盘区域，不把固定屏幕高度比例当成所有 App 的准确边界。
 2. 先按空间区域排除键盘/PiP；候选文字匹配仅作为区域判断的辅助证据，不能在整屏全局过滤相同文字。用户发送后，相同文本成为正式聊天气泡，必须保留。
@@ -288,7 +288,7 @@ Jev 题目和 criteria 使用英文，聊天文字保持中文；每次发送的
 ### 7.2 存储和请求边界
 
 - 当前 API Key 由 Synapse 凭据存储管理，沿用主 App UserDefaults；不写入 App Group。此前 Keychain 条目是原始设计目标，本次不改变既有存储选择。
-- App Group 中，Visyn 使用既有临时 JPEG 邮箱，Jarvis 业务目录保存少量配置和短期 `ReplyBundle`。候选和联系人标题本身属于敏感聊天衍生数据，需文件保护、排除备份和失效清理；不把 Keychain secret 复制到共享文件。
+- App Group 中，Visyn 使用既有临时 JPEG 邮箱，Galchat 业务目录保存少量配置和短期 `ReplyBundle`。候选和联系人标题本身属于敏感聊天衍生数据，需文件保护、排除备份和失效清理；不把 Keychain secret 复制到共享文件。
 - provider、baseURL、model、自动分析开关等普通配置存 UserDefaults。
 - 模型请求统一由 Synapse 使用 Alamofire 传输，提供请求超时、任务取消和受限重试。401/403 和参数错误不盲重试；429 按重试策略处理 `Retry-After`。生成类 POST 不自动重发超时请求。
 - 服务地址默认 HTTPS；显式绑定凭据与目标服务，不向跨域重定向继续附带 Authorization。
@@ -310,30 +310,37 @@ ConversationContext → AnalysisRequest（同一个文本窗口版本）
 
 自动分析默认开启，可在实时会话页关闭；关闭、停采、离开聊天页时取消排队与在途任务，暂停前的 OCR 回调另用采集 generation 拦截。用户补历史后停留 1.5 秒，按实际发送窗口指纹去重，同一尾部最多补算两次。跨段缺口作为明确标记保留给模型，不占真实消息额度。无重叠且方向不明的当前片段按独立单屏分析，不让旧历史链冒充当前内容。
 
-## 8. Jarvis 自定义键盘
+## 8. Galchat 自定义键盘
 
 ### 8.1 交互定位
 
-Jarvis 键盘是独立的 `UIInputViewController` 中文键盘扩展，不是系统 QuickType 插件。2026-09-24 起将原来的建议面板改为可正常输入的键盘：
+Galchat 键盘是独立的 `UIInputViewController` 中文键盘扩展，不是系统 QuickType 插件。2026-09-28 起键盘外观与系统键盘对齐，不再有品牌行、好感度读数或状态说明行：
 
 1. 读取主 App 写入的最新候选结果。
-2. 在键盘顶部横排三个回复候选；候选失效或分析失败时仍保留全部输入按键。
-3. 用户点击后调用 `textDocumentProxy.insertText(_:)`。
-4. 本地全拼与可滚动中文选词、英文大小写、数字、符号、删除/长按删除、空格、回车、地球键和收起键盘。
+2. 顶部一行候选条按输入状态切换内容；候选失效或分析失败时仍保留全部输入按键。
+3. 用户点击候选后调用 `textDocumentProxy.insertText(_:)`。
+4. 本地全拼与可滚动中文选词、英文大小写、数字、符号、删除/长按删除、空格、回车、地球键。
 
-`rank=1/2/3` 保持原共享契约，三个回复从左到右排列，3 为优先推荐并用底色区分。长回复在候选栏截断显示，插入的是完整文本。回复候选与本地拼音候选分开显示，避免中文输入时丢失回复或打字能力。
+候选条复用系统键盘上方预测条的位置，常驻不收起（键盘高度固定），两种状态互斥：
+
+- **没有未上屏的拼音时**：三条回复建议等宽平铺，对齐系统英文键盘的三条预测。
+- **有未上屏的拼音时**：横排拼音候选，全部常规字重、统一文字色，只有首项带白色托底；右侧 ⌄ 展开完整候选网格（盖住按键区），对齐系统中文键盘。
+
+`rank=1/2/3` 保持原共享契约，三个回复从左到右排列，3 为优先推荐。长回复在候选栏截断显示，插入的是完整文本。
 
 ```text
-Jarvis 键盘 · 小王       确认会话       收起
-[回复①]          [回复②]          [回复③]
-拼音/组合文本     [中文选词，可横向滚动]
+[回复①]         [回复②]         [回复③]        ← 或 [哈哈] 哈 蛤 虾 … | ⌄
 q w e r t y u i o p
- a s d f g h j k l
-分词 z x c v b n m 删除
-123    🌐    中/英    空格    ，    回车
+  a s d f g h j k l            ← 第二排缩进半个键位
+⇧   z x c v b n m   ⌫          ← ⇧ / ⌫ 贴边，字母居中
+123  (🌐)   空格      换行
 ```
 
-键盘按 `needsInputModeSwitchKey` 决定是否提供地球按钮。中文使用全拼，`v` 输入 ü，分词键输入音节分隔符；空格选第一候选，回车先提交尚未选词的拼音原文。组合文本留在键盘内存，确认选词后才插入目标输入框。词库来自 Apache-2.0 的 Rime/Android Pinyin IME（65,125 条字词），许可和来源随扩展打包；不接入第三方运行时，也不保存或上传用户键入历史。当前不支持简拼、模糊音、自学习、语音输入和系统联想服务。
+按键几何按系统键盘截图实测：字母键宽为整排 10 等分（不随本排键数拉伸），⇧/⌫ 为 1.34 键宽，123/🌐 为 1.3 键宽，换行为 2.8 键宽，键高 42.5pt、行距 11.5pt（`KeyRowView` 按键宽单位排版）。
+
+键盘按 `needsInputModeSwitchKey` 决定是否提供地球按钮。中文使用全拼，`v` 输入 ü。没有分词键：音节分隔符 `'` 在 123 页，拼写中点它会并入拼音（`xi'an` = 西安）并自动回到字母页。⇧ 单击大写一次、双击锁定，大写状态下字母直接以英文上屏、不进拼音。回车标题跟随输入框的 `returnKeyType`（发送/搜索/换行等），有待选拼音时为「确认」；空格选第一候选，回车在有待选拼音时按第一个候选确认、否则换行，空格键随组合状态在「空格」和「选定」之间切换标题。拼写中的拼音以带下划线的标记文本（`setMarkedText`）显示在输入框里，按音节用空格分隔（`nihao` 显示 `ni hao`，`ttkaix` 显示 `t t kai x`，由 `PinyinInputEngine.displaySpelling` 动态规划切分）；选词时用最终文本替换标记文本，上屏原文时提交实际键入的字母而非显示用空格。宿主改动标记文本（点输入框别处、发送后清空）时，键盘按光标前上下文是否仍以标记文本结尾来作废组合；只有在同一输入框确认过上下文包含标记文本后才做此判断。词库来自 Apache-2.0 的 Rime/Android Pinyin IME（65,125 条字词），许可和来源随扩展打包；不接入第三方运行时，也不保存或上传用户键入历史。当前不支持简拼、模糊音、自学习、语音输入和系统联想服务。
+
+回复候选**点击即隐式确认**会话：首次点击记录确认并重新渲染，再点一次才插入。原独立的「确认会话」按钮已随品牌行一并移除；换输入框或换联系人时确认自动失效。键盘不写共享容器，只读候选与投影（`RequestsOpenAccess = NO`）。
 
 ### 8.2 键盘扩展配置
 
@@ -346,7 +353,7 @@ PrimaryLanguage = zh-CN       // 按键盘扩展的语言/区域配置规则；�
 RequestsOpenAccess = NO       // 第一版只读共享结果
 ```
 
-主 App 和键盘 target 使用同一个 App Group entitlement。用户需要在“设置 → 通用 → 键盘 → 键盘”中添加并启用 Jarvis 键盘。
+主 App 和键盘 target 使用同一个 App Group entitlement。用户需要在“设置 → 通用 → 键盘 → 键盘”中添加并启用 Galchat 键盘。
 
 Apple 当前文档允许未开启 Full Access 的键盘只读 containing app 的共享容器，但不能联网或写共享容器。第一版因此不让键盘直接调用 BYOK 模型。主 App 负责预先创建目录与文件，键盘只读打开，不调用隐式建目录的写入型 helper；最低支持系统上的实际行为必须列入真机验证。
 
@@ -356,7 +363,7 @@ Apple 当前文档允许未开启 Full Access 的键盘只读 containing app 的
 
 ```text
 App Group/
-└── Jarvis/
+└── Galchat/
     └── reply-bundle.json
 ```
 
@@ -422,11 +429,11 @@ App Group/
 
 已实现（2026-09-25）：画中画固定四行，首页使用 Visyn 的横屏 `414×80`（默认）、竖屏 `80×60`、矩形 `80×80` 预设，或输入自定义宽高后应用。运行中也可更新，成功后通过库的 `save/load` 保存和恢复。①来源会话、情绪/危险分及实际分析条数；②意图与紧张是否缓解；③需求、行动与实质答复建议；④Jev/候选各自的进度或补历史提示。提示变蓝不改变危险色条。滚动、新消息或切会话时保留有来源的旧判断并标“上次结果”，新 Jev 判断完成即替换，不等待回复；候选新上下文开始时失效，独立生成与排序完成后可选用。
 
-引擎用来源、意图、建议的多行准确标签和左对齐/字号/行距组成的簇确认 PiP 区域，窗口可拖动到屏幕下方；不会因为单条聊天以 Jarvis 开头就删掉它。键盘顶部固定写“Jarvis 键盘”，它以下视为键盘区，内容区下限再让出输入栏高度。
+引擎用来源、意图、建议的多行准确标签和左对齐/字号/行距组成的簇确认 PiP 区域，窗口可拖动到屏幕下方；不会因为单条聊天以 Galchat 开头就删掉它。键盘本身不再写任何品牌文字，键盘区域改由**按键行**（`qwertyuiop` 等整行字符）定位，切线取最上一排按键之上一个候选条高度，使候选文字与输入栏一起被排除。
 
 `GCPiPLayout` 为显示与 OCR 提供共享的行距、边距和内容尺寸。尺寸快照随屏幕帧传入后台识别，避免 OCR 等待期间的比例切换污染几何；更新成功后丢弃待处理旧帧，并暂缓接收一秒过渡帧。系统悬浮窗大小仍受 iOS 限制，用户可双指缩放；内容尺寸不等于悬浮窗的实际尺寸。
 
-Jarvis 键盘已作为 `GalchatKeyboardExtension` target 加入工程（`GalchatShared/ReplyBundle.swift` 由主 App 与键盘共用）。发布只依赖同请求/输入版本的三条有效、已排序候选；不依赖 Jev 判断完成、长图或连续观察次数。单屏来源可为 recognized，标题遮挡显示“当前会话”，两者都必须人工核对后插入。有效期从候选完成开始计 120 秒，来源新鲜度取真实采集时间加 15 秒，最小续写间隔 3 秒；计时器不延长新鲜度。停采、离开聊天页、换会话、开始新上下文任务时写 invalid。共享写入失败不能标记就绪。
+Galchat 键盘已作为 `GalchatKeyboardExtension` target 加入工程（`GalchatShared/ReplyBundle.swift` 由主 App 与键盘共用）。发布只依赖同请求/输入版本的三条有效、已排序候选；不依赖 Jev 判断完成、长图或连续观察次数。单屏来源可为 recognized，标题遮挡显示“当前会话”，两者都必须人工核对后插入。有效期从候选完成开始计 120 秒，来源新鲜度取真实采集时间加 15 秒，最小续写间隔 3 秒；计时器不延长新鲜度。停采、离开聊天页、换会话、开始新上下文任务时写 invalid。共享写入失败不能标记就绪。
 
 
 
@@ -487,13 +494,13 @@ PiP 状态： inactive / starting / active / failed
 - 取消、重试、超时和 revision 校验。
 - 主 App 结果页展示判断和三条排序后的候选。
 
-### 阶段 D：Jarvis 键盘
+### 阶段 D：Galchat 键盘
 
 - 新增 Keyboard Extension target、Info.plist、App Group entitlement。
 - 主 App 原子写 `ReplyBundle`。
-- 键盘只读 bundle，顶部横排三个回复候选并调用 `insertText`；下方离线全拼和普通输入独立可用。
+- 键盘只读 bundle，顶部一行候选条交替显示三条回复建议与拼音候选，调用 `insertText`；下方离线全拼和普通输入独立可用。
 - 增加过期、版本冲突、选中文本和不可用输入框处理。
-- 保留复制按钮和地球键切换提示。
+- 保留地球键切换提示。
 
 ### 阶段 E：新系统采集和扩展能力
 
@@ -508,7 +515,7 @@ PiP 状态： inactive / starting / active / failed
 - 系统授权、取消授权和重新授权。
 - 微信单聊中文小字、深色主题、横屏和键盘展开。
 - 慢滚、快滚、重复画面、向上翻历史和中间丢帧。
-- 输入框草稿、Jarvis 键盘候选和底部系统键盘不会被 OCR 当成新消息。
+- 输入框草稿、Galchat 键盘候选和底部系统键盘不会被 OCR 当成新消息。
 - 无法识别发言人时显示 `unknown` 或明确提示，不自动归为对方。
 
 ### 模型与上下文
@@ -520,8 +527,10 @@ PiP 状态： inactive / starting / active / failed
 
 ### 键盘
 
-- 设置中启用 Jarvis 键盘，使用地球键切换。
-- 三条候选按低到高展示，点击后插入当前输入框。
+- 设置中启用 Galchat 键盘，使用地球键切换。
+- 三条候选按低到高展示，点击后插入当前输入框；首次点击只确认来源，再点一次才插入。
+- 候选条随输入状态切换：无拼音时显示回复建议，有拼音时显示选词，不出现两行并存。
+- 键盘外观与系统键盘一致；按键行定位不再依赖键盘上的品牌文字。
 - 光标位置、选中文字、空输入框和已有草稿均可预期处理。
 - 结果过期、来源新鲜度过期、停止采集或 revision 冲突时不可插入旧候选；主 App 被强制结束也不能无限沿用最后一份 ready。
 - 同一输入框被不同联系人复用时，来源提示和用户确认生效；排序升序、同分、排序失败和模型返回不足三条分别验证。
@@ -554,17 +563,13 @@ PiP 状态： inactive / starting / active / failed
 
 ### 14.1 本地源码
 
-- [iOS 采集入口 ViewController](/Users/heself/Desktop/Code/jev-chat-jarvis-ios/jev-chat-jarvis-ios/ViewController.swift)：`configureCapture`、`onFrame` 和 `makePiPContent`。
-- [iOS 工程配置](/Users/heself/Desktop/Code/jev-chat-jarvis-ios/Galchat.xcodeproj/project.pbxproj)：主 App 与广播扩展的 deployment target、本地 Visyn package 引用。
+- [iOS 采集入口 ViewController](/Users/gidon/Documents/Code/Galchat/Galchat/ViewController.swift)：`configureCapture`、`onFrame` 和 `makePiPContent`。
+- [iOS 工程配置](/Users/gidon/Documents/Code/Galchat/Galchat.xcodeproj/project.pbxproj)：主 App 与广播扩展的 deployment target、本地 Visyn package 引用。
 - [Visyn 广播帧传输](/Users/heself/Desktop/Code/Visyn/Sources/VisynBroadcast/VisynBroadcastSampleHandler.swift)：节流、方向归一化、JPEG 编码与单槽背压。
 - [Visyn 主 App 接收](/Users/heself/Desktop/Code/Visyn/Sources/VisynCapture/VisynCaptureController.swift)：主线程回调、消费即删与过期过滤。
 - [Visyn PiP](/Users/heself/Desktop/Code/Visyn/Sources/VisynCapture/VisynPictureInPicturePresenter.swift)：UIView 转视频帧、系统 PiP。
 - [Visyn 生命周期说明](/Users/heself/Desktop/Code/Visyn/README.md)：临时文件、过期清理、挂起和触摸限制。
-- [安卓配置](/Users/heself/Desktop/Code/jev-chat-jarvis/app/src/main/java/com/jev/probe/core/Prefs.kt)：三路 provider、endpoint 和当前密钥存储。
-- [安卓截图](/Users/heself/Desktop/Code/jev-chat-jarvis/app/src/main/java/com/jev/probe/capture/ocr/ScreenCapture.kt)：无障碍单次截图。
-- [安卓业务调度](/Users/heself/Desktop/Code/jev-chat-jarvis/app/src/main/java/com/jev/probe/capture/ChatCaptureService.kt)：`runAnalysis`、OCR 和填入。
-- [安卓跨屏合并](/Users/heself/Desktop/Code/jev-chat-jarvis/app/src/main/java/com/jev/probe/core/kb/KbStore.kt)：`appendLog` 的消息序列重叠合并。
-- [安卓判断协议](/Users/heself/Desktop/Code/jev-chat-jarvis/app/src/main/java/com/jev/probe/jev/JudgeClient.kt)、[判断题与 state](/Users/heself/Desktop/Code/jev-chat-jarvis/app/src/main/java/com/jev/probe/jev/JevQuestions.kt)、[回复生成](/Users/heself/Desktop/Code/jev-chat-jarvis/app/src/main/java/com/jev/probe/jev/ReplyClient.kt)：迁移请求和解析语义的依据。
+- 安卓参考项目（`com.jev.probe`，外部仓库）的 `Prefs.kt`、`ScreenCapture.kt`、`ChatCaptureService.kt`、`kb/KbStore.kt`、`jev/JudgeClient.kt`、`jev/JevQuestions.kt`、`jev/ReplyClient.kt`：迁移请求和解析语义的依据。三路 provider、endpoint、无障碍单次截图、消息序列重叠合并。
 
 ### 14.2 Apple 官方资料
 

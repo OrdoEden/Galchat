@@ -129,7 +129,7 @@ final class ViewController: UIViewController {
             button.configuration?.contentInsets = .init(top: 16, leading: 20, bottom: 16, trailing: 20)
         }
         let hintLabel = UILabel()
-        hintLabel.text = "录屏的开始与停止都需要在系统面板中确认。录屏期间打开聊天窗口，Jarvis 会在本机识别文字、"
+        hintLabel.text = "录屏的开始与停止都需要在系统面板中确认。录屏期间打开聊天窗口，Galchat 会在本机识别文字、"
             + "随滚动自动拼接长截图，并在对方发来新消息时调用判断接口分析。画中画可在切换 App 后继续显示。"
         hintLabel.font = .preferredFont(forTextStyle: .footnote)
         hintLabel.textColor = .secondaryLabel

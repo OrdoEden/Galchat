@@ -15,8 +15,11 @@ nonisolated enum GalchatSharedFile {
         return container
     }
 
+    /// 共享文件所在子目录。
+    static let directoryName = "Galchat"
+
     static var directoryURL: URL? {
-        containerURL?.appendingPathComponent("Jarvis", isDirectory: true)
+        containerURL?.appendingPathComponent(directoryName, isDirectory: true)
     }
 
     static func fileURL(named name: String) -> URL? {

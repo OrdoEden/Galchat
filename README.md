@@ -1,10 +1,10 @@
-# Jarvis iOS
+# Galchat iOS
 
 UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/拼接聊天截图，通过 Synapse 调用模型。
 
 画中画默认保持横屏长条，首页可选横屏、竖屏、矩形，或输入宽高后点击“应用尺寸”；运行中也可修改，成功后自动记住尺寸。
 
-业务接入架构见 [iOS 业务架构设计](docs/architecture/ios-business-architecture.md)，包括 OCR、跨屏会话合并、BYOK、语义分析、PiP 和 Jarvis 自定义键盘。
+业务接入架构见 [iOS 业务架构设计](docs/architecture/ios-business-architecture.md)，包括 OCR、跨屏会话合并、BYOK、语义分析、PiP 和 Galchat 自定义键盘。
 
 “人格”页可以选择、新建、编辑、导入和导出人格，也可以选择“不使用人格”。人格包含性格、价值观、看事情的方式和说话习惯。所有内容放在 [Galchat/Personas](Galchat/Personas) 的独立文件里，Swift 只负责加载和保存。
 
@@ -82,13 +82,13 @@ Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package �
 
 这里设置的是内容布局尺寸和比例，不是系统悬浮窗的精确大小。跨 App 小窗仍由 iOS 管理：单指移动位置，双指缩放；不支持任意拖动系统窗口边框。相同比例的内容同时增大宽高，不保证实际小窗同比例放大。
 
-尺寸通过本地 Visyn 的 `pictureInPictureContentSize` 初始化参数和 `setPictureInPictureContentSize(_:)` 更新，成功后调用 `VisynPictureInPictureSize.save`。下次初始化使用 `load() ?? .landscape` 恢复；采用库默认的 UserDefaults 存储域和键，不再使用上一版 App 自建的尺寸偏好。非法输入不改变已应用尺寸或已保存值。四行文字保持 Jarvis 前缀和单行截断；显示与 OCR 共用布局度量，按当前尺寸计算遮挡区域。尺寸变更后暂缓接收一秒屏幕帧，让系统完成比例重排；异步识别使用随帧传入的尺寸快照。
+尺寸通过本地 Visyn 的 `pictureInPictureContentSize` 初始化参数和 `setPictureInPictureContentSize(_:)` 更新，成功后调用 `VisynPictureInPictureSize.save`。下次初始化使用 `load() ?? .landscape` 恢复；采用库默认的 UserDefaults 存储域和键，不再使用上一版 App 自建的尺寸偏好。非法输入不改变已应用尺寸或已保存值。四行文字保持 Galchat 前缀和单行截断；显示与 OCR 共用布局度量，按当前尺寸计算遮挡区域。尺寸变更后暂缓接收一秒屏幕帧，让系统完成比例重排；异步识别使用随帧传入的尺寸快照。
 
 由开发者在 Xcode 真机检查：
 
 1. 无库偏好时默认横屏 `414×80`；依次选择三个预设，确认宽高输入框与系统 PiP 比例同步更新。特别检查两个 80 点宽预设的文字可读性与 OCR 标记识别。
 2. 在 PiP 关闭和开启时分别输入 `200×120` 并应用，再输入小数确认回填取整后的尺寸。键盘弹出时输入框和应用按钮可滚动访问。
 3. 检查空白、非数字、零、负数和超过 640 的输入：出现错误且不覆盖已保存值。退出并重开 App，确认恢复最后成功应用的尺寸；初始化失败时尺寸控件不可操作。
-4. 在不同尺寸下切换到聊天 App，移动和双指缩放 PiP，确认内容继续刷新。检查实时会话和长截图：Jarvis 自身文字未被识别成消息，被遮住的聊天不应作为完整消息进入分析。
+4. 在不同尺寸下切换到聊天 App，移动和双指缩放 PiP，确认内容继续刷新。检查实时会话和长截图：Galchat 自身文字未被识别成消息，被遮住的聊天不应作为完整消息进入分析。
 5. 连续切换比例后立即切回聊天，确认短暂停顿后恢复识别，没有套用旧尺寸的遮挡区域；停止并重启录屏也能恢复。
 6. 小屏、横屏、大字体与 VoiceOver 下确认首页可滚动，预设、宽高输入框和应用按钮可访问。

@@ -15,6 +15,76 @@ final class PinyinInputEngine {
 
     private lazy var dictionary: [String: [Entry]] = loadDictionary()
 
+    /// 词库里出现过的全部音节（含 nve/lve 别名），用于把输入切成系统那样的 `ni hao`。
+    private lazy var syllables: Set<String> = {
+        var result = Set<String>()
+        for entries in dictionary.values {
+            for entry in entries {
+                for syllable in entry.spelling.split(separator: " ") {
+                    result.insert(String(syllable))
+                }
+            }
+        }
+        if result.contains("nue") { result.insert("nve") }
+        if result.contains("lue") { result.insert("lve") }
+        return result
+    }()
+
+    /// 输入框里显示的拼音：按音节用空格隔开，用户输入的 `'` 原样保留。
+    ///
+    /// 与系统中文键盘一致：`nihao` 显示为 `ni hao`，`nver` 为 `nv er`，
+    /// `ttkaix` 为 `t t kai x`，`xi'an` 仍显示 `xi'an`。
+    /// 只用于显示——上屏原文时提交的仍是用户实际键入的字母。
+    func displaySpelling(for input: String) -> String {
+        input.lowercased()
+            .split(separator: "'", omittingEmptySubsequences: false)
+            .map { segment(Array($0)) }
+            .joined(separator: "'")
+    }
+
+    /// 所有音节的前缀，用于识别末尾拼到一半的音节（`zhon`）。
+    private lazy var syllablePrefixes: Set<String> = {
+        var result = Set<String>()
+        for syllable in syllables {
+            var prefix = ""
+            for character in syllable {
+                prefix.append(character)
+                result.insert(prefix)
+            }
+        }
+        return result
+    }()
+
+    /// 动态规划切分：完整音节代价 1，末尾半个音节代价 2，无法成音节的单个字母代价 10。
+    /// 取总代价最小的切法——贪心最长匹配会把 `nver` 切成 `nve r`。
+    private func segment(_ letters: [Character]) -> String {
+        let count = letters.count
+        guard count > 0 else { return "" }
+        var best = [(cost: Int, pieces: [String])?](repeating: nil, count: count + 1)
+        best[count] = (0, [])
+        for start in stride(from: count - 1, through: 0, by: -1) {
+            var choice: (cost: Int, pieces: [String])?
+            func consider(_ end: Int, _ cost: Int) {
+                guard let rest = best[end] else { return }
+                let total = rest.cost + cost
+                if choice == nil || total < choice!.cost {
+                    choice = (total, [String(letters[start..<end])] + rest.pieces)
+                }
+            }
+            for end in (start + 1)...min(count, start + 6) {
+                let piece = String(letters[start..<end])
+                if syllables.contains(piece) {
+                    consider(end, 1)
+                } else if end == count, syllablePrefixes.contains(piece) {
+                    consider(end, 2)
+                }
+            }
+            consider(start + 1, 10)
+            best[start] = choice
+        }
+        return best[0]?.pieces.joined(separator: " ") ?? String(letters)
+    }
+
     func candidates(for input: String) -> [Candidate] {
         let input = input.lowercased().replacingOccurrences(of: "ü", with: "v")
         guard !input.isEmpty, input.count <= 64,

@@ -1,8 +1,8 @@
 import Foundation
 
-/// 主 App 与 Jarvis 键盘之间的候选回复契约（架构文档 §8.3）。
+/// 主 App 与 Galchat 键盘之间的候选回复契约（架构文档 §8.3）。
 ///
-/// 主 App 通过临时文件 + 原子替换写入 App Group 里的 `Jarvis/reply-bundle.json`；
+/// 主 App 通过临时文件 + 原子替换写入 App Group 里的 `Galchat/reply-bundle.json`；
 /// 键盘只读，不联网、不持有 API Key、不读屏幕帧。键盘每次展示和点击都要重新校验。
 nonisolated struct ReplyBundle: Codable, Equatable, Sendable {
     static let currentSchema = 1

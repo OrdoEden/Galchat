@@ -16,7 +16,7 @@ final class ReplyBundlePublisher {
 
     var isReady: Bool { !writeFailed && published?.isUsable() == true }
     var unavailableReason: String {
-        if writeFailed { return "候选共享写入失败，请返回 Jarvis 检查" }
+        if writeFailed { return "候选共享写入失败，请返回 Galchat 检查" }
         guard let published else { return "等待回复候选" }
         if published.status == .invalid { return published.note ?? "等待回复候选" }
         if Date() >= published.expiresAt { return "候选已过期，请重新分析" }
@@ -24,7 +24,7 @@ final class ReplyBundlePublisher {
         return "候选暂不可用"
     }
 
-    init() { write(.invalid(note: "Jarvis 已启动，等待回复候选")) }
+    init() { write(.invalid(note: "")) }
 
     func contextWasEdited() {
         invalidate("上下文或人设已更新，请重新分析")

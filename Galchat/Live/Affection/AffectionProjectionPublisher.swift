@@ -1,6 +1,6 @@
 import Foundation
 
-/// 把好感度投影写给键盘，并消费键盘回传的联系人确认。
+/// 把好感度投影写给键盘。
 ///
 /// 与 `ReplyBundlePublisher` 的节奏差别：候选建议是"当下这一刻的推断"，所以
 /// 有 15 秒新鲜度和 120 秒上限；好感度总分是"已经发生过的历史"，没有这两个时限。
@@ -14,8 +14,6 @@ final class AffectionProjectionPublisher {
 
     private let store: ContactsStore
     private var lastWrite = Date.distantPast
-    private var lastDecisionAt: Date?
-    private var ignoredTitles = Set<String>()
 
     /// 最近一次提交产生的 ± 读数。存在内存里供 PiP 直接读，不必为了一个数字回读磁盘。
     private(set) var lastStep: Int = 0
@@ -70,42 +68,6 @@ final class AffectionProjectionPublisher {
     /// 主 App 当前看到的会话标题。由协调器在每帧识别后更新。
     var currentTitle: String = ""
 
-    // MARK: - 消费键盘确认
-
-    /// 每帧调用。返回 true 表示联系人状态发生了变化，调用方应刷新 UI。
-    @discardableResult
-    func consumeKeyboardDecision() -> Bool {
-        guard let decision = AffectionProjectionStore.loadDecision() else { return false }
-        // 同一次决策只处理一次。键盘可能连续几秒都还没删掉文件。
-        if let last = lastDecisionAt, decision.decidedAt <= last { return false }
-        lastDecisionAt = decision.decidedAt
-        AffectionProjectionStore.clearDecision()
-
-        // 决策针对的是上一次的标题；期间换聊天了就作废。
-        guard ContactsStore.normalize(decision.sourceTitle) == ContactsStore.normalize(currentTitle) else {
-            return false
-        }
-
-        switch decision.resolution {
-        case .existing:
-            guard let contactID = decision.contactID else { return false }
-            store.bind(alias: decision.sourceTitle, to: contactID)
-            publishImmediately()
-            return true
-        case .create:
-            let name = decision.sourceTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !name.isEmpty else { return false }
-            store.createContact(displayName: name, alias: decision.sourceTitle)
-            publishImmediately()
-            return true
-        case .ignore:
-            // 本次不绑定。记录标题，避免同一会话里反复弹确认。
-            ignoredTitles.insert(ContactsStore.normalize(decision.sourceTitle))
-            publishImmediately()
-            return false
-        }
-    }
-
     // MARK: - 身份解析
 
     /// 每帧识别后调用，把 OCR 标题匹配到联系人。
@@ -120,8 +82,6 @@ final class AffectionProjectionPublisher {
             publish()
             return
         }
-        let normalized = ContactsStore.normalize(title)
-        guard !ignoredTitles.contains(normalized) else { return }
 
         switch ContactMatcher.match(title: title, subjects: store.document.contacts.map {
             ContactMatcher.Subject(id: $0.id, displayName: $0.displayName, aliases: $0.aliases)

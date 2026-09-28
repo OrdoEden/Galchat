@@ -10,7 +10,7 @@
 | “哈哈哈哈 / 口合口合口合口合 / 口合口合哈哈” 变成多条或来回跳 | `ChatStitcher.merge` 用**文字相似度 ≥ 0.6** 判断是不是同一条；这几种识别结果的二元组相似度≈0 → 同一位置新建条目。幽灵条目只有在 `observations <= 1 && misses >= 3` 时才删除，错字被看到两次后就永久留下。`VisionOCRService` 只取 `topCandidates(1)`，没有候选投票。 |
 | 自动分析频繁在不该触发时触发（截图中“自动分析过于频繁，等待一分钟额度恢复”） | `LiveAnalysisScheduler.update` 以 `tailSignature`（id + 文字）变化触发。OCR 抖动、对齐失败另起段（`currentTailMissing` 时 `live = currentMessages`）、键盘帧、翻历史都会改变尾部，每次都重新计时 800ms → 6 次/分钟额度被抖动耗光。 |
 | 表情包、头像、图片里的小字混进消息 | 只有行高启发式（`< 0.62/0.72 × 正文行高`）过滤，没有区域级的“这是一张图”的判断；图片区域不占位，里面的文字仍可能组成气泡。 |
-| 疑似：PiP 未被排除 | 截图中 PiP 是 “Jarvis · …” 文字横幅，而 `AppFrameExclusion` 需要同时找到 `Galchat` + `AI估计` + `好感度` 三个锚点。如果这就是当前 PiP，它不会被排除，还盖住了导航栏标题（标题为 nil → 回到聊天页时会被当成新会话）。**需确认。** |
+| 疑似：PiP 未被排除 | 截图中 PiP 是 “Galchat · …” 文字横幅，而 `AppFrameExclusion` 需要同时找到 `Galchat` + `AI估计` + `好感度` 三个锚点。如果这就是当前 PiP，它不会被排除，还盖住了导航栏标题（标题为 nil → 回到聊天页时会被当成新会话）。**需确认。** |
 
 总结：**缺少“这一帧有没有带来新东西”的判断**。现在每一帧都同时驱动文字合并、长图和分析；消息身份依赖不稳定的 OCR 文字；分析触发依赖文字。
 
@@ -134,7 +134,7 @@ enum SeeUChange {
 
 **阶段 A：启发式（现在就做，不依赖模型）**
 - `ChatImageDetector` 找到的 avatar/sticker/photo 区域**在账本里占一个槽位**（`kind = .media`）：区域内的 OCR 行全部丢弃，表情包按槽位锚定到前后消息，也就不会再被当成文字气泡。
-- 键盘：`Jarvis 键盘` 锚点 + 系统键盘按键行 + 输入栏颜色带，三者任一命中都算；contentBottom 取最保守的值。
+- 键盘：系统键盘按键行（`qwertyuiop` 等整行字符）为主锚点 + 输入栏颜色带；切线取最上一排按键之上一个候选条高度（`AppFrameExclusion.candidateBarRatio`），contentBottom 取最保守的值。
 
 **阶段 B：Core ML 检测器（实现已有的 `SeeUImageDetector` 协议，并新增 `SeeULayoutDetector`）**
 - 类别：`avatar, sticker, photo, bubble_me, bubble_other, time, system_notice, quote, voice, card(链接/转账/红包), keyboard, input_bar, nav_bar, overlay(PiP/通知横幅)`。
@@ -162,7 +162,7 @@ enum SeeUChange {
 1. 我方发出新消息后**也触发**一次 Judge（与对方消息走同一批处理窗口）。
 2. “最近联系人”两者都要：当前联系人的往期会话 + 联系人未确认时的最近联系人候选。
 3. 批处理窗口：静默 2.5s，最长 10s。
-4. 截图中的 “Jarvis ·” 文字横幅是旧版画中画，`AppFrameExclusion` 不需要改。
+4. 截图中的 “Galchat ·” 文字横幅是旧版画中画，`AppFrameExclusion` 不需要改。
 5. SeeU JSON 允许升级到 schemaVersion 2（P1 引入 `change` 与条目 `status`）。
 
 ## 7. 进度

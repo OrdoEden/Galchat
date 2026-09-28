@@ -256,7 +256,7 @@ final class LiveSessionViewController: UIViewController {
 
         let stack = UIStackView(arrangedSubviews: [
             statusLabel, analysisLabel, statsLabel, autoRow, recordRow, recordNote, buttons,
-            makeFootnoteLabel("判断结论显示在画中画里；三条候选回复会发到 Jarvis 键盘。首次使用请在“设置 → 通用 → 键盘 → 键盘 → 添加新键盘”里添加 Jarvis 键盘，聊天时用地球键切换过去。键盘不联网、不需要“完全访问”。"),
+            makeFootnoteLabel("判断结论显示在画中画里；三条候选回复会发到 Galchat 键盘。首次使用请在“设置 → 通用 → 键盘 → 键盘 → 添加新键盘”里添加 Galchat 键盘，聊天时用地球键切换过去。键盘不联网、不需要“完全访问”。"),
             makeSectionLabel("判断结果"), judgeLabel,
             makeSectionLabel("候选回复"), replyNoteLabel, candidatesStack,
             makeSectionLabel("拼接的聊天记录"),
