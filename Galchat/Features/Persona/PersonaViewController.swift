@@ -41,7 +41,9 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
         navigationBar.setSecondaryButton(image: UIImage(systemName: "plus"), accessibilityLabel: "添加人格", menu: menu)
         navigationBar.pinToTop(in: view)
         if #available(iOS 26.0, *) {
-            tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+            tableView.snp.makeConstraints { make in
+                make.edges.equalToSuperview()
+            }
             tableView.contentInset.top = NavigationBar.homeTitleBarHeight
             tableView.verticalScrollIndicatorInsets.top = NavigationBar.homeTitleBarHeight
             navigationBar.attachScrollView(tableView)
@@ -260,7 +262,9 @@ private final class PersonaEditorViewController: ProfileEditorViewController {
             let label = index == 0 ? "这个人是什么样" : (heading ?? "人格说明 \(index + 1)")
             let field = addField(label, value: text, lines: 6)
             field.isScrollEnabled = true
-            field.heightAnchor.constraint(equalToConstant: 280).isActive = true
+            field.snp.makeConstraints { make in
+                make.height.equalTo(280)
+            }
             field.smartQuotesType = .no
             field.smartDashesType = .no
             documentFields.append((path, field))

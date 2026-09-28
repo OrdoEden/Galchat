@@ -62,14 +62,16 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
         navigationBar.pinToTop(in: view)
 
         if #available(iOS 26.0, *) {
-            tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+            tableView.snp.makeConstraints { make in
+                make.edges.equalToSuperview()
+            }
             tableView.contentInset.top = NavigationBar.homeTitleBarHeight
             tableView.verticalScrollIndicatorInsets.top = NavigationBar.homeTitleBarHeight
             navigationBar.attachScrollView(tableView)
         } else {
-            tableView.snp.makeConstraints {
-                $0.top.equalTo(navigationBar.snp.bottom)
-                $0.leading.trailing.bottom.equalToSuperview()
+            tableView.snp.makeConstraints { make in
+                make.top.equalTo(navigationBar.snp.bottom)
+                make.leading.trailing.bottom.equalToSuperview()
             }
         }
     }
@@ -234,13 +236,10 @@ private final class SettingsTextViewController: UIViewController {
         textView.backgroundColor = .systemBackground
         textView.isEditable = false
         textView.textContainerInset = UIEdgeInsets(top: 20, left: 16, bottom: 28, right: 16)
-        textView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(textView)
-        NSLayoutConstraint.activate([
-            textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            textView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            textView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
+        textView.snp.makeConstraints { make in
+            make.top.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+        }
     }
 }

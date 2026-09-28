@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 import SeeU
 
 /// 实时会话页：录屏期间识别到的聊天、拼接结果、自动分析状态、判断与候选回复。
@@ -266,23 +267,21 @@ final class LiveSessionViewController: UIViewController {
         stack.spacing = 12
         stack.setCustomSpacing(20, after: buttons)
         stack.setCustomSpacing(20, after: candidatesStack)
-        stack.translatesAutoresizingMaskIntoConstraints = false
 
         let scrollView = UIScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         scrollView.addSubview(stack)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -32),
-            stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -20),
-            stack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -40)
-        ])
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+        }
+        stack.snp.makeConstraints { make in
+            make.top.equalTo(scrollView.contentLayoutGuide).offset(20)
+            make.bottom.equalTo(scrollView.contentLayoutGuide).offset(-32)
+            make.leading.trailing.equalTo(scrollView.contentLayoutGuide).inset(20)
+            make.width.equalTo(scrollView.frameLayoutGuide).offset(-40)
+        }
     }
 }
 

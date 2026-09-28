@@ -45,9 +45,9 @@ final class RecentsViewController: UIViewController, UITableViewDataSource, UITa
             )
             analysisButton.accessibilityLabel = "手动分析"
             navigationItem.rightBarButtonItem = analysisButton
-            tableView.snp.makeConstraints {
-                $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
-                $0.leading.trailing.bottom.equalToSuperview()
+            tableView.snp.makeConstraints { make in
+                make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+                make.leading.trailing.bottom.equalToSuperview()
             }
             return
         }
@@ -61,14 +61,16 @@ final class RecentsViewController: UIViewController, UITableViewDataSource, UITa
         navigationBar.pinToTop(in: view)
 
         if #available(iOS 26.0, *) {
-            tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+            tableView.snp.makeConstraints { make in
+                make.edges.equalToSuperview()
+            }
             tableView.contentInset.top = NavigationBar.homeTitleBarHeight
             tableView.verticalScrollIndicatorInsets.top = NavigationBar.homeTitleBarHeight
             navigationBar.attachScrollView(tableView)
         } else {
-            tableView.snp.makeConstraints {
-                $0.top.equalTo(navigationBar.snp.bottom)
-                $0.leading.trailing.bottom.equalToSuperview()
+            tableView.snp.makeConstraints { make in
+                make.top.equalTo(navigationBar.snp.bottom)
+                make.leading.trailing.bottom.equalToSuperview()
             }
         }
     }
@@ -345,15 +347,15 @@ private final class RecentMessageEditorViewController: UIViewController, UITextV
         let stack = UIStackView(arrangedSubviews: [speakerControl, textView, original, restore])
         stack.axis = .vertical
         stack.spacing = 16
-        stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -12),
-            textView.heightAnchor.constraint(equalTo: original.heightAnchor, multiplier: 1.5),
-        ])
+        stack.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(20)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-12)
+        }
+        textView.snp.makeConstraints { make in
+            make.height.equalTo(original).multipliedBy(1.5)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {

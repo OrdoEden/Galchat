@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 
 /// 一组"标题 + 输入框"的配置行。
 final class ConfigFieldView: UIView {
@@ -31,14 +32,10 @@ final class ConfigFieldView: UIView {
         let stack = UIStackView(arrangedSubviews: [titleLabel, textField])
         stack.axis = .vertical
         stack.spacing = 6
-        stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
     }
 
     @available(*, unavailable)
@@ -107,14 +104,10 @@ final class StepperRowView: UIView {
         let stack = UIStackView(arrangedSubviews: [row, noteLabel])
         stack.axis = .vertical
         stack.spacing = 4
-        stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
         accessibilityElements = [stepper, noteLabel]
         stepper.accessibilityLabel = title
     }

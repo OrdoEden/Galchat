@@ -34,7 +34,9 @@ final class ContactsViewController: UIViewController, UITableViewDataSource, UIT
         navigationBar.onSecondaryButtonTapped = { [weak self] in self?.addContact() }
         navigationBar.pinToTop(in: view)
         if #available(iOS 26.0, *) {
-            tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+            tableView.snp.makeConstraints { make in
+                make.edges.equalToSuperview()
+            }
             tableView.contentInset.top = NavigationBar.homeTitleBarHeight
             tableView.verticalScrollIndicatorInsets.top = NavigationBar.homeTitleBarHeight
             navigationBar.attachScrollView(tableView)

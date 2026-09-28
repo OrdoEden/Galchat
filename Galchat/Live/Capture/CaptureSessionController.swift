@@ -19,7 +19,17 @@ final class CaptureSessionController {
     var state: VisynBroadcastState { capture?.state ?? .stopped }
     var isPictureInPictureActive: Bool { capture?.isPictureInPictureActive == true }
     var contentSize: CGSize {
-        capture?.pictureInPictureContentSize ?? VisynPictureInPictureSize.load() ?? VisynPictureInPictureSize.landscape
+        capture?.pictureInPictureContentSize ?? Self.savedContentSize() ?? VisynPictureInPictureSize.landscape
+    }
+
+    /// 旧版竖屏预设是 90 × 195（9 : 19.5），现在改为 9 : 22；存过旧预设的用户迁到新预设。
+    private static let legacyPortraitSize = CGSize(width: 90, height: 195)
+
+    private static func savedContentSize() -> CGSize? {
+        guard let saved = VisynPictureInPictureSize.load() else { return nil }
+        guard saved == legacyPortraitSize else { return saved }
+        try? VisynPictureInPictureSize.save(VisynPictureInPictureSize.portrait)
+        return VisynPictureInPictureSize.portrait
     }
     var statusDescription: String {
         switch state {

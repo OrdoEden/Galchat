@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 
 /// 判断结果与候选回复的展示，手动分析页和实时会话页共用。
 enum AnalysisPresentation {
@@ -81,14 +82,10 @@ enum AnalysisPresentation {
         let stack = UIStackView(arrangedSubviews: [textLabel, bottomRow])
         stack.axis = .vertical
         stack.spacing = 8
-        stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 14),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -14),
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14)
-        ])
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(14)
+        }
         return container
     }
 

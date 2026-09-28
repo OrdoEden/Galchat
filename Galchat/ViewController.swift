@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 import VisynCapture
 import VisynTransport
 
@@ -139,7 +140,6 @@ final class ViewController: UIViewController {
 
         let scrollView = UIScrollView()
         scrollView.keyboardDismissMode = .interactive
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         let stack = UIStackView(arrangedSubviews: [
             subtitleLabel, statusLabel, frameLabel, liveStatusLabel,
@@ -151,18 +151,16 @@ final class ViewController: UIViewController {
         stack.setCustomSpacing(8, after: statusLabel)
         stack.setCustomSpacing(8, after: frameLabel)
         stack.setCustomSpacing(28, after: liveStatusLabel)
-        stack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(stack)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 28),
-            stack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -28),
-            stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -24),
-            stack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -48)
-        ])
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+            make.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+        }
+        stack.snp.makeConstraints { make in
+            make.top.bottom.equalTo(scrollView.contentLayoutGuide).inset(28)
+            make.leading.trailing.equalTo(scrollView.contentLayoutGuide).inset(24)
+            make.width.equalTo(scrollView.frameLayoutGuide).offset(-48)
+        }
     }
 }

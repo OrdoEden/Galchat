@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 
 final class OnbViewController: UIViewController {
     private static let completionKey = "Galchat.onboarding.completed"
@@ -87,25 +88,27 @@ final class OnbViewController: UIViewController {
         footer.spacing = 12
         view.addSubview(footer)
         view.addSubview(skipButton)
-        [pager.view!, footer, skipButton].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
-        NSLayoutConstraint.activate([
-            skipButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
-            skipButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            skipButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            pager.view.topAnchor.constraint(equalTo: skipButton.bottomAnchor),
-            pager.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            pager.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            pager.view.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -12),
-            footer.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
-            footer.widthAnchor.constraint(lessThanOrEqualToConstant: 520),
-            footer.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-            footer.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-            footer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            continueButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 52)
-        ])
-        let preferredWidth = footer.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, constant: -48)
-        preferredWidth.priority = .defaultHigh
-        preferredWidth.isActive = true
+        skipButton.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(4)
+            make.trailing.equalTo(view.safeAreaLayoutGuide.snp.trailing).offset(-20)
+            make.height.greaterThanOrEqualTo(44)
+        }
+        pager.view.snp.makeConstraints { make in
+            make.top.equalTo(skipButton.snp.bottom)
+            make.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            make.bottom.equalTo(footer.snp.top).offset(-12)
+        }
+        footer.snp.makeConstraints { make in
+            make.centerX.equalTo(view.safeAreaLayoutGuide)
+            make.width.lessThanOrEqualTo(520)
+            make.width.equalTo(view.safeAreaLayoutGuide).offset(-48).priority(.high)
+            make.leading.greaterThanOrEqualTo(view.safeAreaLayoutGuide.snp.leading).offset(24)
+            make.trailing.lessThanOrEqualTo(view.safeAreaLayoutGuide.snp.trailing).offset(-24)
+            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-16)
+        }
+        continueButton.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(52)
+        }
         updateControls()
     }
 
@@ -249,31 +252,26 @@ private final class OnbPageViewController: UIViewController {
         view.addSubview(scroll)
         scroll.addSubview(content)
         content.addSubview(stack)
-        [scroll, content, stack].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
-        NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: view.topAnchor),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            content.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
-            content.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
-            content.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
-            content.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
-            content.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor),
-            content.heightAnchor.constraint(greaterThanOrEqualTo: scroll.frameLayoutGuide.heightAnchor),
-            stack.centerXAnchor.constraint(equalTo: content.centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: content.centerYAnchor),
-            stack.topAnchor.constraint(greaterThanOrEqualTo: content.topAnchor, constant: 24),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -24),
-            stack.widthAnchor.constraint(lessThanOrEqualToConstant: 520),
-            stack.leadingAnchor.constraint(greaterThanOrEqualTo: content.leadingAnchor, constant: 28),
-            stack.trailingAnchor.constraint(lessThanOrEqualTo: content.trailingAnchor, constant: -28),
-            symbolView.heightAnchor.constraint(equalToConstant: 120)
-        ])
-        let preferredHeight = content.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor)
-        preferredHeight.priority = .defaultLow
-        let preferredWidth = stack.widthAnchor.constraint(equalTo: content.widthAnchor, constant: -56)
-        preferredWidth.priority = .defaultHigh
-        NSLayoutConstraint.activate([preferredHeight, preferredWidth])
+        scroll.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        content.snp.makeConstraints { make in
+            make.edges.equalTo(scroll.contentLayoutGuide)
+            make.width.equalTo(scroll.frameLayoutGuide)
+            make.height.greaterThanOrEqualTo(scroll.frameLayoutGuide)
+            make.height.equalTo(scroll.frameLayoutGuide).priority(.low)
+        }
+        stack.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.top.greaterThanOrEqualToSuperview().offset(24)
+            make.bottom.lessThanOrEqualToSuperview().offset(-24)
+            make.width.lessThanOrEqualTo(520)
+            make.width.equalToSuperview().offset(-56).priority(.high)
+            make.leading.greaterThanOrEqualToSuperview().offset(28)
+            make.trailing.lessThanOrEqualToSuperview().offset(-28)
+        }
+        symbolView.snp.makeConstraints { make in
+            make.height.equalTo(120)
+        }
     }
 }

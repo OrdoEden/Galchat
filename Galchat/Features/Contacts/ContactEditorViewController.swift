@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 import PhotosUI
 import ImageIO
 import UniformTypeIdentifiers
@@ -20,23 +21,20 @@ class ProfileEditorViewController: UIViewController, UIAdaptivePresentationContr
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(saveChanges))
         let scroll = UIScrollView()
         scroll.keyboardDismissMode = .interactive
-        scroll.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scroll)
         stack.axis = .vertical
         stack.spacing = 12
-        stack.translatesAutoresizingMaskIntoConstraints = false
         scroll.addSubview(stack)
-        NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 24),
-            stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -24),
-            stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -40)
-        ])
+        scroll.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+        }
+        stack.snp.makeConstraints { make in
+            make.top.bottom.equalTo(scroll.contentLayoutGuide).inset(24)
+            make.leading.trailing.equalTo(scroll.contentLayoutGuide).inset(20)
+            make.width.equalTo(scroll.frameLayoutGuide).offset(-40)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -61,7 +59,9 @@ class ProfileEditorViewController: UIViewController, UIAdaptivePresentationContr
         field.isScrollEnabled = false
         field.delegate = self
         field.accessibilityLabel = label
-        field.heightAnchor.constraint(greaterThanOrEqualToConstant: CGFloat(lines * 24 + 24)).isActive = true
+        field.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(lines * 24 + 24)
+        }
         stack.addArrangedSubview(field)
         stack.setCustomSpacing(24, after: field)
         return field
@@ -119,7 +119,9 @@ final class ContactEditorViewController: ProfileEditorViewController, PHPickerVi
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        avatarButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 72).isActive = true
+        avatarButton.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(72)
+        }
         avatarButton.addTarget(self, action: #selector(chooseAvatar), for: .touchUpInside)
         stack.addArrangedSubview(avatarButton)
         updateAvatar()

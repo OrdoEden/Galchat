@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 
 /// 手动分析页：粘贴聊天文本 → Judge 判断 → Reply 生成 3 条 → Judge 排序。
 ///
@@ -178,16 +179,16 @@ final class AnalysisViewController: UIViewController {
         chatInputView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
         chatInputView.accessibilityLabel = "聊天文本"
         chatInputView.delegate = self
-        chatInputView.translatesAutoresizingMaskIntoConstraints = false
-        chatInputView.heightAnchor.constraint(equalToConstant: 180).isActive = true
+        chatInputView.snp.makeConstraints { make in
+            make.height.equalTo(180)
+        }
 
-        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         chatInputView.addSubview(placeholderLabel)
-        NSLayoutConstraint.activate([
-            placeholderLabel.topAnchor.constraint(equalTo: chatInputView.topAnchor, constant: 14),
-            placeholderLabel.leadingAnchor.constraint(equalTo: chatInputView.leadingAnchor, constant: 12),
-            placeholderLabel.trailingAnchor.constraint(equalTo: chatInputView.trailingAnchor, constant: -12)
-        ])
+        placeholderLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(14)
+            make.leading.equalToSuperview().offset(12)
+            make.trailing.equalToSuperview().offset(-12)
+        }
 
         runButton.configuration?.title = "开始分析"
         runButton.configuration?.image = UIImage(systemName: "sparkles")
@@ -221,24 +222,22 @@ final class AnalysisViewController: UIViewController {
         stack.axis = .vertical
         stack.spacing = 14
         stack.setCustomSpacing(24, after: statusLabel)
-        stack.translatesAutoresizingMaskIntoConstraints = false
 
         let scrollView = UIScrollView()
         scrollView.keyboardDismissMode = .interactive
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         scrollView.addSubview(stack)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -32),
-            stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -20),
-            stack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -40)
-        ])
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview()
+        }
+        stack.snp.makeConstraints { make in
+            make.top.equalTo(scrollView.contentLayoutGuide).offset(20)
+            make.bottom.equalTo(scrollView.contentLayoutGuide).offset(-32)
+            make.leading.trailing.equalTo(scrollView.contentLayoutGuide).inset(20)
+            make.width.equalTo(scrollView.frameLayoutGuide).offset(-40)
+        }
     }
 }
 

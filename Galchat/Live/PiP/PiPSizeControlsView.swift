@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 import VisynCapture
 
 @MainActor
@@ -10,7 +11,7 @@ final class PiPSizeControlsView: UIView {
         didSet { updateEnabledState() }
     }
 
-    // 比例预设统一由 Visyn 提供：横屏长条与竖屏 9 : 19.5，不提供方形。
+    // 比例预设统一由 Visyn 提供：横屏长条与竖屏 9 : 22，不提供方形。
     private let presets = UISegmentedControl(items: VisynPictureInPictureSize.presets.map(\.title))
     private let presetSizes = VisynPictureInPictureSize.presets.map(\.size)
     private let routeControl = UISegmentedControl(items: VisynPictureInPictureRoute.presets.map(\.title))
@@ -70,18 +71,15 @@ final class PiPSizeControlsView: UIView {
                                                    routeControl, inputError, hint])
         stack.axis = .vertical
         stack.spacing = 10
-        stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            presets.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            routeControl.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            widthField.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            heightField.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
-        ])
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        [presets, routeControl, widthField, heightField].forEach { control in
+            control.snp.makeConstraints { make in
+                make.height.greaterThanOrEqualTo(44)
+            }
+        }
         setAppliedSize(VisynPictureInPictureSize.landscape)
         setRoute(VisynPictureInPictureRoute.load() ?? .sampleBuffer)
         updateEnabledState()
@@ -132,7 +130,7 @@ final class PiPSizeControlsView: UIView {
         onApply?(CGSize(width: width, height: height))
     }
 
-    /// 以短边为 1 描述形状，例如 90 × 195 → “竖向 1 : 2.17”。
+    /// 以短边为 1 描述形状，例如 90 × 220 → “竖向 1 : 2.44”。
     private static func ratioDescription(_ size: CGSize) -> String {
         guard size.width > 0, size.height > 0 else { return "" }
         let long = Double(max(size.width, size.height) / min(size.width, size.height))

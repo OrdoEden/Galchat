@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 import Synapse
 
 /// BYOK 配置页：三路 provider / baseURL / model / key，每路一个连通性测试。
@@ -259,23 +260,21 @@ final class SettingsViewController: UIViewController {
         stack.setCustomSpacing(24, after: visionFields)
         stack.setCustomSpacing(24, after: contextRow)
         stack.setCustomSpacing(24, after: ladderRow)
-        stack.translatesAutoresizingMaskIntoConstraints = false
 
         let scrollView = UIScrollView()
         scrollView.keyboardDismissMode = .interactive
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         scrollView.addSubview(stack)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -32),
-            stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -20),
-            stack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -40)
-        ])
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview()
+        }
+        stack.snp.makeConstraints { make in
+            make.top.equalTo(scrollView.contentLayoutGuide).offset(20)
+            make.bottom.equalTo(scrollView.contentLayoutGuide).offset(-32)
+            make.leading.trailing.equalTo(scrollView.contentLayoutGuide).inset(20)
+            make.width.equalTo(scrollView.frameLayoutGuide).offset(-40)
+        }
     }
 }
