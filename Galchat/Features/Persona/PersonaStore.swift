@@ -11,6 +11,18 @@ final class PersonaStore {
         var activeID: String
     }
 
+    /// 人格的来源：随 App 附带、从人格库下载，或本机新建/导入/编辑过。只有前两种会随人格库自动更新。
+    enum Source: String, Codable, Sendable {
+        case bundled, catalog, local
+    }
+
+    /// 每个人格的来源，以及远程下架名单（标识统一小写）。
+    private struct Registry: Codable {
+        var schemaVersion = 1
+        var sources: [String: Source] = [:]
+        var revoked: [String: String] = [:]
+    }
+
     private struct LegacyDocument: Decodable {
         var schemaVersion: Int
         var activeID: String
@@ -22,9 +34,13 @@ final class PersonaStore {
     private(set) var lastError: String?
     private var loadError: String?
     private var directory: URL?
+    private var registry = Registry()
+    /// 因远程下架被移除、还没告诉用户的人格名称。
+    private var revokedNotice: [String] = []
     var prompt: String {
         guard loadError == nil else { return "" }
-        return profiles.first(where: { $0.id == activeID })?.prompt ?? ""
+        guard let profile = profiles.first(where: { $0.id == activeID }), profile.sendsPrompt else { return "" }
+        return profile.prompt
     }
     var replyTransform: PersonaPackage.ReplyTransform? {
         guard loadError == nil else { return nil }
@@ -56,6 +72,19 @@ final class PersonaStore {
             profiles = sorted(loaded)
             // 删除文件后即使选择写入中断，也只会回到“不使用人格”。
             activeID = profiles.contains(where: { $0.id == selection.activeID }) ? selection.activeID : ""
+            let registryURL = directory.appendingPathComponent("registry.json")
+            if let data = try? Data(contentsOf: registryURL),
+               let decoded = try? JSONDecoder().decode(Registry.self, from: data), decoded.schemaVersion == 1 {
+                registry = decoded
+            } else {
+                // 早于来源记录的安装：与附带版本完全一致的算作附带人格，其余按本机修改处理，避免覆盖用户改动。
+                for profile in profiles {
+                    registry.sources[profile.id] = bundledPackage(id: profile.id).map { Self.sameContent($0, profile) } == true
+                        ? .bundled : .local
+                }
+                try? write(registry, to: registryURL)
+            }
+            upgradeBundledPackages(in: directory)
         } catch {
             loadError = "人格文件未能读取，原文件已保留。\(error.localizedDescription)"
             lastError = loadError
@@ -70,8 +99,39 @@ final class PersonaStore {
         notify()
     }
 
-    func save(_ package: PersonaPackage) throws {
+    func source(of id: String) -> Source { registry.sources[id] ?? .local }
+
+    func isRevoked(id: String) -> Bool { registry.revoked[id.lowercased()] != nil }
+
+    /// 取出并清空“已下架移除”的提示名单。
+    func takeRevokedNotice() -> [String] {
+        defer { revokedNotice = [] }
+        return revokedNotice
+    }
+
+    /// 应用人格库的下架名单：删除本机同标识的人格（包括改过的），并记住名单，之后拒绝再次导入。
+    /// 名单里去掉的标识会恢复可导入，但已删除的人格不会自动装回。
+    func applyRevocations(_ revoked: [String: String]) {
+        guard loadError == nil, let directory else { return }
+        registry.revoked = revoked.reduce(into: [:]) { $0[$1.key.lowercased()] = $1.value }
+        var removed: [String] = []
+        for profile in profiles where isRevoked(id: profile.id) {
+            if activeID == profile.id { try? select(id: "") }
+            guard (try? FileManager.default.removeItem(at: packageURL(id: profile.id, in: directory))) != nil else { continue }
+            profiles.removeAll { $0.id == profile.id }
+            registry.sources.removeValue(forKey: profile.id)
+            removed.append(profile.manifest.name)
+        }
+        saveRegistry()
+        if !removed.isEmpty {
+            revokedNotice += removed
+            notify()
+        }
+    }
+
+    func save(_ package: PersonaPackage, source: Source = .local) throws {
         let directory = try writableDirectory()
+        guard !isRevoked(id: package.id) else { throw failure("这个人格已经下架，不能再导入或保存。") }
         var cleaned = package
         cleaned.manifest.name = cleaned.manifest.name.trimmingCharacters(in: .whitespacesAndNewlines)
         cleaned.manifest.summary = cleaned.manifest.summary.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -83,6 +143,8 @@ final class PersonaStore {
         profiles.removeAll { $0.id == cleaned.id }
         profiles.append(cleaned)
         profiles = sorted(profiles)
+        registry.sources[cleaned.id] = source
+        saveRegistry()
         notify()
     }
 
@@ -93,6 +155,8 @@ final class PersonaStore {
         if activeID == id { try select(id: "") }
         try FileManager.default.removeItem(at: packageURL(id: id, in: directory))
         profiles.removeAll { $0.id == id }
+        registry.sources.removeValue(forKey: id)
+        saveRegistry()
         notify()
     }
 
@@ -175,7 +239,42 @@ final class PersonaStore {
             try write(package, to: packageURL(id: package.id, in: staging))
         }
         try write(Selection(activeID: selected), to: staging.appendingPathComponent("selection.json"))
+        var sources = Registry()
+        for package in packages {
+            sources.sources[package.id] = seeds.contains { $0.id == package.id && Self.sameContent($0, package) } ? .bundled : .local
+        }
+        try write(sources, to: staging.appendingPathComponent("registry.json"))
         try FileManager.default.moveItem(at: staging, to: directory)
+    }
+
+    /// App 更新带来更高版本的附带人格时，替换本机未改动过的旧版本（改过的记为本机人格，不会走到这里）。
+    private func upgradeBundledPackages(in directory: URL) {
+        for (index, profile) in profiles.enumerated() where source(of: profile.id) == .bundled {
+            guard let bundled = bundledPackage(id: profile.id),
+                  PersonaPackage.isVersion(bundled.manifest.version, newerThan: profile.manifest.version),
+                  (try? bundled.validate()) != nil,
+                  (try? write(bundled, to: packageURL(id: bundled.id, in: directory))) != nil else { continue }
+            profiles[index] = bundled
+        }
+        profiles = sorted(profiles)
+    }
+
+    private func bundledPackage(id: String) -> PersonaPackage? {
+        guard PersonaPackage.validID(id),
+              let url = Bundle.main.resourceURL?.appendingPathComponent("Personas", isDirectory: true)
+                .appendingPathComponent(id, isDirectory: true) else { return nil }
+        return try? PersonaPackage.read(from: url)
+    }
+
+    private static func sameContent(_ lhs: PersonaPackage, _ rhs: PersonaPackage) -> Bool {
+        lhs.manifest.name == rhs.manifest.name && lhs.manifest.summary == rhs.manifest.summary
+            && lhs.manifest.version == rhs.manifest.version && lhs.files == rhs.files
+    }
+
+    /// 来源与下架名单只影响自动更新和再次导入；写入失败时下次刷新人格库会重建。
+    private func saveRegistry() {
+        guard let directory else { return }
+        try? write(registry, to: directory.appendingPathComponent("registry.json"))
     }
 
     private func packageURL(id: String, in directory: URL) -> URL {

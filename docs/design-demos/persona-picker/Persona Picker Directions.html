@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>人格页三方向</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
+<style>
+/* 假设：立绘统一 3:4 半身像；未生成前用「色调 + 字」诚实占位。粉色取自 GalchatTheme.galchatPink */
+:root{
+  --pink:#F04B7A; --pink-strong:#C13B6A;
+  --page:#F4F1EC; --ink:#1B1A1F; --sub:#6D6A73; --line:#E4E0DA;
+  --phone:#F2F2F7; --card:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --page:#141316; --ink:#F3F1F4; --sub:#A29FA8; --line:#2B2930; --phone:#000; --card:#1C1C1E; --pink:#FF8FB0; }
+}
+:root[data-theme="dark"]{ --page:#141316; --ink:#F3F1F4; --sub:#A29FA8; --line:#2B2930; --phone:#000; --card:#1C1C1E; --pink:#FF8FB0; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--page);color:var(--ink);font-family:-apple-system,"PingFang SC","Hiragino Sans GB",sans-serif;-webkit-font-smoothing:antialiased}
+header.page{max-width:1280px;margin:0 auto;padding:40px 16px 8px}
+header.page h1{font-family:"Noto Serif SC",serif;font-size:32px;font-weight:900;letter-spacing:.02em}
+header.page p{color:var(--sub);font-size:15px;line-height:1.7;margin-top:8px;max-width:720px;text-wrap:pretty}
+.row{max-width:1280px;margin:0 auto;padding:24px 16px 64px;display:flex;flex-wrap:wrap;gap:36px;justify-content:center}
+.col{width:390px;max-width:100%}
+.col h2{font-size:18px;margin:16px 4px 6px}
+.col h2 b{color:var(--pink-strong);margin-right:6px}
+.col p{font-size:14px;line-height:1.7;color:var(--sub);padding:0 4px;text-wrap:pretty}
+
+/* 手机 */
+.phone{position:relative;width:390px;max-width:100%;height:844px;border-radius:48px;background:var(--phone);overflow:hidden;
+  box-shadow:0 0 0 10px #111, 0 30px 60px -20px rgba(0,0,0,.35)}
+.scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:54px 0 120px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:8px 20px 12px}
+.nav h3{font-size:32px;font-weight:800}
+.plus{width:44px;height:44px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:24px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.tabbar{position:absolute;left:14px;right:14px;bottom:24px;height:64px;border-radius:32px;background:color-mix(in oklab,var(--card) 88%,transparent);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-around;font-size:11px;color:var(--sub);box-shadow:0 6px 24px rgba(0,0,0,.08)}
+.tabbar span{display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar span.on{color:var(--pink)}
+.tabbar i{width:20px;height:20px;border:1.8px solid currentColor;border-radius:6px;display:block}
+.tabbar .fab{width:52px;height:52px;border-radius:50%;background:var(--pink-strong);margin-top:-18px}
+
+/* 立绘占位 */
+.art{position:relative;overflow:hidden;background:var(--g);isolation:isolate}
+.art::before{content:attr(data-glyph);position:absolute;right:-6%;bottom:-14%;font-family:"Noto Serif SC",serif;font-weight:900;
+  font-size:var(--gs,150px);line-height:1;color:rgba(255,255,255,.42);z-index:-1}
+.art .ph{position:absolute;left:10px;top:10px;font-size:10px;letter-spacing:.06em;color:rgba(255,255,255,.9);background:rgba(0,0,0,.18);padding:3px 7px;border-radius:99px}
+
+/* ===== A 角色卡网格 ===== */
+.a-none{margin:0 16px 14px;background:var(--card);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.a-none .t{flex:1}
+.a-none b{font-size:15px;display:block}
+.a-none small{font-size:12px;color:var(--sub)}
+.sw{width:50px;height:30px;border-radius:99px;background:#D6D3DA;position:relative;transition:.25s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw.on{background:var(--pink)} .sw.on::after{left:23px}
+.a-head{padding:4px 20px 8px;font-size:13px;color:var(--sub);display:flex;justify-content:space-between}
+.a-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px}
+.a-card{border-radius:20px;overflow:hidden;background:var(--card);cursor:pointer;position:relative;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s;
+  box-shadow:0 0 0 0 var(--pink)}
+.a-card:active{transform:scale(.96)}
+.a-card .art{aspect-ratio:3/4}
+.a-card .cap{position:absolute;left:0;right:0;bottom:0;padding:34px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff}
+.a-card .cap b{font-size:17px;display:block}
+.a-card .cap small{font-size:12px;opacity:.9}
+.a-card.sel{box-shadow:0 0 0 3px var(--pink)}
+.check{position:absolute;right:10px;top:10px;width:26px;height:26px;border-radius:50%;background:var(--pink);color:#fff;font-size:15px;display:grid;place-items:center;
+  transform:scale(0);transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.sel .check{transform:scale(1)}
+.info{position:absolute;right:10px;bottom:10px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.28);color:#fff;font:600 13px/26px Georgia,serif;text-align:center;font-style:italic}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:28px 28px 0 0;padding:10px 20px 40px;transform:translateY(105%);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1);z-index:5;box-shadow:0 -10px 40px rgba(0,0,0,.15)}
+.sheet.open{transform:none}
+.sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 16px}
+.sheet .top{display:flex;gap:14px;align-items:center}
+.sheet .top .art{width:72px;height:96px;border-radius:14px;--gs:70px;flex:none}
+.sheet h4{font-size:20px}
+.sheet p{font-size:14px;line-height:1.7;color:var(--sub);margin:14px 0 18px}
+.btns{display:flex;gap:10px}
+.btn{flex:1;height:48px;border-radius:14px;border:0;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.pri{background:var(--pink);color:#fff}
+.btn.sec{background:var(--phone);color:var(--ink)}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.3s;z-index:4}
+.scrim.open{opacity:1;pointer-events:auto}
+
+/* ===== B 走马灯 ===== */
+.b-strip{display:flex;gap:10px;padding:0 20px 14px;overflow-x:auto;scrollbar-width:none}
+.b-strip::-webkit-scrollbar{display:none}
+.b-dot{flex:none;width:52px;text-align:center;cursor:pointer;font-size:11px;color:var(--sub)}
+.b-dot .art{width:52px;height:52px;border-radius:50%;--gs:40px;margin-bottom:4px;box-shadow:0 0 0 2px transparent;transition:.2s}
+.b-dot .art::before{right:8px;bottom:4px}
+.b-dot.none .art{background:var(--card);display:grid;place-items:center;color:var(--sub);font-size:20px}
+.b-dot.cur{color:var(--ink);font-weight:600}
+.b-dot.cur .art{box-shadow:0 0 0 2px var(--phone),0 0 0 4px var(--ink)}
+.b-dot .act{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--pink);margin-left:2px;vertical-align:1px;visibility:hidden}
+.b-dot.using .act{visibility:visible}
+.b-car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 65px 14px;gap:0;scrollbar-width:none}
+.b-car::-webkit-scrollbar{display:none}
+.b-slide{flex:none;width:260px;scroll-snap-align:center;display:flex;justify-content:center}
+.b-slide .art{width:252px;aspect-ratio:3/4;border-radius:26px;--gs:230px;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s;transform:scale(.86);opacity:.55;
+  box-shadow:0 20px 40px -18px rgba(0,0,0,.4)}
+.b-slide.cur .art{transform:scale(1);opacity:1}
+.b-slide .art .using{position:absolute;left:12px;bottom:12px;background:var(--pink);color:#fff;font-size:12px;padding:4px 10px;border-radius:99px;display:none}
+.b-slide.using .art .using{display:block}
+.b-body{padding:4px 24px 0;text-align:center}
+.b-body h4{font-size:24px;font-family:"Noto Serif SC",serif;font-weight:900}
+.b-body p{font-size:14px;line-height:1.7;color:var(--sub);margin:8px 0 14px;min-height:72px;text-wrap:pretty}
+.b-body .btn{width:100%;flex:none}
+.b-body .btn.done{background:var(--card);color:var(--pink);box-shadow:inset 0 0 0 1.5px var(--pink)}
+.b-body .edit{font-size:14px;color:var(--sub);margin-top:12px;display:inline-block}
+
+/* ===== C 回复预览瀑布 ===== */
+.c-ctx{margin:0 16px 12px;background:var(--card);border-radius:18px;padding:12px 14px}
+.c-ctx small{font-size:12px;color:var(--sub)}
+.c-ctx .in{margin-top:8px;display:inline-block;background:var(--phone);padding:8px 12px;border-radius:16px 16px 16px 4px;font-size:15px}
+.c-chips{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.chip{font-size:12px;padding:5px 10px;border-radius:99px;background:var(--phone);color:var(--sub);cursor:pointer;border:0;font-family:inherit}
+.chip.on{background:var(--ink);color:var(--card)}
+.c-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;align-items:start}
+.c-col{display:flex;flex-direction:column;gap:10px}
+.c-card{background:var(--card);border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 0 0 0 var(--pink)}
+.c-card:active{transform:scale(.97)}
+.c-card.sel{box-shadow:0 0 0 2.5px var(--pink)}
+.c-card .art{--gs:120px}
+.c-card .meta{padding:10px 12px 12px}
+.c-card .meta b{font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.c-card .meta b em{font-style:normal;font-size:11px;color:#fff;background:var(--pink);padding:2px 7px;border-radius:99px;visibility:hidden}
+.c-card.sel .meta b em{visibility:visible}
+.bub{margin-top:8px;font-size:13px;line-height:1.55;background:var(--phone);padding:8px 10px;border-radius:14px 14px 4px 14px;transition:opacity .2s}
+.c-card.sel .bub{background:color-mix(in oklab,var(--pink) 16%,var(--card))}
+.c-off{margin:14px 16px 0;text-align:center;font-size:13px;color:var(--sub);padding:12px;border:1.5px dashed var(--line);border-radius:16px;cursor:pointer}
+.c-off.sel{border-color:var(--pink);color:var(--pink)}
+</style>
+</head>
+<body>
+<header class="page">
+  <h1>人格页 · 三个方向</h1>
+  <p>三台手机都能点：选人设、开详情、切换示例。彩色块里的大字是<strong>立绘占位</strong>，每个人格一种色调，等 AI 立绘生成后会替换成统一画风的 3:4 半身像。</p>
+</header>
+<div class="row">
+  <div class="col"><div class="phone" id="A"></div>
+    <h2><b>A</b>角色卡网格</h2>
+    <p>2 列 3:4 卡片，一进来就能看到 4 张完整立绘。点卡片直接选用（粉色描边加对勾），点 ⓘ 弹出详情和编辑。「不使用人格」做成顶部开关。UIKit 用 CollectionView 的 2 列 compositional layout 就能实现，改造成本最低。</p></div>
+  <div class="col"><div class="phone" id="B"></div>
+    <h2><b>B</b>走马灯 + 头像条</h2>
+    <p>顶部头像条一次露出全部人格（满足「一眼看到 4 个以上」），中间是会缩放、吸附居中的大立绘走马灯，下方写简介，按钮确认后才生效。仪式感最强，但一次只能细看一个。</p></div>
+  <div class="col"><div class="phone" id="C"></div>
+    <h2><b>C</b>回复预览瀑布流</h2>
+    <p>每张卡除了立绘，还直接展示「这个人设会怎么回」。顶部可以切换示例场景，气泡跟着变。卡片高度交错排列，首屏能看到 4 张。最能体现产品价值，内容密度也最高。</p></div>
+</div>
+
+<script>
+const P=[
+ {id:"bu-cang-bu-rao",n:"不藏不绕",g:"直",tag:"暖萌 · 直球",c:"linear-gradient(160deg,#FFB38A,#F0708A)",
+  s:"平时暖乎乎、有网感，给足情绪价值；对方想听真话时，第一句就是结论，不绕弯子。",
+  r:["累了就先躺平，我在，想说话了随时戳我～","有空！你定地方，我负责准时出现","有点，因为你答应的事又忘了。说开就好"]},
+ {id:"jiangnan-shenqing",n:"江南深情",g:"情",tag:"松弛 · 认真",c:"linear-gradient(160deg,#8CC7BE,#3E7F86)",
+  s:"嘴上松弛，心里认真。有主见，会自嘲，敢靠近，也懂得给人留余地。",
+  r:["那就不说，我陪你安静待会儿，也挺好","有，专门给你留的。喝茶还是随便走走？","没生气，就是在意。你哄一句我就好了"]},
+ {id:"wenrou-yougu",n:"温柔有骨",g:"柔",tag:"温柔 · 有原则",c:"linear-gradient(160deg,#D9C6F0,#9C86C9)",
+  s:"说话软、先接住情绪，不爱被捧也不让人破费；碰到原则问题会收起甜度，平静坚定地说不。",
+  r:["辛苦啦，先喝口水，不用急着回我","有的，不过别订太贵的地方，简单点就好","有一点。不是闹脾气，这件事我希望你认真对待"]},
+ {id:"shengong-xuyu",n:"深宫絮语",g:"宫",tag:"端庄 · 话里有话",c:"linear-gradient(160deg,#E7B45C,#B8412F)",
+  s:"带着古装宫廷腔说话：端庄含蓄、话里有话，偶尔一本正经地摆谱逗人，正事照样说清楚。",
+  r:["既是乏了，便早些歇下，明日再叙不迟","周末本宫恰好得闲，你可要好生安排","本宫岂会与你置气？……只是记下了"]},
+ {id:"chouxiang-lezi",n:"抽象乐子人",g:"乐",tag:"嘴贫 · 梗多",c:"linear-gradient(160deg,#C8E86A,#3FA66B)",
+  s:"冲浪多年的老网民：嘴贫、梗多、一句到位，被阴阳也能干净利落地怼回去，朋友难过时立刻收梗。",
+  r:["懂，电量 1% 进入省电模式，已为你静音","有，但钱包没空，AA 可以谈","生气？我只是在后台默默更新小本本"]},
+ {id:"yuangu-juren",n:"远古巨人",g:"恰",tag:"恰",c:"linear-gradient(160deg,#9FB8D6,#4E5E78)",
+  s:"恰恰恰恰恰恰恰恰恰恰恰恰恰恰，恰恰恰恰恰。恰恰恰恰恰恰恰恰恰恰恰：恰恰恰恰恰恰恰“恰”，恰恰恰恰恰恰恰恰恰恰恰。",
+  r:["恰恰，恰恰恰恰。","恰？恰恰，恰恰恰！","恰恰恰……恰。"]}
+];
+const art=(p,extra="")=>`<div class="art" style="--g:${p.c}" data-glyph="${p.g}">${extra}</div>`;
+const shell=inner=>`<div class="scroll"><div class="nav"><h3>人格</h3><div class="plus">+</div></div>${inner}</div>
+ <div class="tabbar"><span><i></i>最近</span><span><i></i>联系</span><span class="fab"></span><span class="on"><i style="border-radius:50%"></i>人格</span><span><i></i>设置</span></div>`;
+
+/* ---------- A ---------- */
+(()=>{
+  const el=document.getElementById("A"); let active="bu-cang-bu-rao", sheet=null;
+  function render(){
+    el.innerHTML=shell(`
+      <div class="a-none" data-none><div class="t"><b>使用人格</b><small>${active?"回复建议会带上所选人设的语气":"关闭时按聊天内容给出回复建议"}</small></div><div class="sw ${active?"on":""}"></div></div>
+      <div class="a-head"><span>我的人格 · ${P.length}</span><span>长按查看详情</span></div>
+      <div class="a-grid">${P.map(p=>`<div class="a-card ${p.id===active?"sel":""}" data-id="${p.id}">
+        ${art(p,'<span class="ph">立绘待生成</span>')}<div class="cap"><b>${p.n}</b><small>${p.tag}</small></div>
+        <div class="check">✓</div><div class="info" data-info="${p.id}">i</div></div>`).join("")}</div>`)
+      +`<div class="scrim"></div><div class="sheet"></div>`;
+    el.querySelector("[data-none]").onclick=()=>{active=active?"":"bu-cang-bu-rao";render()};
+    el.querySelectorAll(".a-card").forEach(c=>{
+      c.onclick=e=>{ if(e.target.dataset.info) return openSheet(e.target.dataset.info); active=c.dataset.id; render(); };
+      let t; c.onpointerdown=()=>t=setTimeout(()=>openSheet(c.dataset.id),450); c.onpointerup=c.onpointerleave=()=>clearTimeout(t);
+    });
+    el.querySelector(".scrim").onclick=closeSheet;
+  }
+  function openSheet(id){
+    const p=P.find(x=>x.id===id), s=el.querySelector(".sheet");
+    s.innerHTML=`<div class="grab"></div><div class="top">${art(p)}<div><h4>${p.n}</h4><small style="color:var(--sub)">${p.tag}</small></div></div>
+      <p>${p.s}</p><div class="btns"><button class="btn sec">编辑</button><button class="btn pri">${p.id===active?"使用中":"使用这个人格"}</button></div>`;
+    s.querySelector(".pri").onclick=()=>{active=id;closeSheet();setTimeout(render,300)};
+    s.querySelector(".sec").onclick=closeSheet;
+    requestAnimationFrame(()=>{s.classList.add("open");el.querySelector(".scrim").classList.add("open")});
+  }
+  function closeSheet(){el.querySelector(".sheet").classList.remove("open");el.querySelector(".scrim").classList.remove("open")}
+  render();
+})();
+
+/* ---------- B ---------- */
+(()=>{
+  const el=document.getElementById("B"); let active="bu-cang-bu-rao", cur=0;
+  el.innerHTML=shell(`
+    <div class="b-strip">${P.map((p,i)=>`<div class="b-dot" data-i="${i}">${art(p)}${p.n.slice(0,2)}<span class="act"></span></div>`).join("")}
+      <div class="b-dot none" data-i="-1"><div class="art">∅</div>不使用<span class="act"></span></div></div>
+    <div class="b-car">${P.map((p,i)=>`<div class="b-slide" data-i="${i}">${art(p,'<span class="ph">立绘待生成</span><span class="using">使用中</span>')}</div>`).join("")}</div>
+    <div class="b-body"><h4></h4><p></p><button class="btn pri"></button><br><span class="edit">查看完整说明 / 编辑</span></div>`);
+  const car=el.querySelector(".b-car"), slides=[...el.querySelectorAll(".b-slide")], dots=[...el.querySelectorAll(".b-dot")];
+  function sync(){
+    slides.forEach((s,i)=>{s.classList.toggle("cur",i===cur);s.classList.toggle("using",P[i].id===active)});
+    dots.forEach(d=>{const i=+d.dataset.i;d.classList.toggle("cur",i===cur);d.classList.toggle("using",i<0?!active:P[i].id===active)});
+    const p=P[cur]; el.querySelector("h4").textContent=p.n; el.querySelector(".b-body p").textContent=p.s;
+    const b=el.querySelector(".b-body .btn"); const on=p.id===active;
+    b.textContent=on?"✓ 正在使用":"使用这个人格"; b.className="btn "+(on?"done":"pri");
+  }
+  car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/260); if(i!==cur&&P[i]){cur=i;sync()}},{passive:true});
+  dots.forEach(d=>d.onclick=()=>{const i=+d.dataset.i; if(i<0){active="";sync();return} car.scrollTo({left:i*260,behavior:"smooth"})});
+  slides.forEach(s=>s.onclick=()=>car.scrollTo({left:+s.dataset.i*260,behavior:"smooth"}));
+  el.querySelector(".b-body .btn").onclick=()=>{active=P[cur].id;sync()};
+  sync();
+})();
+
+/* ---------- C ---------- */
+(()=>{
+  const el=document.getElementById("C"); let active="bu-cang-bu-rao", sc=0;
+  const SC=["今天好累，不想说话","周末有空吗？","你是不是生气了"];
+  const H=["4/5","3/4","1/1","3/4","4/5","1/1"];
+  function render(){
+    const card=(p,i)=>`<div class="c-card ${p.id===active?"sel":""}" data-id="${p.id}">
+      <div class="art" style="--g:${p.c};aspect-ratio:${H[i]}" data-glyph="${p.g}"><span class="ph">立绘待生成</span></div>
+      <div class="meta"><b>${p.n}<em>使用中</em></b><div class="bub">${p.r[sc]}</div></div></div>`;
+    const L=[],R=[]; P.forEach((p,i)=>(i%2?R:L).push(card(p,i)));
+    el.innerHTML=shell(`
+      <div class="c-ctx"><small>如果对方说</small><br><span class="in">${SC[sc]}</span>
+        <div class="c-chips">${SC.map((s,i)=>`<button class="chip ${i===sc?"on":""}" data-s="${i}">${s}</button>`).join("")}</div></div>
+      <div class="c-cols"><div class="c-col">${L.join("")}</div><div class="c-col">${R.join("")}</div></div>
+      <div class="c-off ${active?"":"sel"}">${active?"不使用人格，按聊天内容给建议":"✓ 当前不使用人格"}</div>`);
+    el.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{const top=el.querySelector(".scroll").scrollTop;sc=+c.dataset.s;render();el.querySelector(".scroll").scrollTop=top});
+    el.querySelectorAll(".c-card").forEach(c=>c.onclick=()=>{const top=el.querySelector(".scroll").scrollTop;active=c.dataset.id;render();el.querySelector(".scroll").scrollTop=top});
+    el.querySelector(".c-off").onclick=()=>{const top=el.querySelector(".scroll").scrollTop;active="";render();el.querySelector(".scroll").scrollTop=top};
+  }
+  render();
+})();
+</script>
+</body>
+</html>

@@ -2,11 +2,40 @@ import UIKit
 import SnapKit
 import UniformTypeIdentifiers
 
-final class PersonaViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UIDocumentPickerDelegate {
-    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+/// 人格页：顶部头像条一次露出所有人格，中间是可滑动的形象走马灯，下方是简介和“使用”按钮。
+final class PersonaViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate,
+    UIDocumentPickerDelegate {
+    private enum StripItem {
+        case persona(Int)
+        case none
+        case library
+    }
+
+    private let scrollView = UIScrollView()
     private let navigationBar = NavigationBar(frame: .zero)
-    private var hasPositionedTableView = false
+    private lazy var strip: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.itemSize = PersonaAvatarCell.size
+        layout.minimumLineSpacing = 10
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+        return UICollectionView(frame: .zero, collectionViewLayout: layout)
+    }()
+    private let carouselLayout = PersonaCarouselLayout()
+    private lazy var carousel = UICollectionView(frame: .zero, collectionViewLayout: carouselLayout)
+    private let nameLabel = UILabel()
+    private let summaryLabel = UILabel()
+    private let useButton = UIButton(configuration: .filled())
+    private let detailButton = UIButton(configuration: .plain())
+    private let hintLabel = UILabel()
+    private let emptyLabel = UILabel()
+    private let emptyButton = UIButton(configuration: .filled())
+    private var carouselHeight: Constraint?
+    private let selectionFeedback = UISelectionFeedbackGenerator()
+    private var hasPositionedScrollView = false
     private var isImporting = false
+    /// 走马灯当前居中的人格；按标识记录，列表变化后仍能停在同一个人格上。
+    private var focusedID: String?
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -18,19 +47,20 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 90
+        setupContent()
         NotificationCenter.default.addObserver(self, selector: #selector(reload), name: PersonaStore.changed, object: nil)
     }
 
     private func setupNavigationBar() {
         view.backgroundColor = .systemGroupedBackground
-        tableView.dataSource = self
-        tableView.delegate = self
-        view.addSubview(tableView)
+        scrollView.alwaysBounceVertical = true
+        view.addSubview(scrollView)
         navigationBar.setHomeTitle(title ?? "人格")
         navigationBar.setContentColor(.label)
         let menu = UIMenu(children: [
+            UIAction(title: "人格库", image: UIImage(systemName: "arrow.down.circle")) { [weak self] _ in
+                self?.openLibrary()
+            },
             UIAction(title: "新建人格", image: UIImage(systemName: "square.and.pencil")) { [weak self] _ in
                 self?.edit(.new())
             },
@@ -41,98 +71,300 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
         navigationBar.setSecondaryButton(image: UIImage(systemName: "plus"), accessibilityLabel: "添加人格", menu: menu)
         navigationBar.pinToTop(in: view)
         if #available(iOS 26.0, *) {
-            tableView.snp.makeConstraints { make in
+            scrollView.snp.makeConstraints { make in
                 make.edges.equalToSuperview()
             }
-            tableView.contentInset.top = NavigationBar.homeTitleBarHeight
-            tableView.verticalScrollIndicatorInsets.top = NavigationBar.homeTitleBarHeight
-            navigationBar.attachScrollView(tableView)
+            scrollView.contentInset.top = NavigationBar.homeTitleBarHeight
+            scrollView.verticalScrollIndicatorInsets.top = NavigationBar.homeTitleBarHeight
+            navigationBar.attachScrollView(scrollView)
         } else {
-            tableView.snp.makeConstraints { make in
+            scrollView.snp.makeConstraints { make in
                 make.top.equalTo(navigationBar.snp.bottom)
                 make.leading.trailing.bottom.equalToSuperview()
             }
         }
     }
 
+    private func setupContent() {
+        for collectionView in [strip, carousel] {
+            collectionView.backgroundColor = .clear
+            collectionView.showsHorizontalScrollIndicator = false
+            collectionView.dataSource = self
+            collectionView.delegate = self
+        }
+        strip.register(PersonaAvatarCell.self, forCellWithReuseIdentifier: PersonaAvatarCell.reuseID)
+        carousel.register(PersonaCarouselCell.self, forCellWithReuseIdentifier: PersonaCarouselCell.reuseID)
+        carousel.decelerationRate = .fast
+        carousel.clipsToBounds = false
+
+        nameLabel.font = UIFont(descriptor: UIFont.systemFont(ofSize: 26, weight: .heavy).fontDescriptor.withDesign(.serif)
+                                ?? UIFont.systemFont(ofSize: 26, weight: .heavy).fontDescriptor, size: 26)
+        nameLabel.textAlignment = .center
+        nameLabel.accessibilityTraits = .header
+        summaryLabel.font = .systemFont(ofSize: 15)
+        summaryLabel.textColor = .secondaryLabel
+        summaryLabel.textAlignment = .center
+        summaryLabel.numberOfLines = 0
+
+        useButton.configuration?.cornerStyle = .large
+        useButton.configuration?.buttonSize = .large
+        useButton.addAction(UIAction { [weak self] _ in
+            guard let self, let id = self.focusedID else { return }
+            self.select(id: id)
+        }, for: .touchUpInside)
+
+        detailButton.configuration?.title = "查看完整说明 / 编辑"
+        detailButton.configuration?.baseForegroundColor = .secondaryLabel
+        detailButton.addAction(UIAction { [weak self] _ in
+            guard let self, let profile = self.focusedProfile else { return }
+            self.edit(profile)
+        }, for: .touchUpInside)
+
+        hintLabel.font = .systemFont(ofSize: 13)
+        hintLabel.textColor = .secondaryLabel
+        hintLabel.textAlignment = .center
+        hintLabel.numberOfLines = 0
+
+        emptyLabel.text = "还没有人格。可以从人格库下载，也可以新建或导入人格文件。"
+        emptyLabel.font = .systemFont(ofSize: 15)
+        emptyLabel.textColor = .secondaryLabel
+        emptyLabel.textAlignment = .center
+        emptyLabel.numberOfLines = 0
+        emptyButton.configuration?.title = "打开人格库"
+        emptyButton.configuration?.cornerStyle = .large
+        emptyButton.addAction(UIAction { [weak self] _ in self?.openLibrary() }, for: .touchUpInside)
+
+        let details = UIStackView(arrangedSubviews: [nameLabel, summaryLabel, useButton, detailButton, emptyLabel, emptyButton, hintLabel])
+        details.axis = .vertical
+        details.spacing = 10
+        details.setCustomSpacing(18, after: summaryLabel)
+        details.setCustomSpacing(4, after: useButton)
+        details.setCustomSpacing(16, after: emptyLabel)
+
+        scrollView.addSubview(strip)
+        scrollView.addSubview(carousel)
+        scrollView.addSubview(details)
+        strip.snp.makeConstraints { make in
+            make.top.equalTo(scrollView.contentLayoutGuide).offset(8)
+            make.leading.trailing.equalTo(scrollView.frameLayoutGuide)
+            make.height.equalTo(PersonaAvatarCell.size.height)
+        }
+        carousel.snp.makeConstraints { make in
+            make.top.equalTo(strip.snp.bottom).offset(6)
+            make.leading.trailing.equalTo(scrollView.frameLayoutGuide)
+            carouselHeight = make.height.equalTo(420).constraint
+        }
+        details.snp.makeConstraints { make in
+            make.top.equalTo(carousel.snp.bottom).offset(6)
+            make.leading.trailing.equalTo(scrollView.frameLayoutGuide).inset(24)
+            make.bottom.equalTo(scrollView.contentLayoutGuide).inset(24)
+        }
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         reload()
+        ResourceCatalog.shared.refreshIfNeeded()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        showRevokedNoticeIfNeeded()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        guard !hasPositionedTableView, view.window != nil else { return }
-        hasPositionedTableView = true
+        carouselHeight?.update(offset: PersonaCarouselLayout.height(for: view.bounds.width))
+        guard !hasPositionedScrollView, view.window != nil else { return }
+        hasPositionedScrollView = true
         if #available(iOS 26.0, *) {
-            tableView.setContentOffset(CGPoint(x: 0, y: -tableView.adjustedContentInset.top), animated: false)
+            scrollView.setContentOffset(CGPoint(x: 0, y: -scrollView.adjustedContentInset.top), animated: false)
         }
+        scrollCarousel(toFocus: false)
     }
 
-    @objc private func reload() { tableView.reloadData() }
+    // MARK: 数据
 
-    func numberOfSections(in tableView: UITableView) -> Int { 2 }
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        section == 0 ? nil : "我的人格"
-    }
-    func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        guard section == 1 else { return nil }
-        if isImporting { return "正在读取人格…" }
-        return PersonaStore.shared.lastError ?? (PersonaStore.shared.profiles.isEmpty
-            ? "点右上角添加人格，也可以导入下载到本地的人格文件。"
-            : "选中的人格会影响回复建议，点右侧按钮可查看和编辑完整说明。")
-    }
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        section == 0 ? 1 : PersonaStore.shared.profiles.count
+    private var profiles: [PersonaPackage] { PersonaStore.shared.profiles }
+    private var focusedIndex: Int? { profiles.firstIndex { $0.id == focusedID } }
+    private var focusedProfile: PersonaPackage? { focusedIndex.map { profiles[$0] } }
+
+    private var stripItems: [StripItem] {
+        profiles.indices.map { .persona($0) } + [.none, .library]
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
-        let profile = indexPath.section == 0 ? nil : PersonaStore.shared.profiles[indexPath.row]
-        let active = (profile?.id ?? "") == PersonaStore.shared.activeID
-        var content = cell.defaultContentConfiguration()
-        content.text = (profile?.manifest.name ?? "不使用人格") + (active ? " · 使用中" : "")
-        content.secondaryText = profile?.manifest.summary ?? "按当前聊天内容提供回复建议。"
-        content.secondaryTextProperties.numberOfLines = 3
-        content.image = UIImage(systemName: active ? "checkmark.circle.fill" : "circle")
-        content.imageProperties.tintColor = .galchatPink
-        cell.contentConfiguration = content
-        cell.accessoryType = profile == nil ? .none : .detailButton
-        cell.accessibilityHint = profile == nil ? "停止使用人格" : "使用这个人格，详情按钮可编辑"
-        if active { cell.accessibilityTraits.insert(.selected) }
-        return cell
+    @objc private func reload() {
+        if focusedIndex == nil {
+            focusedID = profiles.first(where: { $0.id == PersonaStore.shared.activeID })?.id ?? profiles.first?.id
+        }
+        strip.reloadData()
+        carousel.reloadData()
+        updateDetails()
+        if !carousel.isDragging && !carousel.isDecelerating { scrollCarousel(toFocus: false) }
+        if viewIfLoaded?.window != nil { showRevokedNoticeIfNeeded() }
     }
 
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let id = indexPath.section == 0 ? "" : PersonaStore.shared.profiles[indexPath.row].id
+    private func updateDetails() {
+        let isEmpty = profiles.isEmpty
+        carousel.isHidden = isEmpty
+        [nameLabel, summaryLabel, useButton, detailButton].forEach { $0.isHidden = isEmpty }
+        emptyLabel.isHidden = !isEmpty
+        emptyButton.isHidden = !isEmpty
+        if let profile = focusedProfile {
+            nameLabel.text = profile.manifest.name
+            summaryLabel.text = profile.manifest.summary
+            let isActive = profile.id == PersonaStore.shared.activeID
+            var configuration = isActive ? UIButton.Configuration.tinted() : .filled()
+            configuration.title = isActive ? "正在使用" : "使用这个人格"
+            configuration.image = isActive ? UIImage(systemName: "checkmark") : nil
+            configuration.imagePadding = 6
+            configuration.cornerStyle = .large
+            configuration.buttonSize = .large
+            configuration.baseBackgroundColor = .galchatPink
+            configuration.baseForegroundColor = isActive ? .galchatPink : .white
+            useButton.configuration = configuration
+            useButton.accessibilityTraits = isActive ? [.button, .selected] : .button
+        }
+        let hint: String?
+        if isImporting {
+            hint = "正在读取人格…"
+        } else if let error = PersonaStore.shared.lastError {
+            hint = error
+        } else if PersonaStore.shared.activeID.isEmpty && !isEmpty {
+            hint = "当前不使用人格，回复建议按聊天内容生成。"
+        } else {
+            hint = nil
+        }
+        hintLabel.text = hint
+        hintLabel.isHidden = hint == nil
+    }
+
+    private func setFocus(_ index: Int, animatedStrip: Bool) {
+        guard profiles.indices.contains(index), profiles[index].id != focusedID else { return }
+        focusedID = profiles[index].id
+        selectionFeedback.selectionChanged()
+        strip.reloadData()
+        strip.scrollToItem(at: IndexPath(item: index, section: 0), at: .centeredHorizontally, animated: animatedStrip)
+        updateDetails()
+    }
+
+    private func scrollCarousel(toFocus animated: Bool) {
+        guard let index = focusedIndex, carouselLayout.pageWidth > 0 else { return }
+        carousel.setContentOffset(CGPoint(x: CGFloat(index) * carouselLayout.pageWidth, y: 0), animated: animated)
+    }
+
+    private func select(id: String) {
+        guard id != PersonaStore.shared.activeID else { return }
         do { try PersonaStore.shared.select(id: id) }
         catch { showError("未能切换人格", error: error) }
     }
 
-    func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
-        guard indexPath.section == 1 else { return }
-        edit(PersonaStore.shared.profiles[indexPath.row])
+    private func openLibrary() {
+        present(UINavigationController(rootViewController: PersonaLibraryViewController()), animated: true)
     }
 
-    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard indexPath.section == 1 else { return nil }
-        let profile = PersonaStore.shared.profiles[indexPath.row]
-        let action = UIContextualAction(style: .destructive, title: "删除") { [weak self] _, _, completion in
-            completion(false)
-            guard let self else { return }
-            let message = profile.id == PersonaStore.shared.activeID ? "删除后将不再使用人格。需要保留的话，可以先在编辑页导出。" : "需要保留的话，可以先在编辑页导出。"
-            let alert = UIAlertController(title: "删除“\(profile.manifest.name)”？", message: message, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-            alert.addAction(UIAlertAction(title: "删除", style: .destructive) { [weak self] _ in
-                do { try PersonaStore.shared.delete(id: profile.id) }
-                catch { self?.showError("未能删除", error: error) }
-            })
-            self.present(alert, animated: true)
+    private func showRevokedNoticeIfNeeded() {
+        guard presentedViewController == nil else { return }
+        let names = PersonaStore.shared.takeRevokedNotice()
+        guard !names.isEmpty else { return }
+        let alert = UIAlertController(title: "人格已下架",
+                                      message: "“\(names.joined(separator: "”“"))”已被人格库下架，已从本机移除。",
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        present(alert, animated: true)
+    }
+
+    // MARK: UICollectionView
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        collectionView === strip ? stripItems.count : profiles.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let activeID = PersonaStore.shared.activeID
+        if collectionView === strip {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PersonaAvatarCell.reuseID, for: indexPath) as! PersonaAvatarCell
+            switch stripItems[indexPath.item] {
+            case .persona(let index):
+                let profile = profiles[index]
+                cell.configure(.persona(image: PersonaImages.avatar(for: profile), name: profile.manifest.name),
+                               isFocused: profile.id == focusedID, isActive: profile.id == activeID)
+            case .none:
+                cell.configure(.none, isFocused: false, isActive: activeID.isEmpty)
+            case .library:
+                cell.configure(.library, isFocused: false, isActive: false)
+            }
+            return cell
         }
-        let configuration = UISwipeActionsConfiguration(actions: [action])
-        configuration.performsFirstActionWithFullSwipe = false
-        return configuration
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PersonaCarouselCell.reuseID, for: indexPath) as! PersonaCarouselCell
+        let profile = profiles[indexPath.item]
+        cell.configure(profile: profile, isActive: profile.id == activeID)
+        return cell
+    }
+
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if collectionView === carousel {
+            setFocus(indexPath.item, animatedStrip: true)
+            scrollCarousel(toFocus: true)
+            return
+        }
+        switch stripItems[indexPath.item] {
+        case .persona(let index):
+            setFocus(index, animatedStrip: true)
+            scrollCarousel(toFocus: true)
+        case .none:
+            select(id: "")
+        case .library:
+            openLibrary()
+        }
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard scrollView === carousel, carouselLayout.pageWidth > 0,
+              carousel.isDragging || carousel.isDecelerating else { return }
+        let index = Int((carousel.contentOffset.x / carouselLayout.pageWidth).rounded())
+        setFocus(min(max(0, index), profiles.count - 1), animatedStrip: true)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath],
+                        point: CGPoint) -> UIContextMenuConfiguration? {
+        guard collectionView === carousel, let indexPath = indexPaths.first,
+              profiles.indices.contains(indexPath.item) else { return nil }
+        let profile = profiles[indexPath.item]
+        let isActive = profile.id == PersonaStore.shared.activeID
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            UIMenu(children: [
+                UIAction(title: isActive ? "正在使用" : "使用这个人格", image: UIImage(systemName: "checkmark.circle"),
+                         attributes: isActive ? .disabled : []) { _ in self?.select(id: profile.id) },
+                UIAction(title: "查看与编辑", image: UIImage(systemName: "square.and.pencil")) { _ in self?.edit(profile) },
+                UIAction(title: "导出人格文件", image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                    self?.export(profile, from: collectionView.cellForItem(at: indexPath))
+                },
+                UIAction(title: "删除", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                    self?.confirmDelete(profile)
+                }
+            ])
+        }
+    }
+
+    private func export(_ profile: PersonaPackage, from sourceView: UIView?) {
+        do {
+            let url = try PersonaStore.shared.exportPackage(id: profile.id)
+            let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+            controller.popoverPresentationController?.sourceView = sourceView ?? view
+            present(controller, animated: true)
+        } catch { showError("未能导出", error: error) }
+    }
+
+    private func confirmDelete(_ profile: PersonaPackage) {
+        let message = profile.id == PersonaStore.shared.activeID ? "删除后将不再使用人格。需要保留的话，可以先导出。" : "需要保留的话，可以先导出。"
+        let alert = UIAlertController(title: "删除“\(profile.manifest.name)”？", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "删除", style: .destructive) { [weak self] _ in
+            do { try PersonaStore.shared.delete(id: profile.id) }
+            catch { self?.showError("未能删除", error: error) }
+        })
+        alertHost.present(alert, animated: true)
     }
 
     private func importProfile() {
@@ -155,7 +387,7 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
         guard !isImporting else { return }
         isImporting = true
         navigationBar.rightButton.isEnabled = false
-        tableView.isUserInteractionEnabled = false
+        scrollView.isUserInteractionEnabled = false
         reload()
         Task { [weak self] in
             let result: Result<PersonaPackage, Error>
@@ -169,7 +401,7 @@ final class PersonaViewController: UIViewController, UITableViewDataSource, UITa
                 guard let self else { return }
                 self.isImporting = false
                 self.navigationBar.rightButton.isEnabled = true
-                self.tableView.isUserInteractionEnabled = true
+                self.scrollView.isUserInteractionEnabled = true
                 self.reload()
                 switch result {
                 case .success(let profile): self.confirmImportedProfile(profile)

@@ -6,7 +6,7 @@ extension UTType {
     nonisolated static let galchatPersonal = UTType(exportedAs: "com.heself.galchat.personal", conformingTo: .json)
 }
 
-/// 人格只包含文字文件；导入不会执行脚本，也不会读取包外的文件。
+/// 人格包含文字文件和可选的形象图片；导入不会执行脚本，也不会读取包外的文件。
 nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
     struct LegacyProfile: Codable, Equatable, Sendable {
         var id: String
@@ -32,6 +32,10 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
         var legacyInstallationKeys: [String]?
         /// 可选的候选回复后处理，由包声明；应用只认识通用的变换种类，不认识具体人格。
         var replyTransform: ReplyTransform?
+        /// 可选的形象图片，指向 `assets` 里的相对路径（PNG 或 JPEG，建议 3:4 半身像）。
+        var portrait: String?
+        /// 为 false 时选中这个人格不发送任何说明，只做回复后处理（如 `replyTransform`）。默认发送。
+        var sendsPrompt: Bool?
     }
 
     /// 候选回复生成并排序后，在展示和发给键盘前统一改写文字。
@@ -75,11 +79,20 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
     }
 
     static let fileExtension = "personal"
+    /// 文字文件合计上限。
     static let maximumBytes = 1_000_000
+    /// 单张形象图片上限。
+    static let maximumAssetBytes = 2_000_000
+    /// 整个 `.personal` 文件上限（图片以 base64 内嵌）。
+    static let maximumPackageBytes = 4_000_000
     static let maximumPromptBytes = 128_000
     var manifest: Manifest
     var files: [String: String]
+    /// 二进制资源（目前只有形象图片），JSON 里以 base64 保存。
+    var assets: [String: Data]?
+    var portraitData: Data? { manifest.portrait.flatMap { assets?[$0] } }
     var id: String { manifest.id }
+    var sendsPrompt: Bool { manifest.sendsPrompt != false }
     var prompt: String {
         (["人格：\(manifest.name)", manifest.summary] + manifest.documents.map {
             "【\($0)】\n\(files[$0] ?? "")"
@@ -99,7 +112,7 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
             }
     }
 
-    private static func validPath(_ path: String) -> Bool {
+    static func validPath(_ path: String) -> Bool {
         !path.isEmpty && path.utf8.count <= 240 && !path.contains("\\")
             && !path.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains)
             && path.split(separator: "/", omittingEmptySubsequences: false).allSatisfy {
@@ -127,12 +140,34 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
               paths.allSatisfy({ files[$0]?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false }) else {
             throw PackageError.message("人格说明或许可文件缺失。请检查文件清单，每份人格说明都需要是非空的 Markdown 文件。")
         }
+        try validatePortrait()
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         guard prompt.utf8.count <= Self.maximumPromptBytes,
-              try encoder.encode(self).count <= Self.maximumBytes else {
-            throw PackageError.message("人格包太大：文件合计最多 1 MB，发送给模型的说明最多 128 KB。")
+              files.values.reduce(0, { $0 + $1.utf8.count }) <= Self.maximumBytes,
+              try encoder.encode(self).count <= Self.maximumPackageBytes else {
+            throw PackageError.message("人格包太大：文字合计最多 1 MB，形象图片最多 2 MB，发送给模型的说明最多 128 KB。")
         }
+    }
+
+    private func validatePortrait() throws {
+        guard let portrait = manifest.portrait else {
+            guard assets?.isEmpty ?? true else { throw PackageError.message("人格包里有未声明的图片。") }
+            return
+        }
+        let lowered = portrait.lowercased()
+        guard Self.validPath(portrait), [".png", ".jpg", ".jpeg"].contains(where: lowered.hasSuffix),
+              Set(assets.map { Array($0.keys) } ?? []) == [portrait], let data = assets?[portrait] else {
+            throw PackageError.message("人格形象需要是包内的一张 PNG 或 JPEG 图片。")
+        }
+        guard data.count <= Self.maximumAssetBytes, Self.isSupportedImage(data) else {
+            throw PackageError.message("人格形象需要是不超过 2 MB 的 PNG 或 JPEG 图片。")
+        }
+    }
+
+    /// 只看文件头，确认是 PNG 或 JPEG；解码交给界面层。
+    static func isSupportedImage(_ data: Data) -> Bool {
+        data.starts(with: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) || data.starts(with: [0xFF, 0xD8, 0xFF])
     }
 
     static func read(from url: URL) throws -> Self {
@@ -169,7 +204,11 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
                 }
                 files[path] = text
             }
-            package = Self(manifest: manifest, files: files)
+            var assets: [String: Data]?
+            if let portrait = manifest.portrait {
+                assets = [portrait: try readFile(portrait, in: directory, limit: maximumAssetBytes)]
+            }
+            package = Self(manifest: manifest, files: files, assets: assets)
         } else if url.pathExtension.lowercased() == "md" {
             let data = try boundedData(at: url)
             guard let text = String(data: data, encoding: .utf8) else {
@@ -179,13 +218,13 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
             imported.files["PERSONA.md"] = text
             package = imported
         } else {
-            package = try JSONDecoder().decode(Self.self, from: boundedData(at: url))
+            package = try JSONDecoder().decode(Self.self, from: boundedData(at: url, limit: maximumPackageBytes))
         }
         try package.validate()
         return package
     }
 
-    private static func readFile(_ path: String, in directory: URL) throws -> Data {
+    private static func readFile(_ path: String, in directory: URL, limit: Int = maximumBytes) throws -> Data {
         guard validPath(path) else { throw PackageError.message("人格包包含无效的文件路径。") }
         var url = directory
         for part in path.split(separator: "/") {
@@ -195,16 +234,28 @@ nonisolated struct PersonaPackage: Codable, Identifiable, Sendable {
                 throw PackageError.message("人格包不能引用包外文件或文件替身。")
             }
         }
-        return try boundedData(at: url)
+        return try boundedData(at: url, limit: limit)
     }
 
-    private static func boundedData(at url: URL) throws -> Data {
+    private static func boundedData(at url: URL, limit: Int = maximumBytes) throws -> Data {
+        let megabytes = limit / 1_000_000
         let values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
-        guard values.isRegularFile == true, let size = values.fileSize, size <= maximumBytes else {
-            throw PackageError.message("请选择不超过 1 MB 的文字文件。")
+        guard values.isRegularFile == true, let size = values.fileSize, size <= limit else {
+            throw PackageError.message("请选择不超过 \(megabytes) MB 的文件。")
         }
         let data = try Data(contentsOf: url)
-        guard data.count <= maximumBytes else { throw PackageError.message("人格文件超过 1 MB。") }
+        guard data.count <= limit else { throw PackageError.message("人格文件超过 \(megabytes) MB。") }
         return data
+    }
+
+    /// 比较 `1.2.10` 这类版本号；非数字段按 0 处理。
+    static func isVersion(_ lhs: String, newerThan rhs: String) -> Bool {
+        let left = lhs.split(separator: ".").map { Int($0) ?? 0 }
+        let right = rhs.split(separator: ".").map { Int($0) ?? 0 }
+        for index in 0..<max(left.count, right.count) {
+            let l = index < left.count ? left[index] : 0, r = index < right.count ? right[index] : 0
+            if l != r { return l > r }
+        }
+        return false
     }
 }

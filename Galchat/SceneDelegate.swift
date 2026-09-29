@@ -71,6 +71,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        // 每次回到前台（最多每 30 分钟一次）同步人格库：执行远程下架，并更新未改动的人格。
+        if OnbViewController.hasCompleted {
+            ResourceCatalog.shared.refreshIfNeeded()
+        }
         // Called when the scene has moved from an inactive state to an active state.
         // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
     }
