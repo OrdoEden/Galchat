@@ -12,7 +12,7 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 
 - 一个文件夹就是一个人格：`manifest.json` 写名称、简介、版本和文件清单，`documents` 按顺序列出要完整发送给模型的 Markdown，`licenseFiles` 列出随包保留、但不发送的许可与署名。照着任意现有文件夹添加即可，不需要修改 Swift。
 - **分发格式是 `.personal`**：一个 UTF-8 JSON 单文件，包含清单和全部文字。用户下载后在“文件”、隔空投送或浏览器里点开，选 Galchat 打开即可导入；也可以在“+ → 从文件导入”里选择。编辑页“导出”得到的也是 `.personal`。旧版 JSON、完整文件夹和单个 Markdown 仍可导入。格式、目录约定与写作规范见 [人格文件格式](docs/persona-file-format.md)。
-- `python3 scripts/build_personals.py` 把每个文件夹打包成 `dist/personals/<id>.personal`，可直接放到网盘或网站供下载。
+- `python3 scripts/build_personals.py` 生成资源库发布目录 `dist/personals/`：每个人格的 `<id>.personal`、形象、提示词包 `prompts/prompts.json`（回复、表情包解读、Jev） 和 `catalog.json`，推到 GitHub 仓库 `OrdoEden/GalchatResource` 根目录后 App 会自动同步（格式见 docs/persona-file-format.md）。
 - 随 App 附带的人格在首次使用时复制到 `Application Support/Personas/packages/<id>.json`，选择单独存为 `selection.json`。编辑只改本地副本，删除后不会自动补回。已经装过旧版人格的设备不会自动出现新预设，需要导入对应的 `.personal`（或删除 App 重装）。
 - 旧版保存的人格自动迁移，原 UserDefaults 留作备份。人格文件损坏时保留原文件并提示错误，暂停写入。
 - 包可以在清单里声明 `replyTransform` 做回复后处理（目前只有 `replaceText`：把所有文字换成一个字符，保留空格、标点和表情）。在排序之后、展示和发给键盘之前生成，改写后重复的候选会补上不同的结尾标点。
@@ -27,7 +27,7 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 | 温柔有骨 | `wenrou-yougu` | 先接住情绪、不爱被捧，原则问题平静坚定 | 改写自 MIT 资料，保留 LICENSE |
 | 深宫絮语 | `shengong-xuyu` | 古装宫廷腔，端庄含蓄、偶尔摆谱逗人 | 原创文字 |
 | 抽象乐子人 | `chouxiang-lezi` | 老网民抽象话，嘴贫一句到位，损人不带脏字 | 原创文字 |
-| 远古巨人 | `yuangu-juren` | 远古石像醒来的守护者，话少郑重；回复后处理把所有文字换成“恰”，只留空格和标点的节奏 | 原创文字 |
+| 远古巨人 | `yuangu-juren` | 不发送任何提示词，说明文字全部是“恰”；回复后处理把所有文字换成“恰”，只留空格和标点的节奏 | 原创 |
 
 所有预设都是虚构的性格原型：不写来源作品、角色、真实人物、主播、平台或社群的名称，不引用影视台词，不冒充任何人，也不虚构用户经历。上游改写部分已删除真实人物的姓名、经历、伴侣、合作方和时间线，只保留抽象的思考方式与表达节奏；无许可或 AGPL 的上游只参考风格描述、不复制文本。每个包的 `NOTICE.txt` 写明来源与改写范围。
 
@@ -46,6 +46,7 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 | Visyn | `../Visyn` | 录屏、帧传输和 PiP，继续使用原有独立仓库 |
 | SeeU | [`../SeeU`](../SeeU/README.md) | OCR、聊天版式、跨图消息合并、长图和结构化对话 JSON |
 | Synapse | [`../Synapse`](../Synapse/README.md) | BYOK 模型配置与凭据管理、请求快照、Jev/Chat Completions 协议与 Alamofire 传输 |
+| SwiftKeyboard | [`../SwiftKeyboard`](../SwiftKeyboard/README.md) | 对齐系统中文键盘的全拼键盘与离线拼音引擎；Galchat 键盘只继承它并注入三条回复建议 |
 
 SeeU 与 Synapse 各自提供一个公开模块，可独立接入其他项目；两者互不依赖。好感度、联系人、人设、情绪判断题、候选生成策略及键盘发布属于 App 业务，未引入两个库。当前没有新增 Realm 或联系人数据库。
 
@@ -54,8 +55,8 @@ Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package �
 ## 运行
 
 用 Xcode 打开 `Galchat.xcodeproj`，选择 `Galchat` scheme。
-项目通过本地 Swift Package 引用 `../Visyn`、`../SeeU` 和 `../Synapse`，请保持这些目录与主仓库位于同一级。
-主 App 链接 `VisynCapture`、本地 `SeeU` 和 `Synapse`；Alamofire 由 Synapse 声明依赖。嵌入的 `GalchatBroadcastExtension` 仍只链接 `VisynBroadcast`，键盘扩展不链接两个新库。
+项目通过本地 Swift Package 引用 `../Visyn`、`../SeeU`、`../Synapse` 和 `../SwiftKeyboard`，请保持这些目录与主仓库位于同一级。
+主 App 链接 `VisynCapture`、本地 `SeeU` 和 `Synapse`；Alamofire 由 Synapse 声明依赖。嵌入的 `GalchatBroadcastExtension` 仍只链接 `VisynBroadcast`，键盘扩展只链接 `SwiftKeyboard`。
 
 主 App 与扩展共用项目级配置：
 

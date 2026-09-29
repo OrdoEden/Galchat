@@ -1,0 +1,72 @@
+{
+  "personas": [
+    {
+      "id": "bu-cang-bu-rao",
+      "name": "不藏不绕",
+      "package": "bu-cang-bu-rao.personal",
+      "sha256": "29b8389c6b36885725eea7144cdc43595106c1a5a40badc911570005741b0aa8",
+      "size": 5530,
+      "sortOrder": 0,
+      "summary": "平时暖乎乎、有网感，给足情绪价值；对方想听真话时，第一句就是结论，不绕弯子。",
+      "version": "1.0.0"
+    },
+    {
+      "id": "chouxiang-lezi",
+      "name": "抽象乐子人",
+      "package": "chouxiang-lezi.personal",
+      "sha256": "d9659c17e7d44c6fde671e292833d392837772585719b9c0cf72bf256b208a5f",
+      "size": 6275,
+      "sortOrder": 4,
+      "summary": "冲浪多年的老网民：嘴贫、梗多、一句到位，被阴阳也能干净利落地怼回去，朋友难过时立刻收梗。",
+      "version": "1.0.0"
+    },
+    {
+      "id": "jiangnan-shenqing",
+      "name": "江南深情",
+      "package": "jiangnan-shenqing.personal",
+      "sha256": "11fed5fe69bd3fc9930c811f39b9db74ea39088a9625f9e315aba395b9246235",
+      "size": 13110,
+      "sortOrder": 1,
+      "summary": "嘴上松弛，心里认真。有主见，会自嘲，敢靠近，也懂得给人留余地。",
+      "version": "3.0.0"
+    },
+    {
+      "id": "shengong-xuyu",
+      "name": "深宫絮语",
+      "package": "shengong-xuyu.personal",
+      "sha256": "4317e48ced374785f9670954280f4b352d9210d1bc3f7e7aee910a431fc8bf35",
+      "size": 5874,
+      "sortOrder": 3,
+      "summary": "带着古装宫廷腔说话：端庄含蓄、话里有话，偶尔一本正经地摆谱逗人，正事照样说清楚。",
+      "version": "1.0.0"
+    },
+    {
+      "id": "wenrou-yougu",
+      "name": "温柔有骨",
+      "package": "wenrou-yougu.personal",
+      "sha256": "f469a3353f07227c7b6f387c9d36f4b629a93374af89c4b3edee5339c4ea8657",
+      "size": 10849,
+      "sortOrder": 2,
+      "summary": "说话软、先接住情绪，不爱被捧也不让人破费；碰到原则问题会收起甜度，平静坚定地说不。",
+      "version": "1.0.0"
+    },
+    {
+      "id": "yuangu-juren",
+      "name": "远古巨人",
+      "package": "yuangu-juren.personal",
+      "sha256": "18c27b5d70ca4bfa2203ef96b839ff96987dc8880defe75a4a22e882cb8e4b46",
+      "size": 5190,
+      "sortOrder": 5,
+      "summary": "恰恰恰恰恰恰恰恰恰恰恰恰恰恰，恰恰恰恰恰。恰恰恰恰恰恰恰恰恰恰恰：恰恰恰恰恰恰恰“恰”，恰恰恰恰恰恰恰恰恰恰恰。",
+      "version": "2.0.0"
+    }
+  ],
+  "prompts": {
+    "package": "prompts/prompts.json",
+    "sha256": "643e3353194a03b155bdb9e31a6dea4823454460a4a7888301d0ff0074921dd9",
+    "size": 11932,
+    "version": "1.0.0"
+  },
+  "revoked": [],
+  "schemaVersion": 1
+}

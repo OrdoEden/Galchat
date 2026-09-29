@@ -11,6 +11,11 @@ import build_personals  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES = ROOT / "Galchat" / "Personas"
+ALLOWED_KEYS = {
+    "schemaVersion", "id", "name", "summary", "version", "documents", "licenseFiles", "sourceURL",
+    "sourceRevision", "sortOrder", "defaultSelected", "legacyProfiles", "legacyInstallationKeys",
+    "replyTransform", "portrait", "sendsPrompt",
+}
 
 # 人格原型的来源作品、真实人物、平台/社群与粗口。以转义形式保存，仓库里不出现这些原文。
 # 发现任何一个即失败：人格只能写抽象后的特点，不写来源名称。
@@ -39,6 +44,43 @@ def scan(label: str, text: str) -> None:
 def apply_transform(transform: dict, text: str) -> str:
     """Python mirror of PersonaPackage.ReplyTransform.apply for replaceText."""
     return "".join(transform["replacement"] if ch.isalpha() or ch.isnumeric() else ch for ch in text)
+
+
+# 与 PromptPack.judgeContract 保持一致：题目 id、题型、选项 key、档位数是代码约定，只有措辞可以改。
+JEV_JUDGE = {
+    "literal_question": ("noul", {"true", "false"}),
+    "true_intent": ("choice", {"confirm_you_care", "vent_anger", "request_action", "seek_explanation", "casual_chat", "close_topic"}),
+    "danger_level": ("score", 10),
+    "should_reply_now": ("noul", {"true", "false"}),
+    "best_action": ("choice", {"check_history", "apologize", "give_commitment", "explain", "acknowledge", "say_less", "make_plan"}),
+    "she_needs": ("choice", {"apology", "action", "explanation", "care", "nothing"}),
+    "tension_resolved": ("noul", {"true", "false"}),
+    "affection_delta": ("choice", {"warm_up", "slight_up", "neutral", "slight_down", "cold_down"}),
+}
+
+
+def check_jev() -> None:
+    data = build_personals.PROMPTS.read_bytes()
+    assert len(data) <= 200_000, "prompts.json over 200 KB"
+    pack = json.loads(data)
+    assert set(pack) == {"schemaVersion", "version", "backgroundNote", "reply", "sticker", "judge", "rank"}, "jev: unknown top-level keys"
+    assert pack["schemaVersion"] == 1 and 0 < len(pack["version"]) <= 100 and len(pack["backgroundNote"]) <= 500
+    assert set(pack["judge"]) == set(JEV_JUDGE), f"jev: judge must be exactly {sorted(JEV_JUDGE)}"
+    texts = lambda values: all(isinstance(v, str) and v.strip() and len(v) <= 4000 for v in values)
+    assert texts([pack["reply"], pack["sticker"]]), "prompts: reply/sticker must be non-empty"
+    for key, (kind, shape) in JEV_JUDGE.items():
+        question = pack["judge"][key]
+        assert question["type"] == kind and 0 < len(question["instructions"].strip()) and len(question["instructions"]) <= 4000, key
+        criteria = question["criteria"]
+        if kind == "score":
+            assert isinstance(criteria, list) and len(criteria) == shape and texts(criteria), f"jev: {key} needs {shape} levels"
+        else:
+            assert isinstance(criteria, dict) and set(criteria) == shape and texts(criteria.values()), f"jev: {key} option keys changed"
+    assert set(pack["rank"]) == {"best_reply"}, "jev: rank must be exactly best_reply"
+    best = pack["rank"]["best_reply"]
+    assert best["type"] == "choice" and "criteria" not in best and best["instructions"].strip(), "jev: best_reply options are filled at runtime"
+    scan("Galchat/Prompts/prompts.json", json.dumps(pack, ensure_ascii=False))
+    print(f"prompts.json {pack['version']}: contract ok")
 
 
 def check_transform(ident: str, transform: dict) -> None:
@@ -87,6 +129,28 @@ def check():
         defaults += manifest.get("defaultSelected", False)
         if "replyTransform" in manifest:
             check_transform(ident, manifest["replyTransform"])
+        assert isinstance(manifest.get("sendsPrompt", True), bool), f"{ident}: sendsPrompt must be true/false"
+        # 所有人格使用同一套结构，见 docs/persona-file-format.md「仓库里的人格」。
+        assert set(manifest) <= ALLOWED_KEYS, f"{ident}: unknown manifest keys {set(manifest) - ALLOWED_KEYS}"
+        assert manifest["documents"][0] == "PERSONA.md", f"{ident}: first document must be PERSONA.md"
+        assert all(re.fullmatch(r"references/[a-z0-9-]+\.md", d) for d in manifest["documents"][1:]), \
+            f"{ident}: documents after PERSONA.md must live in references/<name>.md"
+        assert "NOTICE.txt" in manifest.get("licenseFiles", []), f"{ident}: NOTICE.txt is required"
+        assert set(manifest.get("licenseFiles", [])) <= {"NOTICE.txt", "LICENSE"}, f"{ident}: unexpected license files"
+        portraits = sorted(p.name for p in directory.glob("portrait.*"))
+        if "portrait" in manifest:
+            portrait = directory / manifest["portrait"]
+            assert manifest["portrait"] in ("portrait.png", "portrait.jpg"), f"{ident}: portrait must be portrait.png or portrait.jpg"
+            assert portraits == [manifest["portrait"]] and not portrait.is_symlink(), f"{ident}: portrait file missing"
+            data = portrait.read_bytes()
+            assert len(data) <= 2_000_000, f"{ident}: portrait over 2 MB"
+            assert data.startswith(b"\x89PNG\r\n\x1a\n") or data.startswith(b"\xff\xd8\xff"), f"{ident}: portrait must be PNG/JPEG"
+        else:
+            assert not portraits, f"{ident}: add \"portrait\": \"{portraits[0]}\" to manifest.json"
+        extra = {str(p.relative_to(directory)) for p in directory.rglob("*") if p.is_file()} - (
+            {"manifest.json", *manifest["documents"], *manifest.get("licenseFiles", [])}
+            | ({manifest["portrait"]} if "portrait" in manifest else set()))
+        assert not extra, f"{ident}: unexpected files {sorted(extra)}"
         documents = manifest["documents"]
         paths = documents + manifest.get("licenseFiles", [])
         assert documents and len(paths) <= 64 and len(set(paths)) == len(paths)
@@ -112,7 +176,7 @@ def check():
                 scan(f"{ident}/{path}", files[path])
         payload = {"manifest": manifest, "files": files}
         encoded = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True).encode()
-        assert len(encoded) <= 1_000_000
+        assert len(encoded) <= 1_000_000  # 文字部分；形象图片另计
         assert json.loads(encoded) == payload
         prompt = "\n\n".join([f"人格：{manifest['name']}", manifest["summary"]]
                               + [f"【{path}】\n{files[path]}" for path in documents])
@@ -120,12 +184,18 @@ def check():
         print(f"{ident}: {len(documents)} documents, {len(prompt.encode())} prompt bytes")
     assert ids and defaults == 1
 
-    # 可下载的 .personal 必须与文件夹内容一致，避免分发旧版本。
-    built = dict(build_personals.packages())
-    on_disk = {p.stem: p.read_bytes() for p in build_personals.OUTPUT.glob(f"*{build_personals.EXTENSION}")}
+    # 发布目录（.personal、形象、catalog.json）必须与文件夹内容一致，避免分发旧版本。
+    built = build_personals.outputs()
+    on_disk = {str(p.relative_to(build_personals.OUTPUT)): p.read_bytes()
+               for p in [*build_personals.OUTPUT.glob(f"*{build_personals.EXTENSION}"),
+                         *build_personals.OUTPUT.glob("portraits/*"), *build_personals.OUTPUT.glob("prompts/*"),
+                         *build_personals.OUTPUT.glob("catalog.json")]}
     assert on_disk == built, "dist/personals is stale; run python3 scripts/build_personals.py"
+    check_jev()
+    for entry in build_personals.revoked():
+        assert set(entry) <= {"id", "reason"} and re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", entry["id"]), entry
     scan("README.md", (ROOT / "README.md").read_text(encoding="utf-8"))
-    print(f"{len(built)} .personal files up to date; no sensitive terms found.")
+    print(f"{len(build_personals.packages())} .personal files and catalog.json up to date; no sensitive terms found.")
     print("Persona asset checks passed (no Swift compilation or app execution).")
 
 
