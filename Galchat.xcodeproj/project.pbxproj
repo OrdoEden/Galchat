@@ -14,6 +14,7 @@
 		77DF653630680B8500678096 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 77DF653530680B8500678096 /* SnapKit */; };
 		A1B2C3D4E5F6071829304A5D /* GalchatKeyboardExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B46138095F5795515E07FE18 /* VisynBroadcast in Frameworks */ = {isa = PBXBuildFile; productRef = F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */; };
+		B7A1C0DE5E1F4A2B3C4D5E63 /* SwiftKeyboard in Frameworks */ = {isa = PBXBuildFile; productRef = B7A1C0DE5E1F4A2B3C4D5E62 /* SwiftKeyboard */; };
 		FD6A89AD749CB351767FC831 /* SampleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB1659D065D75EF7E9FAB88 /* SampleHandler.swift */; };
 /* End PBXBuildFile section */
 
@@ -115,6 +116,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B7A1C0DE5E1F4A2B3C4D5E63 /* SwiftKeyboard in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -183,6 +185,9 @@
 				A1B2C3D4E5F6071829304A68 /* GalchatShared */,
 			);
 			name = GalchatKeyboardExtension;
+			packageProductDependencies = (
+				B7A1C0DE5E1F4A2B3C4D5E62 /* SwiftKeyboard */,
+			);
 			productName = GalchatKeyboardExtension;
 			productReference = A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -288,6 +293,7 @@
 				E3E4B153D2AB06FC7383CDA1 /* XCLocalSwiftPackageReference "../Visyn" */,
 				E3E4B154D2AB06FC7383CDA2 /* XCLocalSwiftPackageReference "../Synapse" */,
 				E3E4B155D2AB06FC7383CDA3 /* XCLocalSwiftPackageReference "../SeeU" */,
+				B7A1C0DE5E1F4A2B3C4D5E61 /* XCLocalSwiftPackageReference "../SwiftKeyboard" */,
 				77DF653430680B8500678096 /* XCRemoteSwiftPackageReference "SnapKit" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -699,6 +705,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		B7A1C0DE5E1F4A2B3C4D5E61 /* XCLocalSwiftPackageReference "../SwiftKeyboard" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SwiftKeyboard;
+		};
 		E3E4B153D2AB06FC7383CDA1 /* XCLocalSwiftPackageReference "../Visyn" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../Visyn;
@@ -744,6 +754,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 77DF653430680B8500678096 /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
+		};
+		B7A1C0DE5E1F4A2B3C4D5E62 /* SwiftKeyboard */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B7A1C0DE5E1F4A2B3C4D5E61 /* XCLocalSwiftPackageReference "../SwiftKeyboard" */;
+			productName = SwiftKeyboard;
 		};
 		F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */ = {
 			isa = XCSwiftPackageProductDependency;

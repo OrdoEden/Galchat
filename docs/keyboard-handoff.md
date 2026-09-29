@@ -6,6 +6,13 @@
 同时清掉项目里所有旧品牌名字样（代码、文案、文档、App Group 目录），并把键盘改为完全只读。**只做了静态编译，没有装机验证**；
 真机检查项见文末和 `docs/keyboard-validation.md`。
 
+
+> **2026-09-29 更新：键盘已拆成独立库 [`../SwiftKeyboard`](../../SwiftKeyboard/README.md)。**
+> 键位、候选条、拼音行、⇧ 状态机、高度、拼音引擎和词库都在库里（`SwiftKeyboardViewController`、`PinyinInputEngine`）；
+> `GalchatKeyboardExtension/KeyboardViewController.swift` 只继承它，负责读取 `ReplyBundle`/`AffectionProjection`、
+> 通过 `suggestions()` 注入三条回复建议、在 `didSelectSuggestion(_:)` 里做会话确认与替换选中文字。
+> 候选条几何仍来自 `GalchatShared/KeyboardTopMetrics.swift`，经 `configuration` 传给库。下文的文件位置以此为准。
+
 ## 1. 用户能看到的变化
 
 | 方面 | 之前 | 现在 |
@@ -13,7 +20,7 @@
 | 顶部 | 「旧品牌名 + 键盘 · 联系人」品牌行、好感度、确认会话、收起键盘、状态说明行 | 全部删除，只剩一行候选条 |
 | 候选条 | 三个灰底方块按钮 + 单独一行拼音候选 | 一行常驻候选条：无拼音时三条回复建议等宽平铺，有拼音时横排拼音候选 |
 | 候选样式 | 首项加粗、灰底；原文灰字 | 全部常规字重、统一文字色；只有首项白色托底；右侧 ⌄ 展开完整候选网格 |
-| 拼音显示 | 在键盘里单独一行 | 输入框里带下划线的标记文本，按音节分隔（`ni hao`） |
+| 拼音显示 | 在键盘里单独一行 | 输入框里带下划线的标记文本，按音节分隔（`ni hao`）；上屏改用单次 `insertText`，见 §4 |
 | 按键排布 | 每排 `fillEqually` 拉伸，q 与 a 左对齐 | 字母键宽固定为整排 10 等分：第二排缩进半个键位，第三排 ⇧/⌫ 贴边、字母居中 |
 | 功能键 | 分词、中/英、逗号 | 分词、中/英、逗号删除；新增 ⇧（单击大写一次，双击锁定） |
 | 音节分隔符 `'` | 分词键 | 在 123 页（#+= 页也有），拼写中点它并入拼音并自动回字母页 |
@@ -43,7 +50,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| `GalchatKeyboardExtension/KeyboardViewController.swift` | 键盘主体：候选条、标记文本、⇧ 状态机、布局、高度 |
+| `GalchatKeyboardExtension/KeyboardViewController.swift` | 键盘主体：候选条、拼音行、⇧ 状态机、布局、高度 |
 | `GalchatKeyboardExtension/KeyboardLayoutViews.swift`（新） | `KeyRowView`（按键宽单位排版）、`CandidateGridView`（⌄ 展开网格） |
 | `GalchatKeyboardExtension/PinyinInputEngine.swift` | 新增 `displaySpelling(for:)`：输入框显示用的音节切分 |
 | `GalchatShared/KeyboardTopMetrics.swift`（新） | 候选条高度与间距，键盘与解析器共用 |
@@ -69,15 +76,24 @@
 
 按同一算法推算的键位与截图边界误差约 1pt。
 
-### 标记文本（输入框里的带下划线拼音）
+### 拼音显示（2026-09-29 起改为键盘内显示）
 
-- `syncMarkedText()`：组合变化时 `setMarkedText(显示拼音)`；组合清空时设空串再 `unmarkText()`。
-- `commitMarkedText(as:)`：先把标记内容换成最终文本再 `unmarkText()`，不依赖各 App 对"有标记文本时 insertText"的不同处理。
-  上屏原文提交的是实际键入字母，不含显示用空格。
-- `validateMarkedText()`：在 `textDidChange`/`selectionDidChange` 里检查光标前上下文是否仍以标记文本结尾，不是则作废组合。
-  **只有同一输入框里确认过"上下文包含标记文本"后才生效**——有些 App 的上下文不含标记文本，
-  若无条件判断，空输入框里打第一个字母就会被误判丢掉。
-- 换输入框或宿主改动时用 `dropComposition()`，只清键盘侧状态，不再调用 proxy。
+最初拼音以标记文本（`setMarkedText`）显示在输入框里。真机录屏（App Store 搜索框）发现两个问题，已改回键盘内显示：
+
+- **上屏错乱**：打 `keyboard` 选「可」后输入框只剩 `y bo a r d`，「可」丢失；再点原文 `yboard` 变成 `y bo a r dyboard`。
+  宿主对 `setMarkedText → unmarkText → setMarkedText` 连续调用的处理与键盘侧状态不同步，且无从检测。
+- **卡顿**：每次按键都改宿主的标记文本，宿主随之刷新搜索联想并回调 `textDidChange`/`selectionDidChange`，
+  键盘每次回调都重建整排候选按钮；录屏里按键高亮和候选条比输入框晚约 1.1 秒。
+
+09-29 当天先改成只在键盘内显示拼音，但与系统体验不一致，随后恢复为输入框标记文本，只换掉出问题的上屏方式：
+
+- 拼写中 `setMarkedText(显示拼音)`；上屏（选词/原文）只调用一次 `insertText(结果)`，由宿主用结果替换标记文本，
+  不再用 `setMarkedText(结果) → unmarkText()`。剩余拼音随后重新设为标记文本。
+- `validateMarkedText()` 保留：同一输入框确认过「上下文包含标记文本」后，不匹配即作废组合。
+- 若某宿主仍出错，库的 `Configuration.compositionStyle = .keyboardRow` 可改为只在键盘左上角显示拼音行。
+- `renderCandidateBar()` 按内容签名去重，宿主回调频繁时不重复重建按钮；候选按钮改用轻量 `CandidateButton`。
+- 词库在 `viewDidLoad` 时于后台线程预热（`PinyinInputEngine.prepare()`，引擎内部加锁）。
+- 键帽阴影设置 `shadowPath`，避免逐键离屏渲染。
 - `displaySpelling`：动态规划切分，完整音节代价 1、末尾半个音节 2、孤立字母 10。
   实测：`haha→ha ha`、`ttkaix→t t kai x`、`nver→nv er`、`zhon→zhon`、`xi'an→xi'an`。
 
@@ -91,7 +107,6 @@
 
 - **底排没有 😀 键**：键盘扩展调不出系统表情面板，空格因此比系统宽。
 - **没有按键放大预览**（按住字母时上方弹出的大字）。
-- **不含标记文本上下文的 App**：键盘察觉不到宿主改动了标记文本，点别处后旧拼音可能留在键盘侧，下一次按键在新位置出现。
 - **拼写中按 ⇧ 打字母**会先上屏覆盖整串拼音的候选（没有则上屏拼音原文），再插入大写字母；系统键盘是把大写字母并入标记文本。
 - **解析器锚点**：键盘处于展开候选网格状态时按键不可见，解析器找不到锚点，这一帧键盘区域不会被切除。
 - 回复建议仍需点两次（首次确认、再次插入）；换输入框或换联系人后确认失效。
@@ -100,9 +115,9 @@
 
 1. 键盘弹出过程录屏抽帧：顶边只剩系统那一次跳变，不再逐帧长高。
 2. 与系统键盘截图逐键比对：第二排缩进半键、第三排 ⇧/⌫ 贴边、底排宽度。
-3. 微信打 `nihao`：输入框显示带下划线的 `ni hao`；选「你好」后下划线消失。
+3. 微信、App Store 搜索框打 `nihao`：键盘拼音行显示 `ni hao`，输入框不变；选「你好」后输入框只多出「你好」。打 `keyboard` 选「可」再点原文：输入框为「可yboard」。
 4. 打到一半点输入框别处，再按一个字母：不出现上一段拼音。
-5. `xi` → 123 → `'` → `an`：输入框 `xi'an`，候选含「西安」。
+5. `xi` → 123 → `'` → `an`：拼音行 `xi'an`，候选含「西安」。
 6. ⇧ 单击/双击、微信里回车显示「发送」。
 7. 开录屏在聊天页打字：候选条文字和按键不进入聊天分析（`FrameRecorder` 的 sidecar 里 `keyboardTop` 应落在候选条之上）。
 
