@@ -1,13 +1,18 @@
 import UIKit
 import SnapKit
 
+/// 最近会话列表（玻璃档案 C+ · 素白）：按今天 / 昨天 / 更早分段，行直接铺在背景上。
+/// 联系人详情的“聊天记录”也复用这个页面，只显示该联系人的会话。
 final class RecentsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+    private let tableView = UITableView(frame: .zero, style: .grouped)
     private let navigationBar = NavigationBar(frame: .zero)
     private var hasPositionedTableView = false
+    private var themeBackground: ThemeBackgroundView?
     private let contactID: String?
     private let store = RecentConversationStore.shared
-    private var entries: [RecentConversationStore.Conversation] = []
+    private var sections: [(title: String, entries: [RecentConversationStore.Conversation])] = []
+
+    private var isRoot: Bool { navigationController?.viewControllers.first === self }
 
     init(contactID: String? = nil) {
         self.contactID = contactID
@@ -20,50 +25,52 @@ final class RecentsViewController: UIViewController, UITableViewDataSource, UITa
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 96
         NotificationCenter.default.addObserver(self, selector: #selector(reloadEntries),
                                                name: RecentConversationStore.changed, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(reloadEntries),
                                                name: ContactsStore.changed, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(themeChanged), name: ThemeStore.changed, object: nil)
         reloadEntries()
     }
 
     private func setupUI() {
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = ThemeStore.shared.current.background
+        let background = ThemeBackgroundView(theme: ThemeStore.shared.current)
+        view.addSubview(background)
+        background.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        themeBackground = background
+        tableView.backgroundColor = .clear
         tableView.dataSource = self
         tableView.delegate = self
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 68
+        // 系统分组样式会在每段上下画通栏线；改由单元格自己画内缩的细线。
+        tableView.separatorStyle = .none
+        tableView.sectionFooterHeight = 0
+        tableView.register(RecentConversationCell.self, forCellReuseIdentifier: RecentConversationCell.reuseIdentifier)
+        tableView.register(ContactSectionHeaderView.self,
+                           forHeaderFooterViewReuseIdentifier: ContactSectionHeaderView.reuseIdentifier)
         view.addSubview(tableView)
 
-        // 联系人详情也会打开此列表，该路径继续使用系统返回按钮。
-        guard navigationController?.viewControllers.first === self else {
+        // 联系人详情也会打开此列表，该路径继续使用系统导航栏（iOS 26 上自带玻璃按钮）。
+        guard isRoot else {
             let analysisButton = UIBarButtonItem(
-                image: UIImage(systemName: "square.and.pencil"),
-                style: .plain,
-                target: self,
-                action: #selector(openAnalysis)
-            )
+                image: UIImage(systemName: "square.and.pencil"), style: .plain,
+                target: self, action: #selector(openAnalysis))
             analysisButton.accessibilityLabel = "手动分析"
             navigationItem.rightBarButtonItem = analysisButton
-            tableView.snp.makeConstraints { make in
-                make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
-                make.leading.trailing.bottom.equalToSuperview()
-            }
+            tableView.snp.makeConstraints { make in make.edges.equalToSuperview() }
             return
         }
-
+        navigationBar.backgroundColor = .clear
         navigationBar.setHomeTitle(title ?? "最近")
         navigationBar.setContentColor(.label)
         navigationBar.setSecondaryButton(
-            image: UIImage(systemName: "square.and.pencil"), accessibilityLabel: "手动分析"
-        )
+            image: UIImage(systemName: "square.and.pencil"), accessibilityLabel: "手动分析")
         navigationBar.onSecondaryButtonTapped = { [weak self] in self?.openAnalysis() }
         navigationBar.pinToTop(in: view)
-
         if #available(iOS 26.0, *) {
-            tableView.snp.makeConstraints { make in
-                make.edges.equalToSuperview()
-            }
+            tableView.snp.makeConstraints { make in make.edges.equalToSuperview() }
             tableView.contentInset.top = NavigationBar.homeTitleBarHeight
             tableView.verticalScrollIndicatorInsets.top = NavigationBar.homeTitleBarHeight
             navigationBar.attachScrollView(tableView)
@@ -84,21 +91,71 @@ final class RecentsViewController: UIViewController, UITableViewDataSource, UITa
         super.viewDidLayoutSubviews()
         guard !hasPositionedTableView, view.window != nil else { return }
         hasPositionedTableView = true
-        if #available(iOS 26.0, *), navigationController?.viewControllers.first === self {
+        if #available(iOS 26.0, *), isRoot {
             tableView.setContentOffset(CGPoint(x: 0, y: -tableView.adjustedContentInset.top), animated: false)
         }
     }
 
     @objc private func reloadEntries() {
-        entries = store.conversations(contactID: contactID)
+        let entries = store.conversations(contactID: contactID)
+        let calendar = Calendar.current
+        var today: [RecentConversationStore.Conversation] = []
+        var yesterday: [RecentConversationStore.Conversation] = []
+        var earlier: [RecentConversationStore.Conversation] = []
+        for entry in entries {
+            if calendar.isDateInToday(entry.updatedAt) { today.append(entry) }
+            else if calendar.isDateInYesterday(entry.updatedAt) { yesterday.append(entry) }
+            else { earlier.append(entry) }
+        }
+        sections = [("今天", today), ("昨天", yesterday), ("更早", earlier)].filter { !$0.1.isEmpty }
+            .map { (title: $0.0, entries: $0.1) }
+
+        let message = store.lastError ?? (entries.isEmpty
+            ? (contactID == nil ? "暂无聊天记录\n点击底部“快速开启”识别聊天\n识别到的文字会保存在这里" : "还没有与此联系人的聊天记录")
+            : nil)
+        tableView.backgroundView = message.map(Self.messageLabel)
+        tableView.tableFooterView = entries.isEmpty ? nil : footerView()
+        tableView.reloadData()
+    }
+
+    private static func messageLabel(_ text: String) -> UILabel {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .body)
         label.adjustsFontForContentSizeCategory = true
         label.textColor = .secondaryLabel
         label.textAlignment = .center
         label.numberOfLines = 0
-        label.text = store.lastError ?? (entries.isEmpty ? "暂无聊天记录\n点击底部“快速开启”识别聊天\n识别到的文字会保存在这里" : nil)
-        tableView.backgroundView = label.text == nil ? nil : label
+        label.text = text
+        return label
+    }
+
+    private func footerView() -> UIView {
+        let label = UILabel()
+        label.text = "仅在本机保留最近 100 个会话，每个会话最近 500 条消息，每条最多 2000 字。可左滑删除存档；查看与纠正不会自动发起分析。"
+        label.font = .preferredFont(forTextStyle: .footnote)
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = .tertiaryLabel
+        label.numberOfLines = 0
+        let container = UIView()
+        container.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 16, left: 20, bottom: 24, right: 20))
+        }
+        let width = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
+        container.frame.size = container.systemLayoutSizeFitting(
+            CGSize(width: width, height: 0),
+            withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+        return container
+    }
+
+    /// 换主题：只换背景，内容不用重建。
+    @objc private func themeChanged() {
+        themeBackground?.removeFromSuperview()
+        let background = ThemeBackgroundView(theme: ThemeStore.shared.current)
+        view.insertSubview(background, at: 0)
+        background.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        themeBackground = background
+        view.backgroundColor = ThemeStore.shared.current.background
         tableView.reloadData()
     }
 
@@ -106,39 +163,39 @@ final class RecentsViewController: UIViewController, UITableViewDataSource, UITa
         navigationController?.pushViewController(AnalysisViewController(), animated: true)
     }
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { entries.count }
+    func numberOfSections(in tableView: UITableView) -> Int { sections.count }
 
-    func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        "仅在本机保留最近 100 个会话，每个会话最近 500 条消息，每条最多 2000 字。可左滑删除存档；查看与纠正不会自动发起分析。"
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        sections[section].entries.count
     }
 
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let header = tableView.dequeueReusableHeaderFooterView(
+            withIdentifier: ContactSectionHeaderView.reuseIdentifier) as? ContactSectionHeaderView
+        header?.titleLabel.text = sections[section].title
+        return header
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { .leastNonzeroMagnitude }
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { UIView() }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let entry = entries[indexPath.row]
-        let contact = ContactsStore.shared.contact(id: entry.contactID)
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
-        var content = cell.defaultContentConfiguration()
-        content.text = contact?.displayName ?? "\(entry.sourceTitle) · 待确认"
-        let date = entry.updatedAt.formatted(date: .abbreviated, time: .shortened)
-        let preview = entry.messages.last(where: { !$0.isGap }).map { "\($0.speakerLabel)：\($0.effectiveText)" } ?? "暂无消息"
-        content.secondaryText = "\(date)\n\(preview)"
-        content.secondaryTextProperties.numberOfLines = 3
-        content.secondaryTextProperties.color = .secondaryLabel
-        content.image = contact?.avatarData.flatMap { UIImage(data: $0) } ?? UIImage(systemName: "person.crop.circle.fill")
-        content.imageProperties.maximumSize = CGSize(width: 42, height: 42)
-        content.imageProperties.cornerRadius = 21
-        content.imageProperties.tintColor = .galchatPink
-        cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
+        let cell = tableView.dequeueReusableCell(withIdentifier: RecentConversationCell.reuseIdentifier,
+                                                 for: indexPath) as! RecentConversationCell
+        let entry = sections[indexPath.section].entries[indexPath.row]
+        cell.configure(entry: entry, contact: ContactsStore.shared.contact(id: entry.contactID))
+        cell.separator.isHidden = indexPath.row == sections[indexPath.section].entries.count - 1
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        navigationController?.pushViewController(RecentConversationViewController(id: entries[indexPath.row].id), animated: true)
+        let entry = sections[indexPath.section].entries[indexPath.row]
+        navigationController?.pushViewController(RecentConversationViewController(id: entry.id), animated: true)
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let id = entries[indexPath.row].id
+        let id = sections[indexPath.section].entries[indexPath.row].id
         let action = UIContextualAction(style: .destructive, title: "删除") { [weak self] _, _, completion in
             guard let self else { completion(false); return }
             do { try self.store.delete(conversationID: id); completion(true) }
@@ -150,6 +207,116 @@ final class RecentsViewController: UIViewController, UITableViewDataSource, UITa
     }
 }
 
+/// 一行会话：头像、名称与状态标签、时间、最后一条消息、好感度。
+private final class RecentConversationCell: UITableViewCell {
+    static let reuseIdentifier = "RecentConversationCell"
+
+    private let avatar = ContactAvatarView()
+    private let nameLabel = UILabel()
+    private let tagStack = UIStackView()
+    private let timeLabel = UILabel()
+    private let previewLabel = UILabel()
+    private let affectionLabel = UILabel()
+    let separator = UIView()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .clear
+        let selection = UIView()
+        selection.backgroundColor = .secondarySystemFill
+        selectedBackgroundView = selection
+
+        nameLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        timeLabel.font = .systemFont(ofSize: 12)
+        timeLabel.textColor = .tertiaryLabel
+        timeLabel.setContentHuggingPriority(.required, for: .horizontal)
+        timeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        previewLabel.font = .systemFont(ofSize: 14)
+        previewLabel.textColor = .secondaryLabel
+        previewLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        affectionLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
+        affectionLabel.textColor = .galchatPink
+        affectionLabel.setContentHuggingPriority(.required, for: .horizontal)
+        affectionLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        tagStack.spacing = 4
+
+        let topRow = UIStackView(arrangedSubviews: [nameLabel, tagStack, UIView(), timeLabel])
+        topRow.spacing = 6
+        topRow.alignment = .center
+        let bottomRow = UIStackView(arrangedSubviews: [previewLabel, affectionLabel])
+        bottomRow.spacing = 8
+        bottomRow.alignment = .center
+        let textStack = UIStackView(arrangedSubviews: [topRow, bottomRow])
+        textStack.axis = .vertical
+        textStack.spacing = 3
+
+        contentView.addSubview(avatar)
+        contentView.addSubview(textStack)
+        avatar.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(20)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(44)
+            make.top.greaterThanOrEqualToSuperview().inset(10)
+        }
+        textStack.snp.makeConstraints { make in
+            make.leading.equalTo(avatar.snp.trailing).offset(12)
+            make.trailing.equalToSuperview().inset(20)
+            make.top.bottom.equalToSuperview().inset(11)
+        }
+        separator.backgroundColor = .separator.withAlphaComponent(0.5)
+        contentView.addSubview(separator)
+        separator.snp.makeConstraints { make in
+            make.leading.equalTo(textStack)
+            make.trailing.bottom.equalToSuperview()
+            make.height.equalTo(0.5)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(entry: RecentConversationStore.Conversation, contact: ContactsStore.Contact?) {
+        let name = contact?.displayName ?? entry.sourceTitle
+        nameLabel.text = name
+        avatar.configure(name: name, key: contact?.id ?? entry.sourceTitle, imageData: contact?.avatarData)
+        timeLabel.text = ContactUI.shortTime(entry.updatedAt)
+        let last = entry.messages.last(where: { !$0.isGap })
+        previewLabel.text = last.map { "\($0.speakerLabel)：\($0.effectiveText.replacingOccurrences(of: "\n", with: " "))" } ?? "暂无消息"
+
+        tagStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        var tags: [String] = []
+        if contact == nil {
+            tagStack.addArrangedSubview(StatusTagLabel("待确认", kind: .warning)); tags.append("待确认联系人")
+        }
+        if entry.messages.contains(where: { $0.correction != nil }) {
+            tagStack.addArrangedSubview(StatusTagLabel("已纠正", kind: .positive)); tags.append("已纠正")
+        }
+        if contact?.rupturedUntilResolved == true {
+            tagStack.addArrangedSubview(StatusTagLabel("待修复", kind: .negative)); tags.append("关系待修复")
+        }
+        tagStack.isHidden = tagStack.arrangedSubviews.isEmpty
+
+        if let contact {
+            let text = NSMutableAttributedString(attachment: NSTextAttachment(
+                image: UIImage(systemName: "heart.fill",
+                               withConfiguration: UIImage.SymbolConfiguration(pointSize: 9, weight: .bold))!
+                    .withTintColor(.galchatPink, renderingMode: .alwaysOriginal)))
+            text.append(NSAttributedString(string: " \(contact.total)"))
+            affectionLabel.attributedText = text
+            affectionLabel.isHidden = false
+        } else {
+            affectionLabel.isHidden = true
+        }
+
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = ([name] + tags + [timeLabel.text ?? "", previewLabel.text ?? ""]
+            + (contact.map { ["好感度 \($0.total)"] } ?? [])).joined(separator: "，")
+    }
+}
+
+/// 会话详情：像 iMessage 一样的只读气泡，一左一右，用来审计识别出的上下文。
+/// 点气泡仍是纠正消息；绑定会话归属和发起分析收进导航栏的菜单。
 private final class RecentConversationViewController: UITableViewController {
     private let id: String
     private let store = RecentConversationStore.shared
@@ -157,16 +324,21 @@ private final class RecentConversationViewController: UITableViewController {
 
     init(id: String) {
         self.id = id
-        super.init(style: .insetGrouped)
+        super.init(style: .plain)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        tableView.separatorStyle = .none
+        tableView.backgroundColor = ThemeStore.shared.current.background
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 88
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "分析", style: .plain, target: self, action: #selector(analyze))
+        tableView.estimatedRowHeight = 72
+        tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
+        tableView.register(MessageBubbleCell.self, forCellReuseIdentifier: MessageBubbleCell.reuseIdentifier)
+        tableView.register(ConversationSummaryHeader.self,
+                           forHeaderFooterViewReuseIdentifier: ConversationSummaryHeader.reuseIdentifier)
         NotificationCenter.default.addObserver(self, selector: #selector(reloadEntry), name: RecentConversationStore.changed, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(reloadEntry), name: ContactsStore.changed, object: nil)
         reloadEntry()
@@ -175,73 +347,198 @@ private final class RecentConversationViewController: UITableViewController {
     @objc private func reloadEntry() {
         entry = store.conversation(id: id)
         title = ContactsStore.shared.contact(id: entry?.contactID)?.displayName ?? entry?.sourceTitle ?? "会话已删除"
-        navigationItem.rightBarButtonItem?.isEnabled = entry != nil
+        updateNavigationItems()
         tableView.reloadData()
     }
 
-    override func numberOfSections(in tableView: UITableView) -> Int { entry == nil ? 0 : 2 }
-
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        section == 0 ? 1 : (entry?.messages.count ?? 0)
-    }
-
-    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        section == 0 ? "会话归属" : "聊天上下文 · 点按消息纠正"
-    }
-
-    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        if section == 0 { return "绑定仅修改此会话归属；以后自动识别所需的名称与别名可在联系人档案维护。" }
-        return "人工纠正会保留 OCR 原文，可随时恢复。这里的保存不会自动请求模型或更新好感度；点右上角“分析”后可预览并手动发起分析。"
-    }
-
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
-        guard let entry else { return cell }
-        var content = cell.defaultContentConfiguration()
-        if indexPath.section == 0 {
-            content.text = ContactsStore.shared.contact(id: entry.contactID)?.displayName ?? "待确认联系人"
-            content.secondaryText = "识别标题：\(entry.sourceTitle)"
-            content.image = UIImage(systemName: "person.crop.circle")
-            cell.accessoryType = .disclosureIndicator
-        } else {
-            let message = entry.messages[indexPath.row]
-            content.text = message.isGap ? "上下文缺口" : message.speakerLabel
-            if message.correction != nil { content.text! += " · 已纠正" }
-            else if message.clipped { content.text! += " · 原消息被裁切" }
-            content.secondaryText = message.effectiveText
-            content.secondaryTextProperties.numberOfLines = 0
-            cell.selectionStyle = message.isGap ? .none : .default
-            cell.accessoryType = message.isGap ? .none : .disclosureIndicator
+    private func updateNavigationItems() {
+        guard let entry else {
+            navigationItem.rightBarButtonItems = nil
+            return
         }
-        cell.contentConfiguration = content
-        return cell
-    }
-
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        guard let entry else { return }
-        if indexPath.section == 0 {
-            let picker = RecentContactPickerViewController { [weak self] contact in
-                guard let self else { return }
-                try self.store.bind(conversationID: self.id, contactID: contact.id)
-            }
-            navigationController?.pushViewController(picker, animated: true)
-        } else {
-            let message = entry.messages[indexPath.row]
-            guard !message.isGap else { return }
-            let editor = RecentMessageEditorViewController(conversationID: id, message: message)
-            let navigation = UINavigationController(rootViewController: editor)
-            navigation.modalPresentationStyle = .pageSheet
-            present(navigation, animated: true)
+        let owner = ContactsStore.shared.contact(id: entry.contactID)
+        let ownerAction = UIAction(title: owner?.displayName ?? "待确认联系人",
+                                   subtitle: "识别标题：\(entry.sourceTitle)") { [weak self] _ in
+            self?.pickOwner()
         }
+        let analyze = UIAction(title: "分析此上下文", image: UIImage(systemName: "sparkles")) { [weak self] _ in
+            self?.analyze()
+        }
+        let more = UIBarButtonItem(image: UIImage(systemName: "ellipsis.circle"),
+                                   menu: UIMenu(children: [ownerAction, analyze]))
+        more.accessibilityLabel = "会话归属与分析"
+        navigationItem.rightBarButtonItem = more
     }
 
-    @objc private func analyze() {
+    private func pickOwner() {
+        let picker = RecentContactPickerViewController { [weak self] contact in
+            guard let self else { return }
+            try self.store.bind(conversationID: self.id, contactID: contact.id)
+        }
+        navigationController?.pushViewController(picker, animated: true)
+    }
+
+    private func analyze() {
         guard let entry else { return }
         let relationship = AnalysisModelContext.relationship(config: .shared, contactID: entry.contactID)
         navigationController?.pushViewController(
             AnalysisViewController(initialText: entry.analysisText, relationship: relationship), animated: true)
     }
+
+    override func numberOfSections(in tableView: UITableView) -> Int { entry == nil ? 0 : 1 }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        entry?.messages.count ?? 0
+    }
+
+    override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: ConversationSummaryHeader.reuseIdentifier)
+            as? ConversationSummaryHeader
+        header?.label.text = entry.map { "\($0.messages.count) 条消息 · 点气泡可纠正" }
+        return header
+    }
+
+    override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 38 }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: MessageBubbleCell.reuseIdentifier, for: indexPath) as! MessageBubbleCell
+        if let entry, indexPath.row < entry.messages.count {
+            cell.configure(message: entry.messages[indexPath.row],
+                           contact: ContactsStore.shared.contact(id: entry.contactID))
+        }
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard let entry, indexPath.row < entry.messages.count else { return }
+        let message = entry.messages[indexPath.row]
+        guard !message.isGap else { return }
+        let editor = RecentMessageEditorViewController(conversationID: id, message: message)
+        let navigation = UINavigationController(rootViewController: editor)
+        navigation.modalPresentationStyle = .pageSheet
+        present(navigation, animated: true)
+    }
+}
+
+/// 一条消息气泡：对方在左、自己在右，缺口画成居中的分隔线。
+private final class MessageBubbleCell: UITableViewCell {
+    static let reuseIdentifier = "MessageBubbleCell"
+
+    private let bubble = UIView()
+    private let avatar = ContactAvatarView()
+    private let label = UILabel()
+    private let meta = UILabel()
+    private let gapLabel = UILabel()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .clear
+        selectionStyle = .none
+        label.numberOfLines = 0
+        label.font = .preferredFont(forTextStyle: .body)
+        label.adjustsFontForContentSizeCategory = true
+        meta.font = .systemFont(ofSize: 11)
+        meta.textColor = .tertiaryLabel
+        meta.numberOfLines = 1
+        bubble.layer.cornerRadius = 18
+        bubble.layer.cornerCurve = .continuous
+        bubble.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12))
+        }
+        avatar.isHidden = true
+        gapLabel.font = .preferredFont(forTextStyle: .footnote)
+        gapLabel.textColor = .tertiaryLabel
+        gapLabel.textAlignment = .center
+        gapLabel.numberOfLines = 0
+        contentView.addSubview(gapLabel)
+        gapLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 40, bottom: 6, right: 40))
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(message: RecentConversationStore.Message, contact: ContactsStore.Contact?) {
+        if message.isGap {
+            gapLabel.isHidden = false
+            gapLabel.text = "— \(message.effectiveText) —"
+            return
+        }
+        gapLabel.isHidden = true
+
+        let isOther = message.effectiveSpeaker != .me
+        var text = message.effectiveText
+        if message.clipped && message.correction == nil { text += "（原消息被裁切）" }
+        label.text = text
+        bubble.backgroundColor = isOther ? .secondarySystemBackground : .galchatPink
+        label.textColor = isOther ? .label : .white
+        meta.text = message.correction != nil ? "\(message.speakerLabel) · 已纠正" : message.speakerLabel
+        meta.textAlignment = isOther ? .left : .right
+
+        avatar.isHidden = !isOther
+        if isOther {
+            avatar.configure(name: contact?.displayName ?? "对方", key: contact?.id ?? "other",
+                             imageData: contact?.avatarData)
+        }
+
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.alignment = .bottom
+        row.spacing = 8
+        if isOther {
+            avatar.snp.makeConstraints { make in make.size.equalTo(28) }
+            row.addArrangedSubview(avatar)
+            row.addArrangedSubview(bubble)
+            row.addArrangedSubview(UIView())
+        } else {
+            row.addArrangedSubview(UIView())
+            row.addArrangedSubview(bubble)
+        }
+        let column = UIStackView(arrangedSubviews: [row, meta])
+        column.axis = .vertical
+        column.spacing = 3
+        column.isUserInteractionEnabled = false
+        contentView.addSubview(column)
+        column.snp.makeConstraints { make in
+            make.top.equalToSuperview().inset(3)
+            make.bottom.equalToSuperview().inset(3)
+            if isOther {
+                make.leading.equalToSuperview().inset(14)
+                make.trailing.lessThanOrEqualToSuperview().inset(56)
+            } else {
+                make.trailing.equalToSuperview().inset(14)
+                make.leading.greaterThanOrEqualToSuperview().inset(56)
+            }
+        }
+        bubble.snp.makeConstraints { make in make.width.lessThanOrEqualToSuperview().multipliedBy(0.78) }
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = "\(message.speakerLabel)：\(text)"
+        accessibilityHint = "点按纠正这条消息"
+    }
+}
+
+/// 气泡上方的说明：一共多少条、能点什么。
+private final class ConversationSummaryHeader: UITableViewHeaderFooterView {
+    static let reuseIdentifier = "ConversationSummaryHeader"
+    let label = UILabel()
+
+    override init(reuseIdentifier: String?) {
+        super.init(reuseIdentifier: reuseIdentifier)
+        label.font = .preferredFont(forTextStyle: .footnote)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        contentView.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().inset(20)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 private final class RecentContactPickerViewController: UITableViewController {

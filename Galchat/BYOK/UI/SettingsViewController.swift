@@ -31,6 +31,11 @@ final class SettingsViewController: UIViewController {
     private let visionKey = ConfigFieldView(title: "视觉接口 API Key", placeholder: "sk-...", isSecure: true)
     private let visionFields = UIStackView()
 
+    private let imageBase = ConfigFieldView(title: "图像接口地址", placeholder: GCConfig.Defaults.imageBaseURL)
+    private let imageModel = ConfigFieldView(title: "图像模型", placeholder: GCConfig.Defaults.imageModel)
+    private let imageKey = ConfigFieldView(title: "图像接口 API Key", placeholder: "sk-...", isSecure: true)
+    private let autoAvatarSwitch = UISwitch()
+
     private let relationshipField = ConfigFieldView(title: "关系描述", placeholder: GCConfig.Defaults.relationship)
     private let contextRow = StepperRowView(
         title: "分析上下文条数", range: GCConfig.Defaults.contextMessageRange,
@@ -79,6 +84,10 @@ final class SettingsViewController: UIViewController {
         contextRow.value = config.contextMessageCount
         ladderRow.value = config.ladderCapacity
         visionFields.isHidden = !config.visionEnabled
+        imageBase.text = config.image.baseURL
+        imageModel.text = config.image.model
+        imageKey.text = config.image.apiKey
+        autoAvatarSwitch.isOn = config.autoContactAvatar
     }
 
     private func saveConfig() {
@@ -89,6 +98,9 @@ final class SettingsViewController: UIViewController {
         replyKey.text = config.reply.apiKey
         visionKey.text = config.vision.apiKey
         config.visionEnabled = visionSwitch.isOn
+        config.image.save(baseURL: imageBase.text, model: imageModel.text, apiKey: imageKey.text)
+        imageKey.text = config.image.apiKey
+        config.autoContactAvatar = autoAvatarSwitch.isOn
         config.relationship = relationshipField.text
         if config.contextMessageCount != contextRow.value { config.contextMessageCount = contextRow.value }
         if config.ladderCapacity != ladderRow.value { config.ladderCapacity = ladderRow.value }
@@ -185,6 +197,13 @@ final class SettingsViewController: UIViewController {
 
     // MARK: - 布局
 
+    private func autoAvatarRow() -> UIView {
+        let row = UIStackView(arrangedSubviews: [makeSectionLabel("从聊天中自动提取头像"), UIView(), autoAvatarSwitch])
+        row.alignment = .center
+        row.spacing = 12
+        return row
+    }
+
     private func buildLayout() {
         providerControl.addAction(UIAction { [weak self] _ in
             guard let self else { return }
@@ -244,6 +263,13 @@ final class SettingsViewController: UIViewController {
             makeFootnoteLabel("默认关闭。开启后会把聊天中的表情包（压缩后的小图）发往视觉模型，解读含义后用于判断和回复；关闭时只标记为“[表情包]”，不上传图片。"),
             visionFields,
 
+            makeSectionLabel("立绘生成（可选）"),
+            makeFootnoteLabel("在联系人详情里用头像生成立绘。生成时会把头像发送给此接口，费用由该服务收取。地址填到 /v1 为止。"),
+            imageBase, imageModel, imageKey,
+
+            autoAvatarRow(),
+            makeFootnoteLabel("只取单聊里对方的头像，至少在两条消息旁出现过才会保存，不会覆盖你手动选择的头像。"),
+
             makeSectionLabel("分析上下文"),
             relationshipField,
             contextRow,
@@ -258,6 +284,7 @@ final class SettingsViewController: UIViewController {
         stack.setCustomSpacing(24, after: replyStatus)
         stack.setCustomSpacing(24, after: judgeStatus)
         stack.setCustomSpacing(24, after: visionFields)
+        stack.setCustomSpacing(24, after: imageKey)
         stack.setCustomSpacing(24, after: contextRow)
         stack.setCustomSpacing(24, after: ladderRow)
 

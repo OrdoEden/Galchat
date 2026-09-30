@@ -10,6 +10,8 @@ final class GCConfig {
     let judge: SynapseModelConfiguration
     let reply: SynapseModelConfiguration
     let vision: SynapseModelConfiguration
+    /// 生成联系人立绘的图像模型（OpenAI 兼容 /images/generations）。只用到地址、模型和密钥。
+    let image: SynapseModelConfiguration
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -28,6 +30,19 @@ final class GCConfig {
             defaults: defaults, namespace: "Synapse",
             defaultBaseURL: Defaults.visionBaseURL, defaultModel: Defaults.visionModel
         )
+        self.image = SynapseModelConfiguration(
+            id: "image", apiProtocol: .chatCompletions,
+            defaults: defaults, namespace: "Synapse",
+            defaultBaseURL: Defaults.imageBaseURL, defaultModel: Defaults.imageModel
+        )
+    }
+
+    // MARK: - 联系人头像
+
+    /// 识别聊天时把对方头像存进联系人（不覆盖手动头像）。默认开启。
+    var autoContactAvatar: Bool {
+        get { defaults.object(forKey: Keys.autoContactAvatar) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.autoContactAvatar) }
     }
 
     // MARK: - Vision（可选，默认关闭）
@@ -92,6 +107,7 @@ final class GCConfig {
 
     private enum Keys {
         static let visionEnabled = "Galchat.vision.enabled"
+        static let autoContactAvatar = "Galchat.contacts.autoAvatar"
         static let relationship = "Galchat.relationship"
         static let ladderCapacity = "Galchat.live.ladderCapacity"
         static let contextMessageCount = "Galchat.live.contextMessageCount"
@@ -102,6 +118,8 @@ final class GCConfig {
         static let replyModel = "deepseek/deepseek-chat-v3.1"
         static let visionBaseURL = "https://openrouter.ai/api/v1"
         static let visionModel = "qwen/qwen2.5-vl-72b-instruct"
+        static let imageBaseURL = "https://vibeapi.cc/v1"
+        static let imageModel = "gpt-image-2.5"
         static let relationship = "对方是我的伴侣；from=me 的是我发的，from=other 的是对方发的"
         nonisolated static let ladderCapacity = 10
         nonisolated static let ladderCapacityRange = 3...30

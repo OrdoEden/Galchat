@@ -7,10 +7,11 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
     private var hasPositionedTableView = false
 
     private enum Item {
-        case models, capture, onboarding, keyboard, privacy, about
+        case theme, models, capture, onboarding, keyboard, privacy, about
 
         var title: String {
             switch self {
+            case .theme: return "外观主题"
             case .models: return "BYOK 模型设置"
             case .capture: return "录屏与画中画"
             case .onboarding: return "重新查看欢迎引导"
@@ -22,6 +23,7 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
 
         var symbol: String {
             switch self {
+            case .theme: return "paintpalette"
             case .models: return "sparkles"
             case .capture: return "pip"
             case .onboarding: return "hand.wave"
@@ -32,7 +34,7 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
         }
     }
 
-    private let sections: [[Item]] = [[.models, .capture], [.onboarding, .keyboard], [.privacy, .about]]
+    private let sections: [[Item]] = [[.theme, .models, .capture], [.onboarding, .keyboard], [.privacy, .about]]
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -100,6 +102,7 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
+        case 0: return "外观与模型"
         case 1: return "使用帮助"
         case 2: return "应用信息"
         default: return nil
@@ -107,7 +110,7 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
     }
 
     func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        section == 0 ? "配置状态仅表示信息已填齐。连通性可进入模型设置手动测试。" : nil
+        section == 0 ? "主题决定页面底色和深浅色。模型配置状态仅表示信息已填齐，连通性可进入模型设置手动测试。" : nil
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -150,6 +153,8 @@ final class AppSettingsViewController: UIViewController, UITableViewDataSource, 
         tableView.deselectRow(at: indexPath, animated: true)
         let item = sections[indexPath.section][indexPath.row]
         switch item {
+        case .theme:
+            navigationController?.pushViewController(ThemePickerViewController(), animated: true)
         case .models:
             navigationController?.pushViewController(SettingsViewController(), animated: true)
         case .capture:
@@ -240,6 +245,74 @@ private final class SettingsTextViewController: UIViewController {
         textView.snp.makeConstraints { make in
             make.top.bottom.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
+        }
+    }
+}
+
+/// 外观主题：四种背景，选中即生效。
+private final class ThemePickerViewController: UITableViewController {
+    init() {
+        super.init(style: .insetGrouped)
+        title = "外观主题"
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = ThemeStore.shared.current.background
+        tableView.backgroundColor = .clear
+    }
+
+    override func numberOfSections(in tableView: UITableView) -> Int { 1 }
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        GalchatTheme.allCases.count
+    }
+
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        "主题只改变页面底色与深浅色，列表、玻璃控件和按钮沿用系统材质。"
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let theme = GalchatTheme.allCases[indexPath.row]
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        var content = cell.defaultContentConfiguration()
+        content.text = theme.title
+        content.secondaryText = theme.subtitle
+        content.secondaryTextProperties.numberOfLines = 0
+        content.secondaryTextProperties.color = .secondaryLabel
+        content.image = Self.swatch(for: theme)
+        content.imageProperties.maximumSize = CGSize(width: 34, height: 34)
+        content.imageProperties.cornerRadius = 17
+        cell.contentConfiguration = content
+        cell.accessoryType = theme == ThemeStore.shared.current ? .checkmark : .none
+        cell.accessibilityTraits = theme == ThemeStore.shared.current ? [.button, .selected] : .button
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        ThemeStore.shared.apply(GalchatTheme.allCases[indexPath.row])
+        view.backgroundColor = ThemeStore.shared.current.background
+        tableView.reloadData()
+    }
+
+    /// 预览小圆点：底色加顶部晕染。
+    private static func swatch(for theme: GalchatTheme) -> UIImage {
+        let size = CGSize(width: 34, height: 34)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            theme.background.setFill()
+            context.fill(rect)
+            if let wash = theme.washColors {
+                context.cgContext.saveGState()
+                UIBezierPath(roundedRect: rect, cornerRadius: 17).addClip()
+                wash[0].setFill()
+                context.fill(rect)
+                wash[1].withAlphaComponent(0.6).setFill()
+                context.fill(CGRect(x: 0, y: size.height * 0.5, width: size.width, height: size.height * 0.5))
+                context.cgContext.restoreGState()
+            }
         }
     }
 }

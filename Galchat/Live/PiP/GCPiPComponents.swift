@@ -21,13 +21,6 @@ enum GCPiPPalette {
     static let track = UIColor.black.withAlphaComponent(0.07)
 }
 
-private extension UIColor {
-    convenience init(hex: UInt32) {
-        self.init(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
-                  blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
-    }
-}
-
 /// 一次 PiP 展示需要的全部数据；容器视图把它原样交给当前方向的视图。
 struct GCPiPContent {
     var name = "当前会话"

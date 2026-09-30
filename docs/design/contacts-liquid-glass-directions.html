@@ -1,0 +1,392 @@
+<title>Galchat 液态玻璃三方向</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap">
+<style>
+:root{
+  --bg:#F7F5F6;--surface:#FFFFFF;--ink:#221A1E;--muted:#74676C;--line:#E8E0E3;
+  --pink:#D93D69;--pink-soft:#FCE6EC;--frame:#1B1618;--ok:#2F8F5B;--warn:#A8650B;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark;
+    --bg:#141113;--surface:#1E191B;--ink:#F2E9ED;--muted:#A8979E;--line:#372D31;--pink:#FF8FB0;--pink-soft:#3A1F29;--frame:#000;--ok:#6FCF97;--warn:#F2C166;}
+}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#141113;--surface:#1E191B;--ink:#F2E9ED;--muted:#A8979E;--line:#372D31;--pink:#FF8FB0;--pink-soft:#3A1F29;--frame:#000;--ok:#6FCF97;--warn:#F2C166;}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;padding-inline:20px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:44px 80px;display:flex;flex-direction:column;gap:60px}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(28px,4.6vw,42px);font-weight:900}
+h2{font-size:24px;font-weight:900}
+h3{font-size:16px;font-weight:600;font-family:var(--sans)}
+p{margin:0;max-width:68ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--pink);font-weight:600}
+.lead{color:var(--muted);font-size:16px}
+header{display:flex;flex-direction:column;gap:12px}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.86em;background:var(--pink-soft);padding:1px 5px;border-radius:5px}
+
+.qa{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+.qa .box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.qa ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.qa ul b{color:var(--ink)}
+.verdict{font-weight:600;color:var(--pink)}
+
+.option{display:flex;flex-direction:column;gap:24px;border-top:1px solid var(--line);padding-top:36px}
+.ohead{display:grid;grid-template-columns:auto 1fr;gap:6px 20px;align-items:start}
+.letter{font-family:var(--serif);font-weight:900;font-size:64px;line-height:.9;color:var(--pink);grid-row:span 3}
+.pitch{color:var(--muted)}
+.traits{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.traits span{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted);background:var(--surface)}
+.traits .pro{color:var(--ok)}
+.traits .con{color:var(--warn)}
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;align-items:center}
+figcaption{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
+figcaption b{color:var(--ink);font-weight:600}
+
+/* ---------------- 手机 ---------------- */
+.phone{width:280px;max-width:100%;height:606px;border-radius:44px;border:9px solid var(--frame);overflow:hidden;position:relative;
+  font-family:var(--sans);font-size:13px;line-height:1.35;box-shadow:0 18px 40px -18px rgba(40,20,30,.4);isolation:isolate}
+.phone *{box-sizing:border-box}
+.scr{position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column}
+.scr>*{position:relative}
+.bgl{position:absolute!important;inset:0;z-index:0}
+.sb{height:40px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 24px 0 28px;font-weight:600;font-size:13px;z-index:2}
+.sb i{display:flex;gap:4px;align-items:center}
+.sb i s{display:block;background:currentColor;border-radius:1px;width:3px}
+.sb i em{display:block;width:21px;height:10px;border:1.4px solid currentColor;border-radius:3px;position:relative}
+.sb i em::after{content:"";position:absolute;inset:1.2px;right:5px;background:currentColor;border-radius:1px}
+.ico{display:inline-block;vertical-align:middle;flex:none}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* 液态玻璃：半透明 + 模糊 + 高光描边 + 顶部镜面反光 */
+.lg{position:relative;background:var(--gl-fill,rgba(255,255,255,.2));-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);
+  border:1px solid var(--gl-edge,rgba(255,255,255,.5));
+  box-shadow:inset 0 1px 0 var(--gl-hi,rgba(255,255,255,.75)),inset 0 -1px 1px rgba(255,255,255,.12),0 10px 26px -12px var(--gl-sh,rgba(40,20,60,.35));overflow:hidden}
+.lg::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 70%,rgba(255,255,255,.12) 100%)}
+.lg>*{position:relative}
+.gbtn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.gpill{height:36px;padding:0 15px;border-radius:999px;display:grid;place-items:center;font-weight:600;font-size:13px}
+
+/* Apple 风格灰色字母头像 */
+.mono{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;flex:none;letter-spacing:-.02em}
+.mono.apple{background:linear-gradient(180deg,#A9AEB8 0%,#858A95 100%)}
+
+.tab{position:absolute;left:14px;right:14px;bottom:14px;display:flex;justify-content:space-around;align-items:center;padding:6px;border-radius:30px;z-index:3}
+.tab .t{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9.5px;width:44px;color:var(--tab-ink,#3A3A3C)}
+.tab .t.on{color:var(--tab-on,#E8456F)}
+.tab .qs{width:40px;height:40px;border-radius:50%;background:#E8456F;display:grid;place-items:center;box-shadow:0 6px 14px -4px rgba(232,69,111,.6)}
+.tab .qs::after{content:"";width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.35)}
+
+.it{display:flex;align-items:center;gap:11px;padding:8px 18px;position:relative}
+.it .sep{position:absolute;left:68px;right:0;bottom:0;height:.5px;background:var(--hair,rgba(60,60,67,.14))}
+.it:last-child .sep{display:none}
+.nm{font-weight:600;font-size:14.5px}
+.sub{font-size:12.5px;color:var(--sub,#8A8A8E)}
+.tm{font-size:11px;color:var(--faint,#AEAEB2)}
+.sec{font-size:12px;font-weight:600;color:var(--sub,#8A8A8E);padding:10px 20px 2px}
+.tag{font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;flex:none}
+.idx{position:absolute;right:3px;display:flex;flex-direction:column;gap:1px;font-size:8.5px;font-weight:700;text-align:center;z-index:2}
+
+/* ---------------- A 系统海报 ---------------- */
+.A{background:#FFFFFF;color:#1C1C1E;--gl-fill:rgba(250,250,252,.6);--gl-edge:rgba(255,255,255,.9);--gl-sh:rgba(0,0,0,.18)}
+.A .title{font-size:30px;font-weight:800;padding:2px 20px 8px;letter-spacing:-.01em}
+.A .srch{margin:0 16px 6px;height:38px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 13px;color:#8A8A8E;font-size:14px}
+.A .me{display:flex;align-items:center;gap:12px;padding:10px 18px 12px}
+.A .seg{margin:0 16px 4px;display:flex;border-radius:999px;padding:3px;gap:2px}
+.A .seg span{flex:1;text-align:center;padding:5px 0;border-radius:999px;font-size:12px;color:#3A3A3C}
+.A .seg span.on{background:#fff;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.A .info{width:22px;height:22px;border-radius:50%;border:1.5px solid #E8456F;color:#E8456F;display:grid;place-items:center;font-size:12px;font-weight:700;font-style:italic;font-family:Georgia,serif}
+.Ad{color:#fff;--gl-fill:rgba(255,255,255,.18);--gl-edge:rgba(255,255,255,.45);--gl-sh:rgba(60,20,50,.3);--sub:rgba(255,255,255,.75)}
+.Ad .hero{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 16px 0}
+.Ad .bigmono{width:132px;height:132px;border-radius:50%;display:grid;place-items:center;font-size:46px;font-weight:600;color:#fff;letter-spacing:-.02em}
+.Ad .meta{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;opacity:.95;margin-top:6px}
+.Ad .meta b{background:rgba(255,255,255,.28);border-radius:5px;padding:0 5px;font-size:10px}
+.Ad .name{font-size:28px;font-weight:800;letter-spacing:-.01em;text-shadow:0 1px 10px rgba(80,20,50,.2)}
+.Ad .acts{display:flex;gap:12px;margin:6px 0 10px}
+.Ad .acts>div{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.Ad .card{margin:0 12px 9px;border-radius:24px;padding:11px 14px}
+.Ad .card .k{font-size:11.5px;opacity:.8}
+.Ad .card .hr{height:.5px;background:rgba(255,255,255,.35);margin:9px 0}
+
+/* ---------------- B 夜色光环 ---------------- */
+.B{background:#110A12;color:#F6EEF2;--gl-fill:rgba(255,255,255,.08);--gl-edge:rgba(255,255,255,.18);--gl-hi:rgba(255,255,255,.28);--gl-sh:rgba(0,0,0,.6);
+  --sub:#B3A2AA;--faint:#7E6F76;--hair:rgba(255,220,235,.1);--tab-ink:#CFC2C8;--tab-on:#FF8FB0;--ringgap:#110A12}
+.B .title{font-size:30px;font-weight:800;padding:2px 20px 8px}
+.B .srch{margin:0 16px 8px;height:38px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 13px;color:#B3A2AA;font-size:14px}
+.B .gmono{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;flex:none;
+  background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.35),rgba(255,255,255,.06) 60%),var(--h,#5B4A66);border:1px solid rgba(255,255,255,.25)}
+.B .glow{position:absolute;border-radius:50%;filter:blur(40px);pointer-events:none}
+.Bd .ringwrap{display:grid;width:176px;height:176px;margin:0 auto;place-items:center}
+.Bd .ringwrap>*{grid-area:1/1}
+.Bd .ringwrap .halo{width:160px;height:160px;border-radius:50%;box-shadow:0 0 26px 6px rgba(255,90,140,.5),inset 0 0 22px 2px rgba(255,90,140,.35)}
+.Bd .inner{width:128px;height:128px;border-radius:50%;display:grid;place-items:center;font-size:42px;font-weight:600}
+.Bd .score{display:flex;align-items:baseline;justify-content:center;gap:4px}
+.Bd .score b{font-size:34px;font-weight:800;letter-spacing:-.02em}
+.Bd .card{margin:0 12px 9px;border-radius:24px;padding:12px 14px}
+.Bd .acts{display:flex;gap:8px;padding:0 12px 10px}
+.Bd .acts>div{flex:1;height:52px;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;color:#F6EEF2}
+
+/* ---------------- C 海报封面 ---------------- */
+.C{background:#F4F2F5;color:#1C1C1E;--gl-fill:rgba(255,255,255,.55);--gl-edge:rgba(255,255,255,.9);--gl-sh:rgba(40,20,60,.2)}
+.C .title{font-size:30px;font-weight:800;padding:2px 20px 8px}
+.C .srch{margin:0 16px 10px;height:38px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 13px;color:#8A8A8E;font-size:14px}
+.C .posters{display:flex;gap:9px;padding:0 16px 12px;overflow:hidden}
+.C .pc{width:92px;height:128px;flex:none;border-radius:20px;position:relative;overflow:hidden;color:#fff;padding:8px 9px;display:flex;flex-direction:column;justify-content:space-between}
+.C .pc .big{font-size:34px;font-weight:800;line-height:1;letter-spacing:-.03em;text-shadow:0 2px 10px rgba(0,0,0,.12)}
+.C .pc .chip{align-self:flex-start;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
+.C .pmono{border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:700}
+.Cd .poster{height:318px;flex:none;position:relative;color:#fff;overflow:hidden}
+.Cd .poster .huge{position:absolute;left:18px;bottom:44px;font-size:86px;font-weight:900;line-height:.95;letter-spacing:-.04em;text-shadow:0 6px 30px rgba(90,20,60,.25)}
+.Cd .poster .sm{position:absolute;left:22px;bottom:22px;font-size:13px;font-weight:600;opacity:.92}
+.Cd .poster .aff{position:absolute;right:16px;bottom:24px;border-radius:20px;padding:8px 12px;text-align:center;color:#fff}
+.Cd .sheet{margin-top:-26px;border-radius:30px 30px 0 0;flex:1;padding:14px 14px 0;z-index:2;
+  background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(26px) saturate(1.6);backdrop-filter:blur(26px) saturate(1.6);border-top:1px solid rgba(255,255,255,.95);box-shadow:0 -10px 30px -12px rgba(60,20,50,.25)}
+.Cd .acts{display:flex;gap:8px;margin-bottom:12px}
+.Cd .acts>div{flex:1;height:50px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10px;color:#E8456F;font-weight:600}
+.Cd .grp{background:#fff;border-radius:18px;padding:2px 14px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.Cd .kv{display:flex;justify-content:space-between;gap:10px;padding:10px 0;font-size:13px}
+.Cd .kv+.kv{border-top:.5px solid rgba(60,60,67,.14)}
+.Cd .kv .v{color:#8A8A8E;text-align:right;min-width:0}
+
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:10px}
+.notes ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.notes ul b{color:var(--ink)}
+@media (max-width:820px){.qa{grid-template-columns:1fr}.letter{font-size:46px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GALCHAT · 联系 / 最近 · 第三轮</div>
+    <h1>液态玻璃三个方向</h1>
+    <p class="lead">联系人详情都改成苹果“联系人”的布局：顶部大头像、名字、一排圆形快捷按钮，下面是分组卡片。三个方向的区别在于背景、头像和好感度放在哪里。</p>
+  </header>
+
+  <section class="qa" aria-labelledby="qa-h">
+    <div class="box">
+      <h2 id="qa-h">能不能直接用苹果的联系人详情？</h2>
+      <p class="verdict">可以调用，但不适合 Galchat，建议照着它的布局自己做。</p>
+      <ul>
+        <li>系统提供 <code>CNContactViewController</code>（ContactsUI 框架），能显示一张联系人卡片。</li>
+        <li><b>只能显示系统通讯录的字段</b>：电话、邮箱、地址、备注等。好感度、走势、对方人设、识别别名都没有地方放。</li>
+        <li><b>几乎不能改样式</b>：不能加好感环、不能换背景、不能加走势卡片，按钮也是打电话、发信息、FaceTime、邮件。</li>
+        <li>显示已保存的联系人需要用户授权通讯录；Galchat 的联系人不在系统通讯录里，只能用“未知联系人”模式，那种模式没有海报背景。</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>上一版为什么没有玻璃感</h3>
+      <ul>
+        <li><b>玻璃需要背后有颜色</b>。白底上的玻璃只剩一圈阴影，看起来就是普通白色卡片。苹果联系人详情有整页渐变海报，玻璃才透得出颜色。</li>
+        <li><b>头像颜色杂</b>：随机的土黄、灰绿加高光，像一颗颗珠子。下面三个方向分别改成苹果灰头像、玻璃头像和按人配色的海报。</li>
+        <li>iOS 26 原生有 <code>UIGlassEffect</code>、<code>.glass()</code> 按钮配置，三个方向都能用系统玻璃实现，不用自己画。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="option" aria-labelledby="a-h">
+    <div class="ohead">
+      <div class="letter" aria-hidden="true">A</div>
+      <h2 id="a-h">系统海报 · 最接近苹果联系人</h2>
+      <p class="pitch">列表页是苹果通讯录的样子：白底、灰色字母头像，只在头像外面加一圈细细的好感环。详情页整页换成按联系人配色的柔和渐变，头像、按钮、卡片都是玻璃。好感度放在名字上方那行，位置和苹果显示“默认：商务”的地方一样，点开看走势。</p>
+      <div class="traits"><span class="pro">最像系统，用户最熟悉</span><span class="pro">列表干净，联系人多也好找</span><span class="con">好感度在详情页里存在感较弱</span></div>
+    </div>
+    <div class="phones" id="pA"></div>
+  </section>
+
+  <section class="option" aria-labelledby="b-h">
+    <div class="ohead">
+      <div class="letter" aria-hidden="true">B</div>
+      <h2 id="b-h">夜色光环 · 好感度是主角</h2>
+      <p class="pitch">深色为主，背景有一团跟着联系人颜色走的光晕，玻璃在深色上最明显。详情页的头像外面是会发光的好感环，类似“健身”App 的圆环，分数写在正下方。卡片是深色玻璃，走势线也带一点光。</p>
+      <div class="traits"><span class="pro">玻璃质感最强</span><span class="pro">最有 Galgame 氛围</span><span class="con">浅色模式要另做一套</span><span class="con">白天看偏暗</span></div>
+    </div>
+    <div class="phones" id="pB"></div>
+  </section>
+
+  <section class="option" aria-labelledby="c-h">
+    <div class="ohead">
+      <div class="letter" aria-hidden="true">C</div>
+      <h2 id="c-h">海报封面 · 每个人一张海报</h2>
+      <p class="pitch">参考 iOS 的“联系人海报”：详情页上半部分是一张大海报，名字用超大字排版，好感度像锁屏小组件一样放在角落的玻璃块里。下半部分是一张玻璃面板，从海报上盖过来，里面是按钮、走势和档案。联系页顶部的常聊也是一排小海报。</p>
+      <div class="traits"><span class="pro">最有个性，截图好看</span><span class="pro">以后可以让用户上传照片做海报</span><span class="con">改动最大</span><span class="con">名字很长时要缩字号</span></div>
+    </div>
+    <div class="phones" id="pC"></div>
+  </section>
+
+  <section class="notes" aria-labelledby="n-h">
+    <h2 id="n-h">三个方向共用的做法</h2>
+    <ul>
+      <li><b>配色</b>：每个联系人从一组精选色（玫瑰、丁香、天蓝、薄荷、蜜桃、琥珀）里按 id 固定取一个，不再随机取土黄、灰绿。有头像照片时从照片里取主色。</li>
+      <li><b>玻璃</b>：iOS 26 用 <code>UIGlassEffect</code>，多个相邻玻璃控件放进 <code>UIGlassContainerEffect</code>，让它们在交互时能融合；iOS 26 以下退回 <code>.systemUltraThinMaterial</code>。</li>
+      <li><b>背景</b>：渐变海报用 <code>CAGradientLayer</code> 叠两三层径向渐变，固定在页面后面，内容滚动时玻璃会透出变化的颜色。</li>
+      <li>数据层不用动，GRDB 和好感度历史都已经就绪。</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+const P={
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  person:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5"/>',
+  star:'<path d="M12 3.5l2.4 5 5.3.7-3.9 3.6 1 5.3L12 15.5l-4.8 2.6 1-5.3-3.9-3.6 5.3-.7z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2.6M12 18.4V21M21 12h-2.6M5.6 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4L5.6 5.6"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  chev:'<path d="M9 5l7 7-7 7"/>',
+  chat:'<path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  card:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M5.8 16c.6-1.6 1.8-2.3 3.2-2.3s2.6.7 3.2 2.3M14 10h4M14 13.5h3"/>',
+  kb:'<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M10.5 10h.01M14 10h.01M17 10h.01M8 14h8"/>',
+  heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  filter:'<path d="M4 6h16M7 12h10M10 18h4"/>'
+};
+const ic=(n,s=20,fill)=>`<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="${fill?'currentColor':'none'}" stroke="${fill?'none':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+/* 精选配色：每人一组（海报渐变三色 + 单色） */
+const HUE={
+  rose:{a:'#FFD3E2',b:'#F2A7C3',c:'#B8628E',d:'#E8739C',glow:'255,110,160'},
+  lilac:{a:'#E6DAFF',b:'#BFA8F0',c:'#6C58B0',d:'#9A84E0',glow:'160,130,255'},
+  sky:{a:'#D6ECFF',b:'#9CC8F2',c:'#3F74B5',d:'#6FA6E0',glow:'110,170,255'},
+  mint:{a:'#D5F5E6',b:'#9ADCC0',c:'#3E8E75',d:'#62BD9C',glow:'100,220,170'},
+  peach:{a:'#FFE3CF',b:'#F8BE98',c:'#C06A48',d:'#F09A6E',glow:'255,160,110'},
+  amber:{a:'#FFEDC2',b:'#F2CC7A',c:'#A5701F',d:'#E0A84A',glow:'240,180,80'}
+};
+const contacts=[
+  {n:'林小满',a:78,note:'大学同学 · 喜欢猫',h:'rose',active:true,py:'L'},
+  {n:'苏禾',a:88,note:'同事 · 周末一起爬山',h:'mint',py:'S'},
+  {n:'何夕',a:71,note:'健身房认识',h:'lilac',py:'H'},
+  {n:'周予安',a:62,note:'相亲对象 · 慢热',h:'peach',py:'Z'},
+  {n:'阿毛',a:55,note:'高中同桌',h:'sky',py:'A'},
+  {n:'陈一一',a:41,note:'上次聊崩了，先别急',h:'amber',rupt:true,py:'C'},
+  {n:'许嘉言',a:30,note:'',h:'sky',py:'X'}
+];
+const byName=Object.fromEntries(contacts.map(c=>[c.n,c]));
+const recents=[
+  {n:'林小满',t:'10:40',g:'今天',who:'对方',msg:'今晚那家店还开吗？想吃他家的芒果'},
+  {n:'周予安',t:'09:34',g:'今天',who:'我',msg:'那我明天顺路带过去给你'},
+  {n:'周末爬山小分队',t:'昨天',g:'昨天',who:'对方',msg:'集合时间改到七点半',unbound:true},
+  {n:'苏禾',t:'昨天',g:'昨天',who:'对方',msg:'哈哈哈你也太会了吧',fixed:true},
+  {n:'陈一一',t:'星期一',g:'更早',who:'我',msg:'上次是我语气不好，抱歉'},
+  {n:'何夕',t:'9月26日',g:'更早',who:'对方',msg:'[图片]'}
+];
+const ini=(n,k=1)=>n.slice(-k);
+const sb=(c)=>`<div class="sb" style="color:${c}"><span>9:41</span><i><s style="height:4px"></s><s style="height:6px"></s><s style="height:8px"></s><s style="height:10px"></s><em></em></i></div>`;
+const tab=(on,cls='lg')=>`<div class="tab ${cls}">${[['clock','最近'],['person','联系'],null,['star','人格'],['gear','设置']].map((x,i)=>x?`<div class="t${i===on?' on':''}">${ic(x[0],21)}<span>${x[1]}</span></div>`:'<div class="qs" aria-label="快速开启"></div>').join('')}</div>`;
+const phone=(cls,inner,cap)=>`<figure><div class="phone ${cls}" role="img" aria-label="${cap.replace(/<[^>]+>/g,'')}"><div class="scr">${inner}</div></div><figcaption>${cap}</figcaption></figure>`;
+/* 细好感环 */
+const ring=(c,s,w,inner,track='rgba(232,69,111,.14)')=>{const col=c&&c.rupt?'#E0A04A':'#E8456F';const pct=c?c.a:0;
+  return `<div style="width:${s}px;height:${s}px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(${col} ${pct*3.6}deg,${track} 0)"><div style="width:${s-w*2}px;height:${s-w*2}px;border-radius:50%;background:var(--ringgap,#fff);display:grid;place-items:center">${inner}</div></div>`;};
+const pts=[66,69,68,72,70,75,78];
+const spark=(W,H,col,fill,glow)=>{const x=i=>4+i*(W-8)/6,y=v=>H-4-(v-60)/(80-60)*(H-8);const l=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" aria-hidden="true" style="display:block;${glow?'filter:drop-shadow(0 0 5px '+col+')':''}"><polyline points="${x(0)},${H} ${l} ${x(6)},${H}" fill="${fill}" stroke="none"/><polyline points="${l}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${x(6)}" cy="${y(78)}" r="3.4" fill="${col}"/></svg>`;};
+const lc=byName['林小满'];const H=HUE.rose;
+
+/* ================= A ================= */
+(function(){
+  const monoA=(n,s,k=1)=>`<div class="mono apple" style="width:${s}px;height:${s}px;font-size:${Math.round(s*(k>1?.36:.44))}px">${ini(n,k)}</div>`;
+  const rec=`${sb('#1C1C1E')}<div class="row" style="justify-content:space-between;padding:2px 16px"><div class="gpill lg" style="font-size:12.5px">编辑</div><div class="gbtn lg" style="color:#1C1C1E">${ic('filter',17)}</div></div>
+  <div class="title">最近</div>
+  <div class="seg lg"><span class="on">全部</span><span>待确认</span><span>已纠正</span></div>
+  ${recents.map(r=>{const c=byName[r.n];return `<div class="it">${ring(c,44,2,monoA(r.n,38))}<div class="grow"><div class="row" style="gap:6px"><span class="nm ell" style="${r.unbound?'':''}">${r.n}</span>${r.unbound?'<span class="tag" style="background:#FFF1DB;color:#A8650B">待确认</span>':''}${r.fixed?'<span class="tag" style="background:#E6F4EC;color:#2B7A4B">已纠正</span>':''}</div><div class="sub ell">${r.who}：${r.msg}</div></div><div style="display:flex;align-items:center;gap:8px"><span class="tm">${r.t}</span><span class="info">i</span></div><div class="sep"></div></div>`}).join('')}${tab(0)}`;
+
+  const groups={};contacts.forEach(c=>(groups[c.py]=groups[c.py]||[]).push(c));
+  const con=`${sb('#1C1C1E')}<div class="row" style="justify-content:flex-end;padding:2px 16px"><div class="gbtn lg" style="color:#1C1C1E">${ic('plus',19)}</div></div>
+  <div class="title">联系</div>
+  <div class="srch lg">${ic('search',16)}<span>搜索</span></div>
+  <div class="me">${ring(lc,60,2.5,monoA(lc.n,52,2))}<div><div style="font-size:17px;font-weight:700">林小满</div><div class="sub">正在聊 · 好感度 78</div></div></div>
+  <div style="height:.5px;background:rgba(60,60,67,.14);margin:0 18px"></div>
+  ${['A','C','H','L'].map(k=>`<div class="sec">${k}</div>${groups[k].map(c=>`<div class="it" style="padding:6px 18px">${ring(c,38,2,monoA(c.n,32))}<span class="nm grow">${c.n}</span>${c.rupt?'<span class="tag" style="background:#FDE8E8;color:#B23A3A">待修复</span>':''}<span class="tm tnum" style="margin-right:10px">${c.a}</span><div class="sep" style="left:62px"></div></div>`).join('')}`).join('')}
+  <div class="idx" style="top:240px;color:#E8456F">${'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('').map(x=>`<span>${x}</span>`).join('')}</div>${tab(1)}`;
+
+  const bg=`<div class="bgl" style="background:radial-gradient(90% 45% at 15% 5%,${H.a} 0%,transparent 70%),radial-gradient(80% 40% at 95% 25%,#E9D2F4 0%,transparent 70%),linear-gradient(180deg,#F7C9D9 0%,${H.b} 38%,#C27FA6 70%,#7E4E7E 100%)"></div>`;
+  const det=`${bg}${sb('#fff')}<div class="row" style="justify-content:space-between;padding:2px 14px"><div class="gbtn lg">${ic('back',18)}</div><div class="gpill lg">编辑</div></div>
+  <div class="hero"><div class="bigmono lg" style="border-radius:50%">小满</div>
+  <div class="meta">好感度 <b>78 / 100</b> 今天 +3 ${ic('chev',13)}</div>
+  <div class="name">林小满</div>
+  <div class="acts">${['chat','spark','kb','card'].map(i=>`<div class="lg">${ic(i,21)}</div>`).join('')}</div></div>
+  <div class="card lg"><div class="row" style="justify-content:space-between"><div><div class="k">近 7 天</div><div style="font-size:15px;font-weight:700" class="tnum">66 → 78 <span style="font-size:12px;opacity:.85">+12</span></div></div><div style="width:110px">${spark(110,34,'#fff','rgba(255,255,255,.18)')}</div></div></div>
+  <div class="card lg"><div class="k">备注</div><div>大学同学 · 喜欢猫</div><div class="hr"></div><div class="k">对方人设</div><div>慢热，喜欢被认真回复</div></div>
+  <div class="card lg"><div class="row" style="justify-content:space-between"><div><div class="k">识别别名</div><div>小满、林小满(3)</div></div>${ic('chev',15)}</div></div>`;
+  document.getElementById('pA').innerHTML=
+    phone('A',rec,'<b>最近</b> · 仿“电话”的最近通话：灰头像加细好感环，右侧 ⓘ 进入联系人')+
+    phone('A',con,'<b>联系</b> · 仿系统通讯录：顶部是“正在聊”的人，列表只有名字和分数')+
+    phone('A Ad',det,'<b>详情</b> · 整页海报渐变 + 玻璃头像、按钮和卡片；好感度在名字上方');
+})();
+
+/* ================= B ================= */
+(function(){
+  const gmono=(c,n,s,k=1)=>`<div class="gmono" style="--h:${HUE[c?c.h:'lilac'].c};width:${s}px;height:${s}px;font-size:${Math.round(s*(k>1?.36:.44))}px">${ini(n,k)}</div>`;
+  const aurora=`<div class="glow" style="width:260px;height:180px;left:-40px;top:-40px;background:rgba(232,69,111,.45)"></div><div class="glow" style="width:200px;height:160px;right:-60px;top:40px;background:rgba(130,90,255,.35)"></div>`;
+  const rec=`<div class="bgl" style="overflow:hidden">${aurora}</div>${sb('#fff')}<div class="row" style="justify-content:flex-end;padding:2px 16px"><div class="gbtn lg">${ic('filter',17)}</div></div>
+  <div class="title">最近</div>
+  <div class="srch lg">${ic('search',16)}<span>搜索聊天</span></div>
+  ${['今天','昨天','更早'].map(g=>`<div class="sec">${g}</div>${recents.filter(r=>r.g===g).map(r=>{const c=byName[r.n];return `<div class="it">${c?ring(c,44,2,gmono(c,r.n,38),'rgba(255,143,176,.15)'):gmono(null,r.n,44)}<div class="grow"><div class="row" style="justify-content:space-between;gap:6px"><span class="row" style="gap:5px;min-width:0"><span class="nm ell">${r.n}</span>${r.unbound?'<span class="tag" style="background:rgba(242,193,102,.18);color:#F2C166">待确认</span>':''}${r.fixed?'<span class="tag" style="background:rgba(111,207,151,.16);color:#6FCF97">已纠正</span>':''}</span><span class="tm">${r.t}</span></div><div class="sub ell">${r.who}：${r.msg}</div></div><div class="sep"></div></div>`}).join('')}`).join('')}${tab(0)}`;
+
+  const top=[...contacts].sort((a,b)=>b.a-a.a).slice(0,3);
+  const con=`<div class="bgl" style="overflow:hidden">${aurora}</div>${sb('#fff')}<div class="row" style="justify-content:flex-end;padding:2px 16px"><div class="gbtn lg">${ic('plus',19)}</div></div>
+  <div class="title">联系</div>
+  <div class="srch lg">${ic('search',16)}<span>搜索名称、别名或备注</span></div>
+  <div class="row" style="gap:8px;padding:4px 16px 8px">${top.map(c=>`<div class="lg" style="flex:1;border-radius:22px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:5px">${ring(c,52,3,gmono(c,c.n,44,2),'rgba(255,143,176,.15)')}<span style="font-size:11.5px;font-weight:600">${c.n}</span><span class="tnum" style="font-size:11px;color:#FF8FB0;font-weight:700">♥ ${c.a}</span></div>`).join('')}</div>
+  ${[['A',byName['阿毛']],['C',byName['陈一一']],['H',byName['何夕']],['L',byName['林小满']],['S',byName['苏禾']]].map(([k,c])=>`<div class="sec">${k}</div><div class="it" style="padding:6px 18px">${ring(c,40,2,gmono(c,c.n,34),'rgba(255,143,176,.15)')}<div class="grow"><div class="row" style="gap:5px"><span class="nm">${c.n}</span>${c.rupt?'<span class="tag" style="background:rgba(242,193,102,.18);color:#F2C166">待修复</span>':''}</div><div class="sub ell">${c.note||'未设置备注'}</div></div><span class="tm tnum" style="margin-right:10px">${c.a}</span></div>`).join('')}
+  <div class="idx" style="top:250px;color:#FF8FB0">${'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('').map(x=>`<span>${x}</span>`).join('')}</div>${tab(1)}`;
+
+  const R=80,C=2*Math.PI*R;
+  const det=`<div class="bgl" style="overflow:hidden;background:radial-gradient(70% 38% at 50% 22%,rgba(${H.glow},.55) 0%,rgba(${H.glow},0) 70%),radial-gradient(60% 40% at 0% 70%,rgba(130,90,255,.22),transparent 70%),#110A12"></div>
+  ${sb('#fff')}<div class="row" style="justify-content:space-between;padding:2px 14px 4px"><div class="gbtn lg">${ic('back',18)}</div><div class="gpill lg">编辑</div></div>
+  <div class="ringwrap"><div class="halo"></div><svg width="176" height="176" viewBox="0 0 176 176"><defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC2D4"/><stop offset="1" stop-color="#FF4F86"/></linearGradient></defs><circle cx="88" cy="88" r="${R}" fill="none" stroke="rgba(255,143,176,.16)" stroke-width="10"/><circle cx="88" cy="88" r="${R}" fill="none" stroke="url(#bg1)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(C*.78).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 88 88)"/></svg>
+  <div class="inner lg" style="border-radius:50%;--gl-fill:rgba(255,120,170,.16)">小满</div></div>
+  <div style="text-align:center;margin-top:4px"><div style="font-size:24px;font-weight:800">林小满</div><div class="score"><span style="color:#FF8FB0">♥</span><b class="tnum">78</b><span style="color:#B3A2AA;font-size:12px">/ 100 · 今天 <span style="color:#6FCF97">+3</span></span></div></div>
+  <div class="acts" style="margin-top:8px">${[['chat','聊天记录'],['spark','分析'],['kb','回复'],['card','人设']].map(a=>`<div class="lg">${ic(a[0],19)}<span>${a[1]}</span></div>`).join('')}</div>
+  <div class="card lg"><div class="row" style="justify-content:space-between"><b style="font-size:13px">好感走势</b><span style="font-size:11px;color:#B3A2AA">7 天 · 30 天</span></div><div style="margin:6px 0 4px">${spark(236,52,'#FF8FB0','rgba(255,143,176,.12)',true)}</div>
+  <div class="row" style="font-size:12px;gap:8px"><b style="color:#6FCF97;width:22px">+3</b><span class="grow ell">稍微热络 · 轻松闲聊</span><span class="tm">10:40</span></div></div>`;
+  document.getElementById('pB').innerHTML=
+    phone('B',rec,'<b>最近</b> · 深色底上顶部一团粉紫光晕，玻璃控件透出颜色')+
+    phone('B',con,'<b>联系</b> · 常聊是三张玻璃卡片，头像是按人配色的玻璃球')+
+    phone('B Bd',det,'<b>详情</b> · 发光好感环包住玻璃头像，分数放在名字正下方');
+})();
+
+/* ================= C ================= */
+(function(){
+  const grad=h=>`radial-gradient(90% 60% at 20% 10%,${HUE[h].a} 0%,transparent 70%),linear-gradient(160deg,${HUE[h].b} 0%,${HUE[h].d} 55%,${HUE[h].c} 100%)`;
+  const pmono=(c,n,s)=>`<div class="pmono" style="width:${s}px;height:${s}px;font-size:${Math.round(s*.44)}px;background:${grad(c?c.h:'sky')}">${ini(n)}</div>`;
+  const rec=`${sb('#1C1C1E')}<div class="row" style="justify-content:flex-end;padding:2px 16px"><div class="gbtn lg" style="color:#1C1C1E">${ic('filter',17)}</div></div>
+  <div class="title">最近</div>
+  <div class="srch lg">${ic('search',16)}<span>搜索聊天</span></div>
+  ${['今天','昨天','更早'].map(g=>`<div class="sec">${g}</div>${recents.filter(r=>r.g===g).map(r=>{const c=byName[r.n];return `<div class="it">${pmono(c,r.n,42)}<div class="grow"><div class="row" style="justify-content:space-between;gap:6px"><span class="row" style="gap:5px;min-width:0"><span class="nm ell">${r.n}</span>${r.unbound?'<span class="tag" style="background:#FFF1DB;color:#A8650B">待确认</span>':''}${r.fixed?'<span class="tag" style="background:#E6F4EC;color:#2B7A4B">已纠正</span>':''}</span><span class="tm">${r.t}</span></div><div class="row" style="gap:6px;justify-content:space-between"><span class="sub ell">${r.who}：${r.msg}</span>${c?`<span class="tnum" style="font-size:11.5px;color:#E8456F;font-weight:700">♥${c.a}</span>`:''}</div></div><div class="sep" style="left:70px"></div></div>`}).join('')}`).join('')}${tab(0)}`;
+
+  const top=[...contacts].sort((a,b)=>b.a-a.a).slice(0,4);
+  const con=`${sb('#1C1C1E')}<div class="row" style="justify-content:flex-end;padding:2px 16px"><div class="gbtn lg" style="color:#1C1C1E">${ic('plus',19)}</div></div>
+  <div class="title">联系</div>
+  <div class="srch lg">${ic('search',16)}<span>搜索</span></div>
+  <div class="sec" style="padding-top:2px">常聊</div>
+  <div class="posters">${top.map(c=>`<div class="pc" style="background:${grad(c.h)}"><span class="chip lg" style="--gl-fill:rgba(255,255,255,.22);--gl-edge:rgba(255,255,255,.5);color:#fff">♥ ${c.a}</span><div><div class="big">${ini(c.n,2)}</div><div style="font-size:11px;font-weight:600;opacity:.95">${c.n}</div></div></div>`).join('')}</div>
+  ${[['A',byName['阿毛']],['C',byName['陈一一']],['H',byName['何夕']]].map(([k,c])=>`<div class="sec">${k}</div><div class="it" style="padding:6px 18px">${pmono(c,c.n,38)}<div class="grow"><div class="row" style="gap:5px"><span class="nm">${c.n}</span>${c.rupt?'<span class="tag" style="background:#FDE8E8;color:#B23A3A">待修复</span>':''}</div><div class="sub ell">${c.note}</div></div><span class="tm tnum" style="margin-right:10px">♥ ${c.a}</span></div>`).join('')}
+  <div class="idx" style="top:380px;color:#E8456F">${'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('').map(x=>`<span>${x}</span>`).join('')}</div>${tab(1)}`;
+
+  const det=`<div class="poster" style="background:${grad('rose')}">
+    <div style="position:absolute;right:-60px;top:40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.35),transparent 65%)"></div>
+    ${sb('#fff')}<div class="row" style="justify-content:space-between;padding:2px 14px"><div class="gbtn lg">${ic('back',18)}</div><div class="gpill lg" style="color:#fff">编辑</div></div>
+    <div class="huge">小满</div><div class="sm">林小满 · 大学同学</div>
+    <div class="aff lg"><div style="font-size:10px;opacity:.9">好感度</div><div class="tnum" style="font-size:26px;font-weight:800;line-height:1.05">78</div><div style="font-size:10px;opacity:.95">今天 +3</div></div>
+  </div>
+  <div class="sheet">
+    <div class="acts">${[['chat','聊天记录'],['spark','分析'],['kb','回复'],['card','人设']].map(a=>`<div class="lg">${ic(a[0],19)}<span>${a[1]}</span></div>`).join('')}</div>
+    <div class="grp" style="padding:10px 14px"><div class="row" style="justify-content:space-between"><b style="font-size:13px">好感走势 · 7 天</b><span style="font-size:11px;color:#2B7A4B;font-weight:600">+12</span></div><div style="margin-top:6px">${spark(226,44,'#E8456F','rgba(232,69,111,.1)')}</div></div>
+    <div class="grp"><div class="kv"><span>对方人设</span><span class="v ell">慢热，喜欢被认真回复</span></div><div class="kv"><span>识别别名</span><span class="v ell">小满、林小满(3)</span></div></div>
+  </div>`;
+  document.getElementById('pC').innerHTML=
+    phone('C',rec,'<b>最近</b> · 头像用每个人的海报配色，不再是灰色')+
+    phone('C',con,'<b>联系</b> · 常聊是一排竖版小海报，角上是玻璃好感标签')+
+    phone('C Cd',det,'<b>详情</b> · 上半部是大字海报，玻璃面板从下方盖上来');
+})();
+})();
+</script>

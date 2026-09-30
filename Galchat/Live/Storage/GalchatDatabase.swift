@@ -116,6 +116,15 @@ final class GalchatDatabase {
                 t.primaryKey(["conversation_id", "position"])
             }
         }
+        // v2：头像记录来源（聊天自动提取 / 手动选择）；立绘单独一张表，按需读取。
+        migrator.registerMigration("v2") { db in
+            try db.alter(table: "contact_avatar") { t in t.add(column: "source", .text) }
+            try db.create(table: "contact_illustration") { t in
+                t.primaryKey("contact_id", .text).references("contact", onDelete: .cascade)
+                t.column("data", .blob).notNull()
+                t.column("created_at", .datetime).notNull()
+            }
+        }
         return migrator
     }
 
@@ -167,9 +176,9 @@ extension GalchatDatabase {
             for row in try Row.fetchAll(db, sql: "SELECT contact_id, alias FROM contact_alias ORDER BY contact_id, position") {
                 aliases[row["contact_id"], default: []].append(row["alias"])
             }
-            var avatars: [String: Data] = [:]
-            for row in try Row.fetchAll(db, sql: "SELECT contact_id, data FROM contact_avatar") {
-                avatars[row["contact_id"]] = row["data"]
+            var avatars: [String: (data: Data, source: String?)] = [:]
+            for row in try Row.fetchAll(db, sql: "SELECT contact_id, data, source FROM contact_avatar") {
+                avatars[row["contact_id"]] = (row["data"], row["source"])
             }
             var ledgers: [String: [ContactsStore.ScoredTurn]] = [:]
             for row in try Row.fetchAll(db, sql: "SELECT * FROM scored_turn ORDER BY contact_id, position") {
@@ -184,7 +193,7 @@ extension GalchatDatabase {
                     total: row["total"], rupturedUntilResolved: row["ruptured"],
                     lastCommitAt: row["last_commit_at"], createdAt: row["created_at"],
                     ledger: ledgers[id] ?? [], note: row["note"], persona: row["persona"],
-                    avatarData: avatars[id])
+                    avatarData: avatars[id]?.data, avatarSource: avatars[id]?.source)
             }
             let active = try String.fetchOne(db, sql: "SELECT value FROM app_meta WHERE key = ?",
                                              arguments: [Self.activeContactKey])
@@ -205,7 +214,8 @@ extension GalchatDatabase {
             for contact in new.contacts {
                 let previous = oldByID[contact.id]
                 guard previous != contact else { continue }
-                try Self.upsert(contact, in: db, avatarChanged: previous?.avatarData != contact.avatarData)
+                try Self.upsert(contact, in: db, avatarChanged: previous?.avatarData != contact.avatarData
+                                    || previous?.avatarSource != contact.avatarSource)
             }
             for event in events where newIDs.contains(event.contactID) {
                 try db.execute(sql: """
@@ -243,10 +253,33 @@ extension GalchatDatabase {
         }
         guard avatarChanged else { return }
         if let data = contact.avatarData {
-            try db.execute(sql: "INSERT OR REPLACE INTO contact_avatar (contact_id, data) VALUES (?, ?)",
-                           arguments: [contact.id, data])
+            try db.execute(sql: "INSERT OR REPLACE INTO contact_avatar (contact_id, data, source) VALUES (?, ?, ?)",
+                           arguments: [contact.id, data, contact.avatarSource])
         } else {
             try db.execute(sql: "DELETE FROM contact_avatar WHERE contact_id = ?", arguments: [contact.id])
+        }
+    }
+
+    // MARK: 立绘
+
+    func illustrationIDs() throws -> Set<String> {
+        try queue.read { db in Set(try String.fetchAll(db, sql: "SELECT contact_id FROM contact_illustration")) }
+    }
+
+    func illustration(contactID: String) throws -> Data? {
+        try queue.read { db in
+            try Data.fetchOne(db, sql: "SELECT data FROM contact_illustration WHERE contact_id = ?", arguments: [contactID])
+        }
+    }
+
+    func setIllustration(_ data: Data?, contactID: String) throws {
+        try queue.write { db in
+            if let data {
+                try db.execute(sql: "INSERT OR REPLACE INTO contact_illustration (contact_id, data, created_at) VALUES (?, ?, ?)",
+                               arguments: [contactID, data, Date()])
+            } else {
+                try db.execute(sql: "DELETE FROM contact_illustration WHERE contact_id = ?", arguments: [contactID])
+            }
         }
     }
 

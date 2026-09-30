@@ -1,0 +1,449 @@
+<title>Galchat 立绘海报</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap">
+<style>
+:root{
+  --bg:#F6F6F8;--surface:#FFFFFF;--ink:#1D1B20;--muted:#6E6A73;--line:#E5E3E8;
+  --pink:#E0457B;--pink-soft:#FDE7EF;--frame:#18171A;--ok:#23915E;--warn:#A8650B;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark;
+    --bg:#131215;--surface:#1D1C20;--ink:#F1EFF4;--muted:#A19DA8;--line:#34323A;--pink:#FF8FB5;--pink-soft:#3A1E2A;--frame:#000;--ok:#6FCF97;--warn:#F2C166;}
+}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#131215;--surface:#1D1C20;--ink:#F1EFF4;--muted:#A19DA8;--line:#34323A;--pink:#FF8FB5;--pink-soft:#3A1E2A;--frame:#000;--ok:#6FCF97;--warn:#F2C166;}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;padding-inline:20px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:44px 80px;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(28px,4.6vw,42px);font-weight:900}
+h2{font-size:24px;font-weight:900}
+h3{font-size:15px;font-weight:700;font-family:var(--sans)}
+p{margin:0;max-width:68ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--pink);font-weight:600}
+.lead{color:var(--muted);font-size:16px}
+header{display:flex;flex-direction:column;gap:12px}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.86em;background:var(--pink-soft);padding:1px 5px;border-radius:5px}
+section{display:flex;flex-direction:column;gap:22px}
+.shead{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:32px}
+.shead p{color:var(--muted)}
+
+.ladder{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.ladder div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.ladder .step{font-size:12px;font-weight:700;color:var(--pink);letter-spacing:.06em}
+.ladder b{font-size:15px}
+.ladder span{font-size:13px;color:var(--muted);line-height:1.55}
+
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;align-items:center}
+figcaption{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
+figcaption b{color:var(--ink);font-weight:600}
+
+.palette{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.palette .sw{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.palette .dot{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:20px}
+.palette .old{opacity:.9}
+.palette .arrow{font-size:20px;color:var(--muted);padding:0 6px}
+
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.notes .box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:14px}
+.notes ul b{color:var(--ink)}
+
+/* ---------------- 手机 ---------------- */
+.phone{width:280px;max-width:100%;height:606px;border-radius:44px;border:9px solid var(--frame);overflow:hidden;position:relative;background:#fff;color:#1C1C1E;
+  font-family:var(--sans);font-size:13px;line-height:1.35;box-shadow:0 18px 40px -18px rgba(30,20,40,.4);isolation:isolate}
+.phone *{box-sizing:border-box}
+.scr{position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column}
+.scr>*{position:relative}
+.bgl{position:absolute!important;inset:0;z-index:0;overflow:hidden}
+.sb{height:40px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 24px 0 28px;font-weight:600;font-size:13px;z-index:3;position:relative}
+.sb i{display:flex;gap:4px;align-items:center}
+.sb i s{display:block;background:currentColor;border-radius:1px;width:3px}
+.sb i em{display:block;width:21px;height:10px;border:1.4px solid currentColor;border-radius:3px;position:relative}
+.sb i em::after{content:"";position:absolute;inset:1.2px;right:5px;background:currentColor;border-radius:1px}
+.ico{display:inline-block;vertical-align:middle;flex:none}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tnum{font-variant-numeric:tabular-nums}
+
+.lg{position:relative;background:var(--gl-fill,rgba(255,255,255,.22));-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);
+  border:1px solid var(--gl-edge,rgba(255,255,255,.55));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 1px rgba(255,255,255,.15),0 10px 26px -14px var(--gl-sh,rgba(30,20,50,.35));overflow:hidden}
+.lg::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.42) 0%,rgba(255,255,255,0) 40%,rgba(255,255,255,0) 72%,rgba(255,255,255,.14) 100%)}
+.lg>*{position:relative}
+.light{--gl-fill:rgba(255,255,255,.62);--gl-edge:rgba(255,255,255,.95);--gl-sh:rgba(0,0,0,.16)}
+.gbtn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.gpill{height:36px;padding:0 15px;border-radius:999px;display:grid;place-items:center;font-weight:600;font-size:13px}
+.av{border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;color:#fff;font-weight:700;letter-spacing:-.02em}
+.av svg{width:100%;height:100%;display:block}
+.dotbadge{position:absolute;right:-2px;bottom:-2px;width:16px;height:16px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+
+.title{font-size:30px;font-weight:800;padding:2px 20px 8px;letter-spacing:-.01em}
+.srch{margin:0 16px 8px;height:38px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 13px;color:#8A8A8E;font-size:14px}
+.sec{font-size:12px;font-weight:600;color:#8A8A8E;padding:10px 20px 2px}
+.it{display:flex;align-items:center;gap:11px;padding:8px 18px;position:relative}
+.it .sep{position:absolute;left:70px;right:0;bottom:0;height:.5px;background:rgba(60,60,67,.13)}
+.nm{font-weight:600;font-size:14.5px}
+.sub{font-size:12.5px;color:#8A8A8E}
+.tm{font-size:11px;color:#AEAEB2}
+.tag{font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;flex:none}
+.tag.wait{background:#FFF1DB;color:#A8650B}
+.tag.fix{background:#E4F5EC;color:#23915E}
+.tag.bad{background:#FDE8E8;color:#C0453F}
+.tag.art{background:#F1E9FF;color:#7A4FE0}
+.idx{position:absolute;right:3px;display:flex;flex-direction:column;gap:1px;font-size:8.5px;font-weight:700;text-align:center;z-index:2;color:#E0457B}
+.tab{position:absolute;left:14px;right:14px;bottom:14px;display:flex;justify-content:space-around;align-items:center;padding:6px;border-radius:30px;z-index:4}
+.tab .t{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9.5px;width:44px;color:#3A3A3C}
+.tab .t.on{color:#E0457B}
+.tab .qs{width:40px;height:40px;border-radius:50%;background:#E0457B;display:grid;place-items:center;box-shadow:0 6px 14px -4px rgba(224,69,123,.6)}
+.tab .qs::after{content:"";width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.35)}
+
+/* 详情通用 */
+.dact{display:flex;gap:10px;justify-content:center}
+.dact>div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:600}
+.dact .gbtn{width:50px;height:50px}
+.card{border-radius:22px;padding:11px 14px;margin:0 12px 9px}
+.card .k{font-size:11px;opacity:.7}
+.card .hr{height:.5px;background:currentColor;opacity:.15;margin:8px 0}
+.affrow{display:flex;align-items:center;gap:10px}
+
+/* 海报 */
+.poster{height:372px;flex:none;position:relative;color:#fff;overflow:hidden}
+.poster .art{position:absolute;inset:0}
+.poster .scrim{position:absolute;left:0;right:0;bottom:0;height:170px;background:linear-gradient(180deg,rgba(40,20,40,0) 0%,rgba(40,20,40,.42) 100%)}
+.poster .nameblock{position:absolute;left:18px;right:110px;bottom:40px}
+.poster .pname{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;text-shadow:0 2px 16px rgba(60,20,50,.35)}
+.poster .pnote{font-size:12px;font-weight:600;opacity:.95;margin-top:6px;display:flex;align-items:center;gap:6px}
+.poster .aff{position:absolute;right:14px;bottom:40px;width:84px;border-radius:22px;padding:8px 6px;text-align:center}
+.sheet{margin-top:-24px;border-radius:28px 28px 0 0;flex:1;padding:14px 0 0;z-index:2;
+  background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(30px) saturate(1.7);backdrop-filter:blur(30px) saturate(1.7);
+  border-top:1px solid rgba(255,255,255,.95);box-shadow:0 -12px 30px -14px rgba(60,20,50,.3)}
+.sheet .card{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+
+/* 表单 */
+.form{margin:0 14px 10px;background:#fff;border-radius:16px;overflow:hidden}
+.form .fr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;font-size:13px;position:relative}
+.form .fr+.fr::before{content:"";position:absolute;top:0;left:14px;right:0;height:.5px;background:rgba(60,60,67,.13)}
+.form .v{color:#8A8A8E}
+.toggle{width:38px;height:23px;border-radius:999px;background:#34C759;position:relative;flex:none}
+.toggle::after{content:"";position:absolute;right:2px;top:2px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.toggle.off{background:#E3E3E8}.toggle.off::after{right:auto;left:2px}
+.fhint{font-size:11px;color:#8A8A8E;padding:0 28px 12px;line-height:1.45}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-size:11.5px;padding:5px 11px;border-radius:999px;background:#F2F2F7;color:#3A3A3C}
+.chips span.on{background:#1C1C1E;color:#fff}
+.cta{margin:4px 14px 0;height:46px;border-radius:999px;background:#E0457B;color:#fff;font-weight:700;display:grid;place-items:center;font-size:14px;box-shadow:0 8px 18px -8px rgba(224,69,123,.7)}
+
+.affpill{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);white-space:nowrap;display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#fff;
+  padding:2px 9px 2px 8px;border-radius:999px;background:rgba(255,255,255,.2);
+  -webkit-backdrop-filter:blur(10px) saturate(1.8);backdrop-filter:blur(10px) saturate(1.8);
+  border:1px solid rgba(255,255,255,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 3px 8px -3px rgba(40,20,40,.3);text-shadow:0 1px 3px rgba(40,20,40,.35)}
+.affpill svg{flex:none;filter:drop-shadow(0 0 3px rgba(255,92,152,.6))}
+.gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.gi{align-items:stretch}
+.gp{position:relative;aspect-ratio:2/3;max-width:100%;border-radius:20px;overflow:hidden;box-shadow:0 12px 28px -16px rgba(60,20,50,.45)}
+.gav{position:absolute;left:10px;bottom:10px;width:44px;height:44px;border-radius:50%;overflow:hidden;border:2.5px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+.gi figcaption{max-width:none}
+@media (max-width:860px){.gallery{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:860px){.ladder,.notes{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GALCHAT · 联系人详情 · 第四轮</div>
+    <h1>有立绘用海报，没有就回退</h1>
+    <p class="lead">联系人详情按手里有什么素材自动选布局。头像从聊天截图里自动提取，立绘由你配置的图像模型根据头像生成。列表页改回干净的白底，头像换成更明亮的新配色。</p>
+    <p class="lead" style="font-size:13px">效果图里的头像是你提供的 5 张聊天头像，立绘由 gpt-image-2.5 根据这些头像生成（genImage 技能），画风参考“小绒”效果图。</p>
+  </header>
+
+  <section aria-labelledby="s1">
+    <div class="shead">
+      <h2 id="s1">联系人详情的三种状态</h2>
+      <p>三种状态共用同一套按钮、好感度和档案卡片，只是顶部区域不同。</p>
+    </div>
+    <div class="ladder">
+      <div><span class="step">有立绘</span><b>海报布局</b><span>立绘铺满上半屏，名字和好感度压在立绘底部，下方玻璃面板盖上来。</span></div>
+      <div><span class="step">只有头像</span><b>标准布局 · 头像取色</b><span>头像放大后模糊做背景，颜色和头像天然协调；顶部提示可以一键生成立绘。</span></div>
+      <div><span class="step">什么都没有</span><b>标准布局 · 字母头像</b><span>用新配色的字母头像，背景是同色系的浅色渐变。</span></div>
+    </div>
+    <div class="phones" id="pDetail"></div>
+  </section>
+
+  <section aria-labelledby="s1b">
+    <div class="shead">
+      <h2 id="s1b">五个头像生成的立绘</h2>
+      <p>每张用一个聊天头像做角色参考，“小绒”效果图做画风参考，竖版 2:3，人物偏右，左下角留给名字。</p>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section aria-labelledby="s2">
+    <div class="shead">
+      <h2 id="s2">列表页</h2>
+      <p>白底，不再有粉色晕染。有真实头像的显示头像，没有的显示新配色的字母头像；有立绘的联系人在“常聊”里显示成小海报。</p>
+    </div>
+    <div class="phones" id="pList"></div>
+  </section>
+
+  <section aria-labelledby="s2b">
+    <div class="shead">
+      <h2 id="s2b">常聊卡片的三种情况</h2>
+      <p>常聊只有一个卡片组件：有立绘铺立绘；只有头像时，底色是头像的模糊色，中间放头像；什么都没有就用配色和字母头像。好感度统一看底部居中的粉色玻璃标签，卡片里的头像不再加好感环。</p>
+    </div>
+    <div class="phones" id="pFav"></div>
+  </section>
+
+  <section aria-labelledby="s3">
+    <div class="shead">
+      <h2 id="s3">头像和立绘从哪里来</h2>
+      <p>头像默认自动提取，立绘需要你主动生成。生成会把头像发给你在设置里配置的图像服务，费用由该服务收取。</p>
+    </div>
+    <div class="phones" id="pFlow"></div>
+  </section>
+
+  <section aria-labelledby="s4">
+    <div class="shead">
+      <h2 id="s4">字母头像换色</h2>
+      <p>去掉灰棕、土黄这类发闷的颜色，换成明亮、干净的六种渐变。颜色按联系人固定，不会每次变。</p>
+    </div>
+    <div class="palette" id="palette"></div>
+  </section>
+
+  <section aria-labelledby="s5">
+    <div class="shead"><h2 id="s5">要做的改动</h2></div>
+    <div class="notes">
+      <div class="box">
+        <h3>自动提取头像</h3>
+        <ul>
+          <li>复用现有的 <code>PiPAvatarTracker</code> 规则：只取已确认的单聊里对方的头像，至少在两条消息旁出现过，群聊不取。</li>
+          <li>联系人已绑定且<b>没有手动头像</b>时，把识别到的头像存进联系人；手动上传的头像永远优先，不会被覆盖。</li>
+          <li>数据库给头像加“来源”字段（自动 / 手动），详情页头像角上显示小标记，可以一键换掉或删除。</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>生成立绘</h3>
+        <ul>
+          <li>设置里新增“图像模型”，和现有 BYOK 一样填服务地址、模型和密钥，走 OpenAI 兼容的图片接口（例如 vibeapi 的 <code>gpt-image-2.5</code>，按张计费）。</li>
+          <li>联系人详情里点“生成立绘”，选风格和构图后生成；满意再点“使用这张”，不会自动替换。</li>
+          <li>立绘单独存一张表，可以随时删除；删除后详情页自动回到头像布局。</li>
+          <li>没配置图像模型时，“生成立绘”入口引导去设置，不显示报错。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const P={
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  person:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5"/>',
+  star:'<path d="M12 3.5l2.4 5 5.3.7-3.9 3.6 1 5.3L12 15.5l-4.8 2.6 1-5.3-3.9-3.6 5.3-.7z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2.6M12 18.4V21M21 12h-2.6M5.6 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4L5.6 5.6"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  chev:'<path d="M9 5l7 7-7 7"/>',
+  chat:'<path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  card:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M5.8 16c.6-1.6 1.8-2.3 3.2-2.3s2.6.7 3.2 2.3M14 10h4M14 13.5h3"/>',
+  kb:'<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M10.5 10h.01M14 10h.01M17 10h.01M8 14h8"/>',
+  wand:'<path d="M4 20L15 9M14 4v3M18 8h3M19.5 4.5l-2 2M17 14v2M9 3v2"/>',
+  photo:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/>',
+  filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
+  close:'<path d="M6 6l12 12M18 6L6 18"/>',
+  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+};
+const ic=(n,s=20,fill)=>`<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="${fill?'currentColor':'none'}" stroke="${fill?'none':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+/* 新配色：明亮、干净，上浅下深 */
+const PAL={
+  sakura:['#FFA6C9','#FF5C98'], sky:['#8FD0FF','#3D8BFF'], mint:['#7BE8CB','#1FB889'],
+  lemon:['#FFE07A','#FFAA2B'], grape:['#C6ADFF','#7A57F5'], coral:['#FFB38F','#FF6B5A']
+};
+const OLD=['#C9A07A','#98A6B6','#A3B584','#C696C8'];
+const grad=k=>`linear-gradient(180deg,${PAL[k][0]} 0%,${PAL[k][1]} 100%)`;
+
+/* ---- 素材：真实头像 + gpt-image-2.5 生成的立绘 ---- */
+// 头像和立绘都用真实素材；仓库里没有真人相关的图（真人头像与含真人的风格参考图
+// 不入库），缺图时退回一个纯色块，避免出现裂图。
+const imgAv=f=>`<img src="assets/avatars/${f}.jpg" alt="" style="width:100%;height:100%;object-fit:cover;display:block"
+  onerror="this.style.display='none';this.parentElement.style.background='#D9D3D6'">`;
+const lihui=f=>`<img src="assets/portraits/${f}.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"
+  onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(160deg,#F3E4EA,#D9C4D2)'">`;
+
+const sb=c=>`<div class="sb" style="color:${c}"><span>9:41</span><i><s style="height:4px"></s><s style="height:6px"></s><s style="height:8px"></s><s style="height:10px"></s><em></em></i></div>`;
+const tab=on=>`<div class="tab lg light">${[['clock','最近'],['person','联系'],null,['star','人格'],['gear','设置']].map((x,i)=>x?`<div class="t${i===on?' on':''}">${ic(x[0],21)}<span>${x[1]}</span></div>`:'<div class="qs" aria-label="快速开启"></div>').join('')}</div>`;
+const phone=(inner,cap,bg='#fff')=>`<figure><div class="phone" style="background:${bg}" role="img" aria-label="${cap.replace(/<[^>]+>/g,'')}"><div class="scr">${inner}</div></div><figcaption>${cap}</figcaption></figure>`;
+
+const contacts=[
+  {n:'小绒',a:78,note:'大学同学 · 爱猫',k:'sakura',img:'cat',art:'cat',py:'X',active:true},
+  {n:'海月',a:88,note:'同事 · 周末一起逛展',k:'sky',img:'aquarium',art:'aquarium',py:'H'},
+  {n:'财财',a:71,note:'高中同桌 · 爱凑热闹',k:'coral',img:'tanuki',art:'tanuki',py:'C'},
+  {n:'鸭鸭',a:62,note:'游戏好友 · 声音很可爱',k:'lemon',img:'duck',art:'duck',py:'Y'},
+  {n:'阿骏',a:55,note:'健身房认识 · 话不多',k:'mint',img:'boy',py:'A'},
+  {n:'何夕',a:47,note:'朋友的朋友',k:'grape',py:'H'},
+  {n:'陈一一',a:41,note:'上次聊崩了，先别急',k:'lemon',rupt:true,py:'C'}
+];
+const by=Object.fromEntries(contacts.map(c=>[c.n,c]));
+/* 头像：有图用图，没有用新配色字母；可选好感环 */
+const av=(c,s,k=1)=>c&&c.img?`<div class="av" style="width:${s}px;height:${s}px">${imgAv(c.img)}</div>`
+  :`<div class="av" style="width:${s}px;height:${s}px;background:${grad(c?c.k:'sky')};font-size:${Math.round(s*(k>1?.36:.44))}px">${c?c.n.slice(-k):'队'}</div>`;
+const ring=(c,s,w,inner)=>{const col=c.rupt?'#F2A93B':'#FF5C98';return `<div style="width:${s}px;height:${s}px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(${col} ${c.a*3.6}deg,rgba(255,92,152,.13) 0)"><div style="width:${s-w*2}px;height:${s-w*2}px;border-radius:50%;background:#fff;display:grid;place-items:center">${inner}</div></div>`;};
+const pts=[66,69,68,72,70,75,78];
+const spark=(W,H,col,fill)=>{const x=i=>4+i*(W-8)/6,y=v=>H-4-(v-60)/(80-60)*(H-8);const l=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" aria-hidden="true" style="display:block"><polyline points="${x(0)},${H} ${l} ${x(6)},${H}" fill="${fill}"/><polyline points="${l}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${x(6)}" cy="${y(78)}" r="3.4" fill="${col}"/></svg>`;};
+const acts=(dark)=>`<div class="dact" style="color:${dark?'#1C1C1E':'#fff'}">${[['chat','聊天记录'],['spark','分析'],['kb','回复'],['card','人设']].map(a=>`<div><div class="gbtn lg ${dark?'light':''}" style="color:${dark?'#E0457B':'#fff'}">${ic(a[0],20)}</div><span style="opacity:.85">${a[1]}</span></div>`).join('')}</div>`;
+const trendCard=(dark,extra='',score=78)=>`<div class="card ${dark?'':'lg'}" style="${dark?'background:#fff':''}"><div class="row" style="justify-content:space-between"><b style="font-size:13px">好感走势</b><span style="font-size:11px;opacity:.7">7 天 · 30 天</span></div>
+<div class="affrow" style="margin-top:6px"><div class="tnum" style="font-size:26px;font-weight:800;line-height:1">${score}<span style="font-size:12px;font-weight:600;opacity:.6"> /100</span></div><div class="grow">${spark(150,40,dark?'#FF5C98':'#fff',dark?'rgba(255,92,152,.1)':'rgba(255,255,255,.2)')}</div></div>
+<div class="row" style="font-size:11.5px;gap:8px;margin-top:6px"><b style="color:${dark?'#23915E':'#fff'};width:22px">+3</b><span class="grow ell">稍微热络 · 轻松闲聊</span><span style="opacity:.6">10:40</span></div>${extra}</div>`;
+
+/* ============ 详情三态 ============ */
+const lc=by['小绒'], jun=by['阿骏'];
+/* 海报上的好感度：三种做法 */
+const heart=(s,c)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;filter:drop-shadow(0 1px 4px rgba(255,80,140,.45))"><path d="M12 20.5s-7.5-4.6-7.5-10.4A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.7c0 5.8-7.5 10.4-7.5 10.4z" fill="${c}"/></svg>`;
+const affStyles={
+  /* 1. 无框排版 + 进度条（参考“小绒”效果图） */
+  bar:`<div class="nameblock" style="right:18px;bottom:38px"><div class="pname">小绒</div><div class="pnote"><div class="av" style="width:20px;height:20px;border:1.5px solid #fff">${imgAv('cat')}</div>大学同学 · 爱猫</div>
+    <div class="row" style="gap:6px;margin-top:10px;align-items:center">${heart(22,'#FF8DB4')}<span class="tnum" style="font-size:30px;font-weight:800;line-height:1;letter-spacing:-.02em;text-shadow:0 2px 12px rgba(80,20,50,.35)">78</span><span style="font-size:11px;font-weight:700;color:#fff;background:rgba(255,120,165,.55);padding:1px 7px;border-radius:999px">+3</span><span style="font-size:11px;opacity:.9;margin-left:auto">好感度</span></div>
+    <div style="margin-top:7px;height:5px;border-radius:999px;background:rgba(255,255,255,.35);overflow:hidden"><div style="width:78%;height:100%;border-radius:999px;background:linear-gradient(90deg,#FFB6CE,#FF5C98);box-shadow:0 0 8px rgba(255,92,152,.7)"></div></div></div>`,
+};
+const poster=()=>`<div class="poster"><div class="art">${lihui('cat')}</div><div style="position:absolute;left:0;right:0;top:0;height:110px;background:linear-gradient(180deg,rgba(40,20,40,.28),rgba(40,20,40,0))"></div><div class="scrim"></div>
+  ${sb('#fff')}<div class="row" style="justify-content:space-between;padding:2px 14px;position:relative;z-index:3"><div class="gbtn lg" style="color:#fff">${ic('back',18)}</div><div class="gpill lg" style="color:#fff">编辑</div></div>
+  ${affStyles.bar}
+</div>`;
+const d1=`${poster()}
+<div class="sheet">${acts(true)}<div style="height:10px"></div>${trendCard(true)}
+<div class="card" style="background:#fff"><div class="k">对方人设</div><div>慢热，喜欢被认真回复，爱发猫猫表情</div></div></div>`;
+
+const blurBg=(img)=>`<div class="bgl"><div style="position:absolute;inset:-60px;filter:blur(38px) saturate(1.3);transform:scale(1.3)">${img}</div><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.1) 0%,rgba(255,255,255,.25) 45%,rgba(255,255,255,.7) 100%)"></div></div>`;
+const d2=`${blurBg(imgAv('boy'))}${sb('#1C1C1E')}<div class="row" style="justify-content:space-between;padding:2px 14px"><div class="gbtn lg light">${ic('back',18)}</div><div class="gpill lg light">编辑</div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:2px">
+  <div style="position:relative">${ring(jun,124,5,`<div class="av" style="width:106px;height:106px">${imgAv('boy')}</div>`).replace('background:#fff','background:rgba(255,255,255,.9)')}</div>
+  <div style="font-size:26px;font-weight:800;color:#2A1A22">阿骏</div>
+  <div style="font-size:12px;color:#5B4652;margin-top:-4px">健身房认识 · 话不多</div>
+</div>
+<div style="height:10px"></div>${acts(true)}
+<div style="height:10px"></div>
+<div class="card lg light" style="--gl-fill:rgba(255,255,255,.62)"><div class="row"><div class="gbtn" style="width:32px;height:32px;background:#F1E9FF;color:#7A4FE0">${ic('wand',17)}</div><div class="grow"><b style="font-size:13px">用头像生成立绘</b><div style="font-size:11px;color:#6E6A73">生成后详情页会换成海报布局</div></div>${ic('chev',15)}</div></div>
+${trendCard(true,'',55).replace('class="card " style="background:#fff"','class="card lg light" style="--gl-fill:rgba(255,255,255,.62)"')}`;
+
+const d3=`<div class="bgl" style="background:linear-gradient(180deg,#EFE9FF 0%,#F7F4FF 42%,#FFFFFF 75%)"><div style="position:absolute;width:260px;height:260px;left:10px;top:-40px;border-radius:50%;background:radial-gradient(circle,rgba(198,173,255,.55),rgba(198,173,255,0) 70%)"></div></div>
+${sb('#1C1C1E')}<div class="row" style="justify-content:space-between;padding:2px 14px"><div class="gbtn lg light">${ic('back',18)}</div><div class="gpill lg light">编辑</div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:2px">
+  ${ring(by['何夕'],124,5,av(by['何夕'],106,2))}
+  <div style="font-size:26px;font-weight:800">何夕</div>
+  <div style="font-size:12px;color:#8A8A8E;margin-top:-4px">健身房认识</div>
+</div>
+<div style="height:10px"></div>${acts(true)}<div style="height:12px"></div>
+<div class="card lg light" style="--gl-fill:rgba(255,255,255,.7)"><div class="row"><div class="gbtn" style="width:32px;height:32px;background:#F1E9FF;color:#7A4FE0">${ic('photo',17)}</div><div class="grow"><b style="font-size:13px">还没有头像</b><div style="font-size:11px;color:#8A8A8E">识别聊天时会自动提取，也可以手动选择</div></div>${ic('chev',15)}</div></div>
+${trendCard(true,'',47).replace('class="card " style="background:#fff"','class="card lg light" style="--gl-fill:rgba(255,255,255,.62)"')}`;
+
+document.getElementById('pDetail').innerHTML=
+  phone(d1,'<b>有立绘</b> · 立绘铺满上半屏，名字和好感度在底部，玻璃面板盖上来','#F4F2F7')+
+  phone(d2,'<b>只有头像</b> · 头像放大模糊做背景，提示可以生成立绘')+
+  phone(d3,'<b>没有头像</b> · 新配色字母头像，背景用同色系浅渐变');
+
+/* ============ 画廊 ============ */
+document.getElementById('gallery').innerHTML=[['cat','小绒','灰白长毛猫 + 小熊发箍'],['aquarium','海月','水族馆里的女生'],['tanuki','财财','戴财神帽的狸猫玩偶'],['duck','鸭鸭','粉色头套的小黄鸭玩偶'],['boy','阿骏','定食屋里的男生']]
+  .map(([f,n,d])=>`<figure class="gi"><div class="gp">${lihui(f)}<div class="gav">${imgAv(f)}</div></div><figcaption><b>${n}</b> · ${d}</figcaption></figure>`).join('');
+
+/* ============ 列表 ============ */
+const recents=[
+  {n:'小绒',t:'10:40',g:'今天',who:'对方',msg:'今晚那家店还开吗？想吃他家的芒果'},
+  {n:'阿骏',t:'09:34',g:'今天',who:'我',msg:'明天练腿，老时间？'},
+  {n:'周末爬山小分队',t:'昨天',g:'昨天',who:'对方',msg:'集合时间改到七点半',unbound:true},
+  {n:'海月',t:'昨天',g:'昨天',who:'对方',msg:'水族馆那只鳐鱼好像在笑',fixed:true},
+  {n:'陈一一',t:'星期一',g:'更早',who:'我',msg:'上次是我语气不好，抱歉'},
+  {n:'鸭鸭',t:'9月26日',g:'更早',who:'对方',msg:'[图片]'}
+];
+const rec=`${sb('#1C1C1E')}<div class="row" style="justify-content:flex-end;padding:2px 16px"><div class="gbtn lg light">${ic('filter',17)}</div></div>
+<div class="title">最近</div><div class="srch lg light">${ic('search',16)}<span>搜索聊天</span></div>
+${['今天','昨天','更早'].map(g=>`<div class="sec">${g}</div>${recents.filter(r=>r.g===g).map(r=>{const c=by[r.n];return `<div class="it">${c?av(c,44):`<div class="av" style="width:44px;height:44px;background:#E9E9EE;color:#8A8A8E">${ic('person',22)}</div>`}<div class="grow"><div class="row" style="justify-content:space-between;gap:6px"><span class="row" style="gap:5px;min-width:0"><span class="nm ell">${r.n}</span>${r.unbound?'<span class="tag wait">待确认</span>':''}${r.fixed?'<span class="tag fix">已纠正</span>':''}${c&&c.rupt?'<span class="tag bad">待修复</span>':''}</span><span class="tm">${r.t}</span></div><div class="row" style="gap:6px;justify-content:space-between"><span class="sub ell">${r.who}：${r.msg}</span>${c?`<span class="tnum" style="font-size:11.5px;color:#FF5C98;font-weight:700">♥${c.a}</span>`:''}</div></div><div class="sep"></div></div>`}).join('')}`).join('')}${tab(0)}`;
+
+const fav=[...contacts].sort((a,b)=>b.a-a.a).slice(0,4);
+/* 常聊卡片（一个组件）：有立绘铺立绘；否则用头像模糊色（没有头像用配色）做底，中间放头像。好感度只看底部的粉色玻璃标签。 */
+const favCard=c=>`<div style="width:54px;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:54px;height:76px;border-radius:16px;overflow:hidden;position:relative;box-shadow:0 6px 14px -8px rgba(80,40,80,.4)">
+  ${c.art?lihui(c.art)
+    :c.img?`<div style="position:absolute;inset:-14px;filter:blur(9px) saturate(1.2)">${imgAv(c.img)}</div><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.05) 50%,rgba(40,20,40,.18))"></div>`
+    :`<div style="position:absolute;inset:0;background:${grad(c.k)};opacity:.55"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0))"></div>`}
+  ${c.art?'':`<div style="position:absolute;left:50%;top:7px;transform:translateX(-50%);border-radius:50%;border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 8px rgba(40,20,40,.2)">${av(c,36,2)}</div>`}
+  <span class="affpill tnum"><svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-4.9-8-11.1A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 2.9C20 16.1 12 21 12 21z" fill="#FF5C98"/></svg>${c.a}</span>
+</div><span style="font-size:11px;font-weight:600">${c.n}</span></div>`;
+const favRow=list=>`<div class="row" style="gap:4px;padding:4px 24px 4px 16px;justify-content:space-between;align-items:flex-start">${list.map(favCard).join('')}</div>`;
+const conFor=list=>`${sb('#1C1C1E')}<div class="row" style="justify-content:flex-end;padding:2px 16px"><div class="gbtn lg light">${ic('plus',19)}</div></div>
+<div class="title">联系</div><div class="srch lg light">${ic('search',16)}<span>搜索名称、别名或备注</span></div>
+<div class="sec" style="padding-top:4px">常聊</div>
+${favRow(list)}
+${[['A',by['阿骏']],['C',by['财财']],['H',by['何夕']]].map(([k,c])=>`<div class="sec">${k}</div><div class="it" style="padding:6px 18px">${ring(c,44,2.5,av(c,37))}<div class="grow"><div class="row" style="gap:5px"><span class="nm">${c.n}</span>${c.rupt?'<span class="tag bad">待修复</span>':''}</div><div class="sub ell">${c.note}</div></div><span class="tm tnum" style="margin-right:12px;font-size:12.5px">${c.a}</span></div>`).join('')}
+<div class="idx" style="top:250px">${'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('').map(x=>`<span>${x}</span>`).join('')}</div>${tab(1)}`;
+const noArt=c=>({...c,art:null});
+const con=conFor([by['小绒'],by['海月'],by['财财'],by['鸭鸭']]);
+document.getElementById('pList').innerHTML=
+  phone(rec,'<b>最近</b> · 纯白底；有头像显示头像，没有的用新配色字母头像')+
+  phone(con,'<b>联系</b> · 常聊里有立绘的显示成小海报，其余是带好感环的头像');
+
+/* ============ 常聊三种情况 ============ */
+document.getElementById('pFav').innerHTML=
+  phone(conFor([by['小绒'],by['海月'],by['财财'],by['鸭鸭']]),'<b>都有立绘</b> · 四张小海报')+
+  phone(conFor([by['小绒'],by['阿骏'],by['海月'],by['何夕']]),'<b>混排</b> · 小绒、海月有立绘；阿骏只有头像；何夕什么都没有')+
+  phone(conFor([noArt(by['小绒']),noArt(by['海月']),by['阿骏'],by['何夕']]),'<b>只有头像</b> · 同一个卡片组件，底色取自各自头像');
+
+/* ============ 流程 ============ */
+const gen=`<div class="bgl" style="background:rgba(0,0,0,.35)"></div>${sb('#fff')}
+<div style="position:absolute;left:0;right:0;bottom:0;top:54px;background:#F2F2F7;border-radius:26px 26px 0 0;display:flex;flex-direction:column;z-index:2">
+  <div class="row" style="justify-content:space-between;padding:12px 14px 6px"><div class="gbtn lg light" style="width:32px;height:32px">${ic('close',15)}</div><b style="font-size:15px">生成立绘</b><div style="width:32px"></div></div>
+  <div class="row" style="justify-content:center;gap:14px;padding:8px 0 12px">
+    <div style="text-align:center"><div class="av" style="width:64px;height:64px;margin:0 auto">${imgAv('boy')}</div><div style="font-size:10.5px;color:#8A8A8E;margin-top:4px">当前头像</div></div>
+    <span style="color:#AEAEB2">${ic('arrow',20)}</span>
+    <div style="text-align:center"><div style="width:64px;height:86px;border-radius:14px;overflow:hidden;margin:0 auto;box-shadow:0 6px 14px -8px rgba(120,40,80,.5)">${lihui('boy')}</div><div style="font-size:10.5px;color:#8A8A8E;margin-top:4px">预览</div></div>
+  </div>
+  <div style="padding:0 16px 4px;font-size:12px;font-weight:600;color:#6E6A73">风格</div>
+  <div class="chips" style="padding:4px 16px 10px"><span class="on">日系立绘</span><span>厚涂</span><span>Q 版</span><span>水彩</span><span>像素</span></div>
+  <div style="padding:0 16px 4px;font-size:12px;font-weight:600;color:#6E6A73">构图</div>
+  <div class="chips" style="padding:4px 16px 10px"><span class="on">半身</span><span>全身</span><span>特写</span></div>
+  <div class="form"><div class="fr"><span>补充描述</span><span class="v">白色T恤，日式定食屋</span></div><div class="fr"><span>图像模型</span><span class="v">gpt-image-2.5 ›</span></div></div>
+  <div class="fhint">头像会发送给你配置的图像服务，费用由该服务收取。生成后可以预览，点“使用这张”才会替换。</div>
+  <div class="cta">${ic('wand',17)}&nbsp;生成</div>
+</div>`;
+
+const avatarSrc=`${sb('#1C1C1E')}<div class="row" style="justify-content:space-between;padding:2px 14px"><div class="gbtn lg light">${ic('back',18)}</div><div></div></div>
+<div style="padding:4px 20px 10px;font-size:22px;font-weight:800">头像与立绘</div>
+<div class="row" style="gap:12px;padding:0 16px 12px">
+  <div style="flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center"><div class="av" style="width:70px;height:70px;margin:0 auto">${imgAv('cat')}</div><div style="font-size:12px;font-weight:700;margin-top:6px">头像</div><div style="font-size:10.5px;color:#7A4FE0;font-weight:600">来自聊天 · 自动</div></div>
+  <div style="flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center"><div style="width:52px;height:70px;border-radius:12px;overflow:hidden;margin:0 auto">${lihui('cat')}</div><div style="font-size:12px;font-weight:700;margin-top:6px">立绘</div><div style="font-size:10.5px;color:#8A8A8E">9月30日生成</div></div>
+</div>
+<div class="form"><div class="fr"><span>从相册选择头像</span><span class="v">›</span></div><div class="fr"><span>重新生成立绘</span><span class="v">›</span></div><div class="fr"><span style="color:#FF3B30">删除立绘</span><span></span></div></div>
+<div class="fhint">删除立绘后，详情页回到头像布局。手动选择的头像不会被聊天里识别到的头像覆盖。</div>
+<div class="form"><div class="fr"><span>详情页使用海报布局</span><div class="toggle"></div></div></div>
+<div class="fhint">有立绘时默认开启，也可以单独关掉。</div>`;
+
+const settings=`${sb('#1C1C1E')}<div class="row" style="justify-content:space-between;padding:2px 14px"><div class="gbtn lg light">${ic('back',18)}</div><div></div></div>
+<div style="padding:4px 20px 10px;font-size:22px;font-weight:800">头像与立绘</div>
+<div style="padding:0 30px 4px;font-size:11.5px;color:#8A8A8E">头像</div>
+<div class="form"><div class="fr"><span>从聊天中自动提取头像</span><div class="toggle"></div></div><div class="fr"><span>群聊也提取</span><div class="toggle off"></div></div></div>
+<div class="fhint">只取单聊里对方的头像，至少在两条消息旁出现过才会保存，不覆盖手动头像。</div>
+<div style="padding:0 30px 4px;font-size:11.5px;color:#8A8A8E">图像模型（生成立绘）</div>
+<div class="form"><div class="fr"><span>服务地址</span><span class="v ell" style="max-width:130px">vibeapi.cc/v1</span></div><div class="fr"><span>模型</span><span class="v">gpt-image-2.5</span></div><div class="fr"><span>API Key</span><span class="v">已保存</span></div><div class="fr"><span>默认风格</span><span class="v">日系立绘 ›</span></div></div>
+<div class="fhint">使用 OpenAI 兼容的图片编辑接口。密钥只保存在本机钥匙串。</div>
+<div class="form"><div class="fr"><span style="color:#E0457B;font-weight:600">测试连接</span><span></span></div></div>`;
+
+document.getElementById('pFlow').innerHTML=
+  phone(gen,'<b>生成立绘</b> · 选风格和构图，预览满意再使用','#000')+
+  phone(avatarSrc,'<b>联系人的头像与立绘</b> · 看来源、换头像、重新生成或删除立绘','#F2F2F7')+
+  phone(settings,'<b>设置</b> · 自动提取开关和图像模型配置','#F2F2F7');
+
+/* ============ 配色 ============ */
+const names=['绒','月','财','鸭','骏','夕'];
+document.getElementById('palette').innerHTML=
+  OLD.map((c,i)=>`<div class="sw old"><div class="dot" style="background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.5),rgba(255,255,255,0) 60%),${c}">${names[i]}</div>旧</div>`).join('')+
+  '<span class="arrow" aria-hidden="true">→</span>'+
+  Object.keys(PAL).map((k,i)=>`<div class="sw"><div class="dot" style="background:${grad(k)}">${names[i]}</div>${{sakura:'樱',sky:'天',mint:'薄荷',lemon:'柠',grape:'葡萄',coral:'珊瑚'}[k]}</div>`).join('');
+})();
+</script>

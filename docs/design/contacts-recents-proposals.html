@@ -1,0 +1,437 @@
+<title>Galchat 联系与最近</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap">
+<style>
+:root{
+  --bg:#FAF7F8;--surface:#FFFFFF;--ink:#221A1E;--muted:#76676D;--line:#EBE1E5;
+  --pink:#D93D69;--pink-soft:#FCE6EC;--frame:#1D1719;--ok:#2F8F5B;--warn:#B7791F;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark;
+    --bg:#151113;--surface:#1F191C;--ink:#F2E9ED;--muted:#A8979E;--line:#3A2F34;
+    --pink:#FF8FB0;--pink-soft:#3A1F29;--frame:#000;--ok:#6FCF97;--warn:#F2C166;}
+}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#151113;--surface:#1F191C;--ink:#F2E9ED;--muted:#A8979E;--line:#3A2F34;
+  --pink:#FF8FB0;--pink-soft:#3A1F29;--frame:#000;--ok:#6FCF97;--warn:#F2C166;}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;padding-inline:20px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:48px 80px;display:flex;flex-direction:column;gap:72px}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(30px,5vw,46px);font-weight:900}
+h2{font-size:26px;font-weight:900}
+h3{font-size:17px;font-weight:600}
+p{margin:0;max-width:66ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--pink);font-weight:600}
+.lead{color:var(--muted);font-size:16px}
+header{display:flex;flex-direction:column;gap:14px}
+
+/* 现状 */
+.now{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.now .box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.now dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px}
+.now dt{font-weight:600;white-space:nowrap}
+.now dd{margin:0;color:var(--muted)}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.88em;background:var(--pink-soft);color:var(--ink);padding:1px 5px;border-radius:5px}
+.now ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.now ul b{color:var(--ink);font-weight:600}
+
+/* 方案 */
+.option{display:flex;flex-direction:column;gap:26px;border-top:1px solid var(--line);padding-top:36px}
+.ohead{display:grid;grid-template-columns:auto 1fr;gap:6px 20px;align-items:start}
+.letter{font-family:var(--serif);font-weight:900;font-size:64px;line-height:.9;color:var(--pink);grid-row:span 3}
+.ohead .pitch{color:var(--muted)}
+.traits{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.traits span{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted);background:var(--surface)}
+.traits span.pro{color:var(--ok)}
+.traits span.con{color:var(--warn)}
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;align-items:center}
+figcaption{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
+figcaption b{color:var(--ink);font-weight:600}
+
+/* ---------- 手机外壳（内部为 iOS 浅色效果图，固定配色） ---------- */
+.phone{width:280px;max-width:100%;height:606px;border-radius:44px;border:9px solid var(--frame);overflow:hidden;position:relative;
+  font-family:var(--sans);color:#1C1C1E;font-size:13px;line-height:1.35;box-shadow:0 18px 40px -18px rgba(60,20,35,.35)}
+.phone *{box-sizing:border-box}
+.scr{position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column}
+.sb{height:40px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 24px 0 28px;font-weight:600;font-size:13px}
+.sb i{display:flex;gap:4px;align-items:center}
+.sb i s{display:block;background:currentColor;border-radius:1px;width:3px}
+.sb i em{display:block;width:21px;height:10px;border:1.4px solid currentColor;border-radius:3px;position:relative}
+.sb i em::after{content:"";position:absolute;inset:1.2px;right:5px;background:currentColor;border-radius:1px}
+.ico{display:inline-block;vertical-align:middle;flex:none}
+.av{flex:none;display:grid;place-items:center;color:#fff;font-weight:600;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* 底栏公共 */
+.tab{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-around;align-items:center;padding:6px 8px 20px}
+.tab .t{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9.5px;color:#8E8E93;width:48px}
+.tab .t.on{color:#F04B7A}
+.tab .qs{width:46px;height:46px;border-radius:50%;background:#F04B7A;display:grid;place-items:center;box-shadow:0 6px 14px -4px rgba(240,75,122,.6)}
+.tab .qs::after{content:"";width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.35)}
+
+/* ---------- 方案 A 素笺 ---------- */
+.A{background:#F5F3F4}
+.A .nav{display:flex;align-items:flex-end;justify-content:space-between;padding:6px 16px 8px}
+.A .nav h4{margin:0;font-size:27px;font-weight:700;letter-spacing:-.01em}
+.A .btn{width:32px;height:32px;border-radius:50%;background:#fff;display:grid;place-items:center;color:#F04B7A}
+.A .search{margin:0 16px 10px;height:34px;border-radius:10px;background:#E9E6E8;display:flex;align-items:center;gap:6px;padding:0 10px;color:#8E8A8C}
+.A .live{margin:0 16px 10px;background:#FFE9EF;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;color:#B2244F;font-size:12px}
+.A .live .dot{width:7px;height:7px;border-radius:50%;background:#F04B7A;box-shadow:0 0 0 3px rgba(240,75,122,.2)}
+.A .list{background:#fff;margin:0 16px;border-radius:14px;overflow:hidden}
+.A .it{display:flex;gap:11px;padding:10px 12px;align-items:center;position:relative}
+.A .it+.it::before{content:"";position:absolute;top:0;left:68px;right:0;height:.5px;background:#E3E0E2}
+.A .it .top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.A .it .nm{font-size:14.5px;font-weight:600}
+.A .it .tm{font-size:11px;color:#9B979A}
+.A .it .pv{font-size:12.5px;color:#8B8689;display:flex;justify-content:space-between;gap:6px;margin-top:2px}
+.A .aff{font-size:11px;color:#F04B7A;display:flex;align-items:center;gap:2px;flex:none}
+.A .chip{font-size:10px;border-radius:4px;padding:1px 5px;font-weight:600;flex:none}
+.A .chip.wait{background:#FFF1DB;color:#A8650B}
+.A .chip.fix{background:#E6F4EC;color:#2B7A4B}
+.A .chip.bad{background:#FDE8E8;color:#B23A3A}
+.A .sec{font-size:11px;color:#9B979A;font-weight:600;padding:8px 28px 4px}
+.A .ring{border-radius:50%;padding:2.5px;flex:none}
+.A .ring>.av{border:2px solid #fff}
+.A .idx{position:absolute;right:3px;top:150px;display:flex;flex-direction:column;gap:1px;font-size:8.5px;font-weight:600;color:#F04B7A;text-align:center}
+.A .card{background:#fff;margin:0 16px 10px;border-radius:14px;padding:14px}
+.A .bar{height:6px;border-radius:3px;background:#F2E6EA;overflow:hidden}
+.A .bar i{display:block;height:100%;background:linear-gradient(90deg,#FF9AB5,#F04B7A);border-radius:3px}
+.A .kv{display:flex;justify-content:space-between;gap:12px;padding:11px 14px;position:relative}
+.A .kv+.kv::before{content:"";position:absolute;top:0;left:14px;right:0;height:.5px;background:#E3E0E2}
+.A .kv .k{color:#1C1C1E;flex:none}
+.A .kv .v{color:#8B8689;text-align:right;min-width:0}
+.A .tab{background:rgba(250,249,249,.94);border-top:.5px solid #E0DCDE}
+
+/* ---------- 方案 B 好感手账 ---------- */
+.B{background:#FFF4F6}
+.B .nav{padding:4px 18px 10px;display:flex;justify-content:space-between;align-items:flex-end}
+.B .nav h4{margin:0;font-size:26px;font-weight:800}
+.B .nav small{display:block;font-size:11px;color:#B98796;font-weight:500}
+.B .hero{margin:0 14px 12px;border-radius:22px;padding:14px;color:#fff;background:linear-gradient(140deg,#F04B7A 0%,#FF7E9F 60%,#FFB2A6 100%);position:relative;overflow:hidden}
+.B .hero::after{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.14)}
+.B .hero .lab{font-size:10.5px;letter-spacing:.08em;opacity:.9}
+.B .big{font-family:var(--serif);font-weight:900;font-size:34px;line-height:1}
+.B .bub{border-radius:14px;padding:7px 10px;font-size:12px;max-width:86%}
+.B .bub.o{background:#fff;color:#3A2A30;border-bottom-left-radius:4px}
+.B .bub.m{background:#FFD7E2;color:#6B1F37;border-bottom-right-radius:4px;margin-left:auto}
+.B .hero .bub.o{background:rgba(255,255,255,.95)}
+.B .cta{margin-top:10px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:6px 10px;font-size:11.5px;text-align:center;font-weight:600}
+.B .chips{display:flex;gap:6px;padding:0 14px 10px}
+.B .chips span{font-size:11px;padding:4px 10px;border-radius:999px;background:#fff;color:#8A5A69;border:1px solid #F6D9E1}
+.B .chips span.on{background:#3A2A30;color:#fff;border-color:#3A2A30}
+.B .cd{background:#fff;margin:0 14px 10px;border-radius:18px;padding:11px 12px;box-shadow:0 4px 14px -8px rgba(200,60,100,.35);display:flex;flex-direction:column;gap:7px}
+.B .cd.dash{border:1.5px dashed #F2B8C8;box-shadow:none;background:#FFFBFC}
+.B .cd .bub.o{background:#F6F1F3}
+.B .nm{font-weight:700;font-size:14px}
+.B .tm{font-size:10.5px;color:#B3A1A7}
+.B .pill{font-size:10px;padding:1px 7px;border-radius:999px;font-weight:600}
+.B .pill.w{background:#FFF1DB;color:#A8650B}
+.B .pill.f{background:#E6F4EC;color:#2B7A4B}
+.B .pill.r{background:#FDE8E8;color:#B23A3A}
+.B .pill.h{background:#FFE3EB;color:#D23566}
+.B .seg{margin:0 14px 12px;background:#F7E3E9;border-radius:10px;padding:3px;display:flex}
+.B .seg span{flex:1;text-align:center;font-size:11.5px;padding:5px 0;border-radius:8px;color:#8A5A69}
+.B .seg span.on{background:#fff;color:#3A2A30;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.B .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 14px}
+.B .gc{background:#fff;border-radius:18px;padding:11px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 14px -8px rgba(200,60,100,.35)}
+.B .gc.me{outline:2px solid #F04B7A}
+.B .meter{height:5px;border-radius:3px;background:#F7E3E9;overflow:hidden}
+.B .meter i{display:block;height:100%;background:#F04B7A;border-radius:3px}
+.B .note{font-size:10.5px;color:#9C8990}
+.B .tab{left:14px;right:14px;bottom:14px;padding:6px 6px;background:#fff;border-radius:26px;box-shadow:0 8px 24px -10px rgba(200,60,100,.45)}
+.B .tab .qs{width:40px;height:40px}
+.B .dhero{padding:4px 18px 16px;background:linear-gradient(180deg,#FFD9E3,#FFF4F6);display:flex;flex-direction:column;align-items:center;gap:6px}
+.B .gauge{position:relative;width:118px;height:118px}
+.B .gauge .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.B .tags{display:flex;flex-wrap:wrap;gap:5px}
+.B .tags span{font-size:10.5px;background:#FFF0F4;color:#A23A5B;padding:2px 8px;border-radius:6px}
+.B .quote{font-family:var(--serif);font-size:13px;color:#4A2F38;line-height:1.5}
+
+/* ---------- 方案 C 玻璃档案 ---------- */
+.C{background:linear-gradient(170deg,#ECE6F5 0%,#D6E3EC 38%,#A9A6CC 78%,#6F6AA0 100%)}
+.C .g{background:rgba(255,255,255,.42);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid rgba(255,255,255,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+.C .top{display:flex;justify-content:space-between;padding:4px 14px}
+.C .gb{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#3C3857}
+.C .gp{height:34px;padding:0 14px;border-radius:999px;display:grid;place-items:center;color:#3C3857;font-weight:600;font-size:12.5px}
+.C h4{margin:6px 20px 10px;font-size:28px;font-weight:800;color:#23213A}
+.C .srch{margin:0 14px 12px;height:36px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 12px;color:#5E5A7A}
+.C .gl{font-size:11px;font-weight:700;color:#4F4B6E;padding:0 26px 5px;letter-spacing:.04em}
+.C .grp{margin:0 14px 12px;border-radius:22px;overflow:hidden}
+.C .it{display:flex;align-items:center;gap:10px;padding:9px 12px;position:relative}
+.C .it+.it::before{content:"";position:absolute;top:0;left:58px;right:12px;height:.5px;background:rgba(60,56,87,.14)}
+.C .mono{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,.12));border:1px solid rgba(255,255,255,.7);text-shadow:0 1px 2px rgba(40,30,80,.25);flex:none}
+.C .nm{font-weight:600;font-size:14px;color:#23213A}
+.C .pv{font-size:12px;color:#5E5A7A}
+.C .tm{font-size:11px;color:#6D6989}
+.C .tag{font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;background:rgba(255,255,255,.6)}
+.C .fav{display:flex;gap:10px;padding:0 16px 14px}
+.C .fav>div{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:#23213A;font-weight:600}
+.C .tab{left:16px;right:16px;bottom:14px;padding:6px;border-radius:30px}
+.C .tab .t{color:#4F4B6E}
+.C .tab .t.on{color:#D93D69}
+.C .tab .qs{width:40px;height:40px}
+.C .dv{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 14px}
+.C .acts{display:flex;gap:12px;justify-content:center}
+.C .acts>div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:#fff;font-weight:600}
+.C .acts .gb{width:48px;height:48px;color:#fff;background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
+.C .dcard{width:100%;border-radius:22px;padding:12px 14px;color:#fff;background:rgba(80,70,140,.32);border:1px solid rgba(255,255,255,.28);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.C .dcard .lb{font-size:11px;opacity:.8}
+.C .dcard+.dcard{margin-top:0}
+.C .hr{height:.5px;background:rgba(255,255,255,.3);margin:9px 0}
+
+/* 数据库 */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;padding:12px 16px;vertical-align:top;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+.rec{display:inline-block;font-size:11px;font-weight:600;color:var(--pink);background:var(--pink-soft);padding:1px 7px;border-radius:999px;margin-left:6px}
+.db{display:flex;flex-direction:column;gap:18px}
+.next{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:10px}
+.next ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.next ol b{color:var(--ink)}
+
+@media (max-width:760px){
+  .now{grid-template-columns:1fr}
+  .letter{font-size:46px}
+  .wrap{padding-block:28px 56px;gap:52px}
+}
+@media (max-width:340px){.phone{transform:scale(.92);transform-origin:top center}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GALCHAT · 最近 / 联系 改版提案</div>
+    <h1>最近和联系的三个方向</h1>
+    <p class="lead">每个方向给出三张图：最近列表、联系人列表、联系人详情。数据用的是示例联系人，字段与 App 现有模型一致（好感度、备注、对方人设、识别别名、OCR 纠正、待确认绑定）。选定方向后再动 UIKit 代码和数据库。</p>
+  </header>
+
+  <section class="now" aria-labelledby="now-h">
+    <div class="box">
+      <h2 id="now-h">现在的持久化方式</h2>
+      <dl>
+        <dt>联系人</dt><dd><code>ContactsStore</code> → App Group 下的 <code>contacts.json</code>。整个 <code>Document</code>（联系人数组 + 好感度台账）用 <code>Codable</code> 编码，每次修改整文件 <code>.atomic</code> 重写。</dd>
+        <dt>最近</dt><dd><code>RecentConversationStore</code> → <code>recents.json</code>，最多 100 个会话 × 500 条消息 × 2000 字，OCR 原文与人工纠正分层保存。</dd>
+        <dt>头像</dt><dd><code>avatarData: Data</code> 直接放在联系人 JSON 里，会以 base64 写进文件。</dd>
+        <dt>版本</dt><dd><code>schemaVersion = 1</code>，版本不符直接报错并暂停保存，没有迁移路径。</dd>
+      </dl>
+    </div>
+    <div class="box">
+      <h3>换数据库能解决的问题</h3>
+      <ul>
+        <li><b>写放大</b>：改一个备注要重写全部联系人和头像；最近满额时单文件可达几十 MB，每识别一轮就整份重写。</li>
+        <li><b>查询</b>：列表排序、按拼音分组、搜索聊天内容，现在都要把全部数据读进内存再过滤。</li>
+        <li><b>迁移</b>：以后加字段（比如好感度走势、标签），需要正规的版本迁移，而不是解码失败。</li>
+        <li><b>扩展无需改动</b>：键盘扩展只读 <code>AffectionProjection</code>，不读这两个文件，数据库只放主 App 即可。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="option" id="A" aria-labelledby="a-h">
+    <div class="ohead">
+      <div class="letter" aria-hidden="true">A</div>
+      <h2 id="a-h">素笺 · 精修系统列表</h2>
+      <p class="pitch">贴近你截图里的微信和系统通讯录：高密度列表、拼音分组和右侧索引。好感度用头像外圈的细环表示，“待确认”“已纠正”“待修复”用小标签提示。</p>
+      <div class="traits"><span class="pro">改动最小，UIKit 原生组件即可实现</span><span class="pro">联系人多时找人最快</span><span class="con">个性较弱，和其他 App 差别不大</span></div>
+    </div>
+    <div class="phones" id="phones-A"></div>
+  </section>
+
+  <section class="option" id="B" aria-labelledby="b-h">
+    <div class="ohead">
+      <div class="letter" aria-hidden="true">B</div>
+      <h2 id="b-h">好感手账 · 卡片与走势</h2>
+      <p class="pitch">把“正在聊”的人放在最上方做主卡片，直接显示好感度和最新一句。会话卡片里用两条小气泡还原上下文；联系人改成双列卡片，可以按好感度、最近或名称排序。</p>
+      <div class="traits"><span class="pro">Galgame 味道最足，好感度是主角</span><span class="pro">详情页有 7 天走势，适合配合数据库</span><span class="con">每屏信息更少，联系人上百时要靠搜索</span></div>
+    </div>
+    <div class="phones" id="phones-B"></div>
+  </section>
+
+  <section class="option" id="C" aria-labelledby="c-h">
+    <div class="ohead">
+      <div class="letter" aria-hidden="true">C</div>
+      <h2 id="c-h">玻璃档案 · iOS 26 液态玻璃</h2>
+      <p class="pitch">延续你截图里系统联系人卡片的渐变与玻璃材质。最近按“今天 / 昨天 / 更早”分组；联系顶部是常聊的人；详情页用大号字母头像和四个圆形操作按钮。</p>
+      <div class="traits"><span class="pro">和 iOS 26 系统风格一致，质感最好</span><span class="pro">与现有 TCNavigationBar 的玻璃效果协调</span><span class="con">iOS 26 以下需要降级为半透明底色</span><span class="con">渐变底上的文字对比度要逐屏检查</span></div>
+    </div>
+    <div class="phones" id="phones-C"></div>
+  </section>
+
+  <section class="db" aria-labelledby="db-h">
+    <h2 id="db-h">数据库怎么选</h2>
+    <p class="lead">你提到了 Realm。它能用，但下面三个选项在这个项目里的取舍不太一样。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>方案</th><th>适合这里的地方</th><th>要注意的地方</th></tr></thead>
+        <tbody>
+          <tr><td>GRDB（SQLite）<span class="rec">推荐</span></td><td>直接复用现有 <code>Codable</code> 结构体做记录；自带版本迁移；<code>ValueObservation</code> 可以替代现在的 <code>NotificationCenter</code> 刷新；FTS5 全文检索可以搜聊天内容；Swift 6 并发友好。</td><td>要手写表结构和少量 SQL；多一个 SPM 依赖。</td></tr>
+          <tr><td>Realm</td><td>对象模型上手快，列表可以直接绑定实时结果。</td><td>MongoDB 已在 2024 年宣布停止 Atlas Device SDK 的官方演进，本地库仍开源但更新放缓；对象受线程限制，和工程里默认 MainActor 隔离、Swift 6 严格并发配合起来比较别扭；包体积增加明显。</td></tr>
+          <tr><td>SwiftData</td><td>系统自带，没有第三方依赖。</td><td>需要 iOS 17+，要先确认主 App 的最低版本；复杂迁移和后台写入的坑较多，调试信息少。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="next">
+      <h3>选定后的落地顺序</h3>
+      <ol>
+        <li><b>建表</b>：<code>contact</code>、<code>contact_alias</code>、<code>scored_turn</code>、<code>conversation</code>、<code>message</code>，头像改存为文件，表里只保存路径。</li>
+        <li><b>一次性迁移</b>：首次启动读取旧的 <code>contacts.json</code> / <code>recents.json</code> 写入数据库，成功后把原文件改名备份，不删除。</li>
+        <li><b>保持接口</b>：<code>ContactsStore</code> 和 <code>RecentConversationStore</code> 的公开方法不变，只替换内部存储，调用方不用改。</li>
+        <li><b>再换 UI</b>：按你选的方案重写 <code>ContactsViewController</code>、<code>ContactDetailViewController</code> 和 <code>RecentsViewController</code>。</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const P={
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  person:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5"/>',
+  star:'<path d="M12 3.5l2.4 5 5.3.7-3.9 3.6 1 5.3L12 15.5l-4.8 2.6 1-5.3-3.9-3.6 5.3-.7z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2.6M12 18.4V21M21 12h-2.6M5.6 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4L5.6 5.6"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  chev:'<path d="M9 5l7 7-7 7"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  sort:'<path d="M7 5v14M4 8l3-3 3 3M17 19V5M14 16l3 3 3-3"/>',
+  heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'
+};
+const ic=(n,s=20,fill)=>`<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="${fill?'currentColor':'none'}" stroke="${fill?'none':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+const COL={'林小满':'#F08BA6','苏禾':'#7FB3A0','何夕':'#8E9BD6','周予安':'#E3A66B','阿毛':'#9AA7B5','陈一一':'#C99ACB','许嘉言':'#86B7D6','周末爬山小分队':'#A9B98A'};
+const av=(n,s,r,chars)=>`<div class="av" style="width:${s}px;height:${s}px;border-radius:${r};background:${COL[n]||'#B5A9B0'};font-size:${Math.round(s*(chars===2?.34:.42))}px">${chars===2?n.slice(-2):n.slice(-1)}</div>`;
+
+const contacts=[
+  {n:'阿毛',a:55,note:'高中同桌',py:'A'},
+  {n:'陈一一',a:41,note:'上次聊崩了，先别急',py:'C',rupt:true},
+  {n:'何夕',a:71,note:'健身房认识',py:'H'},
+  {n:'林小满',a:78,note:'大学同学 · 喜欢猫',py:'L',active:true},
+  {n:'苏禾',a:88,note:'同事 · 周末一起爬山',py:'S'},
+  {n:'许嘉言',a:30,note:'',py:'X'},
+  {n:'周予安',a:62,note:'相亲对象 · 慢热',py:'Z'}
+];
+const recents=[
+  {n:'林小满',t:'10:40',g:'今天',who:'对方',msg:'今晚那家店还开吗？想吃他家的芒果',prev:['我','下班一起去？'],a:78,live:true},
+  {n:'周予安',t:'09:34',g:'今天',who:'我',msg:'那我明天顺路带过去给你',prev:['对方','书还在你那吗'],a:62},
+  {n:'周末爬山小分队',t:'昨天',g:'昨天',who:'对方',msg:'集合时间改到七点半',prev:['对方','谁带帐篷'],unbound:true},
+  {n:'苏禾',t:'昨天',g:'昨天',who:'对方',msg:'哈哈哈你也太会了吧',prev:['我','猜猜我在哪'],a:88,fixed:true},
+  {n:'陈一一',t:'星期一',g:'更早',who:'我',msg:'上次是我语气不好，抱歉',prev:['对方','算了'],a:41,rupt:true},
+  {n:'何夕',t:'9月26日',g:'更早',who:'对方',msg:'[图片]',prev:['我','今天练腿'],a:71}
+];
+const sb=(c='#1C1C1E')=>`<div class="sb" style="color:${c}"><span>9:41</span><i><s style="height:4px"></s><s style="height:6px"></s><s style="height:8px"></s><s style="height:10px"></s><em></em></i></div>`;
+const tab=(on)=>`<div class="tab">${[['clock','最近'],['person','联系'],null,['star','人格'],['gear','设置']].map((x,i)=>x?`<div class="t${i===on?' on':''}">${ic(x[0],22)}<span>${x[1]}</span></div>`:'<div class="qs" aria-label="快速开启"></div>').join('')}</div>`;
+const phone=(cls,inner,cap)=>`<figure><div class="phone ${cls}" role="img" aria-label="${cap.replace(/<[^>]+>/g,'')}"><div class="scr">${inner}</div></div><figcaption>${cap}</figcaption></figure>`;
+const lc=contacts.find(c=>c.active);
+
+/* ---------- A ---------- */
+function A(){
+  const chipsA=r=>r.unbound?'<span class="chip wait">待确认</span>':r.fixed?'<span class="chip fix">已纠正</span>':r.rupt?'<span class="chip bad">待修复</span>':'';
+  const rec=`${sb()}<div class="nav"><h4>最近</h4><div class="btn">${ic('pencil',17)}</div></div>
+  <div class="search">${ic('search',15)}<span>搜索联系人或聊天内容</span></div>
+  <div class="live"><span class="dot"></span><span class="grow">正在识别 · <b>林小满</b></span><span class="tnum">已存 36 条</span></div>
+  <div class="list">${recents.map(r=>`<div class="it">${av(r.n,44,'12px')}<div class="grow"><div class="top"><div class="row grow" style="gap:6px"><span class="nm ell">${r.n}</span>${chipsA(r)}</div><span class="tm">${r.t}</span></div>
+  <div class="pv"><span class="ell">${r.who}：${r.msg}</span>${r.a!=null?`<span class="aff tnum">${ic('heart',10,1)}${r.a}</span>`:''}</div></div></div>`).join('')}</div>${tab(0)}`;
+
+  const ring=(c,s)=>`<div class="ring" style="background:conic-gradient(#F04B7A ${c.a*3.6}deg,#F1E4E8 0)">${av(c.n,s,'50%')}</div>`;
+  const groups={};contacts.forEach(c=>(groups[c.py]=groups[c.py]||[]).push(c));
+  const con=`${sb()}<div class="nav"><h4>联系</h4><div class="btn">${ic('plus',18)}</div></div>
+  <div class="search">${ic('search',15)}<span>搜索名称、别名或备注</span></div>
+  <div class="sec">当前在聊</div>
+  <div class="list"><div class="it">${ring(lc,38)}<div class="grow"><div class="nm">${lc.n}</div><div class="pv"><span>${lc.note}</span></div></div><span class="aff tnum" style="font-size:13px;font-weight:600">${lc.a}</span></div></div>
+  ${Object.keys(groups).slice(0,4).map(k=>`<div class="sec">${k}</div><div class="list">${groups[k].map(c=>`<div class="it">${ring(c,38)}<div class="grow"><div class="row" style="gap:6px"><span class="nm">${c.n}</span>${c.rupt?'<span class="chip bad">待修复</span>':''}</div><div class="pv"><span class="ell">${c.note||'未设置备注'}</span></div></div><span class="tnum" style="color:#9B979A;font-size:13px">${c.a}</span></div>`).join('')}</div>`).join('')}
+  <div class="idx">${'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('').map(x=>`<span>${x}</span>`).join('')}</div>${tab(1)}`;
+
+  const det=`${sb()}<div class="nav" style="align-items:center;padding-bottom:4px"><span class="row" style="gap:2px;color:#F04B7A;font-size:14px">${ic('back',18)}联系</span><span style="color:#F04B7A;font-size:14px">编辑</span></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0 12px"><div class="ring" style="background:conic-gradient(#F04B7A ${lc.a*3.6}deg,#F1E4E8 0);padding:3px">${av(lc.n,70,'50%',2)}</div><div style="font-size:19px;font-weight:700;margin-top:4px">${lc.n}</div><div style="font-size:12px;color:#8B8689">${lc.note}</div></div>
+  <div class="card"><div class="row" style="justify-content:space-between;align-items:baseline"><span style="font-size:12px;color:#8B8689">好感度</span><span style="font-size:11px;color:#2B7A4B">今天 +3 · 7 天 +9</span></div>
+  <div style="font-size:30px;font-weight:700;margin:2px 0 8px" class="tnum">${lc.a}<span style="font-size:13px;color:#9B979A;font-weight:500"> / 100</span></div><div class="bar"><i style="width:${lc.a}%"></i></div></div>
+  <div class="list" style="margin-bottom:10px"><div class="kv"><span class="k">对方人设</span><span class="v ell">慢热，喜欢被认真回复</span></div><div class="kv"><span class="k">识别别名</span><span class="v ell">小满、林小满(3)</span></div><div class="kv"><span class="k">聊天记录</span><span class="v row" style="gap:2px">12 段${ic('chev',14)}</span></div></div>
+  <div class="list"><div class="kv" style="justify-content:center;color:#D33">删除联系人</div></div>`;
+  document.getElementById('phones-A').innerHTML=
+    phone('A',rec,'<b>最近</b> · 顶部显示正在识别的会话，状态用小标签，右下角是好感度')+
+    phone('A',con,'<b>联系</b> · 按拼音分组，头像外圈显示好感度，右侧字母索引')+
+    phone('A',det,'<b>详情</b> · 好感度单独一张卡片，其余字段是系统风格的分组列表');
+}
+
+/* ---------- B ---------- */
+function B(){
+  const rest=recents.filter(r=>!r.live);
+  const pillB=r=>r.unbound?'<span class="pill w">待确认</span>':r.fixed?'<span class="pill f">已纠正</span>':r.rupt?'<span class="pill r">待修复</span>':`<span class="pill h tnum">♥ ${r.a}</span>`;
+  const bubs=r=>`<div class="bub ${r.prev[0]==='我'?'m':'o'}">${r.prev[1]}</div><div class="bub ${r.who==='我'?'m':'o'}">${r.msg}</div>`;
+  const rec=`${sb()}<div class="nav"><h4>最近<small>9月30日 星期三</small></h4><span style="color:#D23566">${ic('pencil',20)}</span></div>
+  <div class="hero"><div class="row" style="justify-content:space-between;align-items:flex-start;position:relative;z-index:1"><div><div class="lab">正在聊</div><div class="row" style="gap:8px;margin-top:6px">${av('林小满',36,'50%')}<b style="font-size:16px">林小满</b></div></div>
+  <div style="text-align:right"><div class="big tnum">78</div><div style="font-size:11px;opacity:.9">♥ 今天 +3</div></div></div>
+  <div style="margin-top:10px;position:relative;z-index:1"><div class="bub o">今晚那家店还开吗？想吃他家的芒果</div></div>
+  <div class="cta" style="position:relative;z-index:1">查看 3 条回复建议</div></div>
+  <div class="chips"><span class="on">全部 6</span><span>待确认 1</span><span>已纠正 1</span></div>
+  ${rest.slice(0,3).map(r=>`<div class="cd${r.unbound?' dash':''}"><div class="row">${av(r.n,26,'50%')}<span class="nm grow ell">${r.n}</span>${pillB(r)}<span class="tm">${r.t}</span></div>${bubs(r)}${r.unbound?'<div style="font-size:11px;color:#D23566;font-weight:600;text-align:center">绑定到联系人 ›</div>':''}</div>`).join('')}${tab(0)}`;
+
+  const sorted=[...contacts].sort((a,b)=>b.a-a.a);
+  const con=`${sb()}<div class="nav"><h4>联系</h4><span class="row" style="gap:14px;color:#D23566">${ic('search',20)}${ic('plus',21)}</span></div>
+  <div class="seg"><span class="on">好感度</span><span>最近</span><span>名称</span></div>
+  <div class="grid">${sorted.slice(0,6).map(c=>`<div class="gc${c.active?' me':''}"><div class="row" style="justify-content:space-between">${av(c.n,38,'50%')}${c.active?'<span class="pill h">在聊</span>':c.rupt?'<span class="pill r">待修复</span>':''}</div>
+  <div class="row" style="justify-content:space-between;align-items:baseline"><span class="nm">${c.n}</span><span class="tnum" style="font-family:var(--serif);font-weight:900;font-size:17px;color:#D23566">${c.a}</span></div>
+  <div class="meter"><i style="width:${c.a}%"></i></div><div class="note ell">${c.note||'未设置备注'}</div></div>`).join('')}</div>${tab(1)}`;
+
+  const pts=[66,69,68,72,70,75,78];
+  const W=224,H=46,x=i=>8+i*(W-16)/6,y=v=>H-6-(v-60)/(80-60)*(H-14);
+  const line=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const R=50,C=2*Math.PI*R;
+  const det=`<div class="dhero">${sb()}<div class="row" style="justify-content:space-between;width:100%;color:#D23566;margin-top:-4px">${ic('back',20)}<span style="font-size:13px;font-weight:600">编辑</span></div>
+  <div class="gauge"><svg width="118" height="118" viewBox="0 0 118 118" aria-hidden="true"><circle cx="59" cy="59" r="${R}" fill="none" stroke="#FFE3EB" stroke-width="9"/><circle cx="59" cy="59" r="${R}" fill="none" stroke="#F04B7A" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(C*lc.a/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 59 59)"/></svg>
+  <div class="c">${av(lc.n,76,'50%',2)}</div></div>
+  <div style="font-size:19px;font-weight:800">${lc.n}</div><div class="row" style="gap:6px"><span class="pill h tnum" style="font-size:11px">♥ 78 / 100</span><span class="pill f">今天 +3</span></div></div>
+  <div class="cd" style="margin-top:-4px"><div class="row" style="justify-content:space-between"><span class="nm" style="font-size:12.5px">近 7 天</span><span class="tm tnum">66 → 78</span></div>
+  <svg width="100%" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${x(0)},${H-2} ${line} ${x(6)},${H-2}" fill="#FFE3EB" stroke="none"/><polyline points="${line}" fill="none" stroke="#F04B7A" stroke-width="2" stroke-linejoin="round"/><circle cx="${x(6)}" cy="${y(78)}" r="3.5" fill="#F04B7A"/></svg>
+  <div class="row tm" style="justify-content:space-between"><span>24日</span><span>30日</span></div></div>
+  <div class="cd"><span class="nm" style="font-size:12.5px">对方人设</span><div class="quote">“慢热，喜欢被认真回复，别连发表情包。”</div><div class="tags"><span>小满</span><span>林小满(3)</span><span>+ 别名</span></div></div>
+  <div class="row" style="gap:8px;padding:0 14px"><div class="cd" style="flex:1;margin:0;align-items:center;font-weight:600;font-size:12px">聊天记录 12</div><div class="cd" style="flex:1;margin:0;align-items:center;font-weight:600;font-size:12px;background:#3A2A30;color:#fff">开始分析</div></div>`;
+  document.getElementById('phones-B').innerHTML=
+    phone('B',rec,'<b>最近</b> · 正在聊的人放主卡片，其余会话用两条小气泡还原上下文')+
+    phone('B',con,'<b>联系</b> · 双列卡片，默认按好感度排序，当前在聊的人描边')+
+    phone('B',det,'<b>详情</b> · 好感度圆环、7 天走势（需要数据库记录每日分数）');
+}
+
+/* ---------- C ---------- */
+function C(){
+  const tagC=r=>r.unbound?'<span class="tag" style="color:#9A5B0B">待确认</span>':r.fixed?'<span class="tag" style="color:#2B7A4B">已纠正</span>':r.rupt?'<span class="tag" style="color:#B23A3A">待修复</span>':'';
+  const mono=(n,s,chars)=>`<div class="mono" style="width:${s}px;height:${s}px;font-size:${Math.round(s*(chars===2?.32:.42))}px;background:linear-gradient(160deg,rgba(255,255,255,.5),rgba(255,255,255,.05)),${COL[n]||'#B5A9B0'}">${chars===2?n.slice(-2):n.slice(-1)}</div>`;
+  const groups=['今天','昨天','更早'];
+  const rec=`${sb('#23213A')}<div class="top"><div class="gb g">${ic('search',17)}</div><div class="gb g">${ic('pencil',16)}</div></div><h4>最近</h4>
+  ${groups.map(g=>`<div class="gl">${g}</div><div class="grp g">${recents.filter(r=>r.g===g).map(r=>`<div class="it">${mono(r.n,36)}<div class="grow"><div class="row" style="justify-content:space-between;gap:6px"><span class="row" style="gap:5px;min-width:0"><span class="nm ell">${r.n}</span>${tagC(r)}${r.live?'<span class="tag" style="color:#D93D69">识别中</span>':''}</span><span class="tm">${r.t}</span></div><div class="pv ell">${r.who}：${r.msg}</div></div></div>`).join('')}</div>`).join('')}
+  <div class="tab g">${[['clock','最近'],['person','联系'],null,['star','人格'],['gear','设置']].map((x,i)=>x?`<div class="t${i===0?' on':''}">${ic(x[0],21)}<span>${x[1]}</span></div>`:'<div class="qs"></div>').join('')}</div>`;
+
+  const fav=[...contacts].sort((a,b)=>b.a-a.a).slice(0,4);
+  const con=`${sb('#23213A')}<div class="top"><div class="gb g">${ic('sort',16)}</div><div class="gb g">${ic('plus',18)}</div></div><h4>联系</h4>
+  <div class="srch g">${ic('search',15)}<span>搜索</span></div>
+  <div class="gl">常聊</div><div class="fav">${fav.map(c=>`<div>${mono(c.n,50,2)}<span>${c.n}</span></div>`).join('')}</div>
+  <div class="gl">全部 · 7</div><div class="grp g">${contacts.slice(0,5).map(c=>`<div class="it">${mono(c.n,34)}<div class="grow"><div class="row" style="gap:5px"><span class="nm">${c.n}</span>${c.rupt?'<span class="tag" style="color:#B23A3A">待修复</span>':''}</div><div class="pv ell">${c.note||'未设置备注'}</div></div><span class="tm tnum">♥ ${c.a}</span></div>`).join('')}</div>
+  <div class="tab g">${[['clock','最近'],['person','联系'],null,['star','人格'],['gear','设置']].map((x,i)=>x?`<div class="t${i===1?' on':''}">${ic(x[0],21)}<span>${x[1]}</span></div>`:'<div class="qs"></div>').join('')}</div>`;
+
+  const det=`${sb('#23213A')}<div class="top"><div class="gb g">${ic('back',18)}</div><div class="gp g">编辑</div></div>
+  <div class="dv"><div class="mono" style="width:112px;height:112px;font-size:38px;margin-top:6px;background:linear-gradient(160deg,rgba(255,255,255,.6),rgba(255,255,255,.08)),#C9A0B8">小满</div>
+  <div style="font-size:11.5px;color:#3C3857;font-weight:600">好感度 <span class="tnum">78</span> · 今天 +3</div>
+  <div style="font-size:24px;font-weight:800;color:#fff;text-shadow:0 1px 6px rgba(40,30,80,.3)">${lc.n}</div>
+  <div class="acts">${[['chat','聊天记录'],['spark','分析'],['person','人设'],['heart','好感']].map(a=>`<div><div class="gb g">${ic(a[0],20)}</div>${a[1]}</div>`).join('')}</div>
+  <div class="dcard"><div class="lb">备注</div><div>${lc.note}</div><div class="hr"></div><div class="lb">对方人设</div><div>慢热，喜欢被认真回复</div></div>
+  <div class="dcard"><div class="row" style="justify-content:space-between"><div><div class="lb">识别别名</div><div>小满、林小满(3)</div></div>${ic('chev',16)}</div></div></div>`;
+  document.getElementById('phones-C').innerHTML=
+    phone('C',rec,'<b>最近</b> · 按今天 / 昨天 / 更早分组，每组一块玻璃卡片')+
+    phone('C',con,'<b>联系</b> · 顶部四位常聊的人，下方玻璃分组列表')+
+    phone('C',det,'<b>详情</b> · 延续系统联系人卡片：大字母头像和四个圆形操作按钮');
+}
+A();B();C();
+})();
+</script>

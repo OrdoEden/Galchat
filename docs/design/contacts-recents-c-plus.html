@@ -1,0 +1,318 @@
+<title>Galchat 玻璃档案 C+</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap">
+<style>
+:root{
+  --bg:#FAF7F8;--surface:#FFFFFF;--ink:#221A1E;--muted:#76676D;--line:#EBE1E5;
+  --pink:#D93D69;--pink-soft:#FCE6EC;--frame:#1D1719;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark;
+    --bg:#151113;--surface:#1F191C;--ink:#F2E9ED;--muted:#A8979E;--line:#3A2F34;--pink:#FF8FB0;--pink-soft:#3A1F29;--frame:#000;}
+}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#151113;--surface:#1F191C;--ink:#F2E9ED;--muted:#A8979E;--line:#3A2F34;--pink:#FF8FB0;--pink-soft:#3A1F29;--frame:#000;}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;padding-inline:20px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:44px 80px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(28px,4.6vw,42px);font-weight:900}
+h2{font-size:22px;font-weight:900}
+p{margin:0;max-width:66ch}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--pink);font-weight:600}
+.lead{color:var(--muted);font-size:16px}
+header{display:flex;flex-direction:column;gap:12px}
+.changes{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.changes div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.changes b{font-size:14px}
+.changes span{font-size:13px;color:var(--muted);line-height:1.55}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.86em;background:var(--pink-soft);padding:1px 5px;border-radius:5px}
+
+.picker{display:flex;flex-direction:column;gap:12px;align-items:center}
+.picker .lbl{font-size:13px;color:var(--muted)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.swatches button{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:6px 14px 6px 8px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.swatches button[aria-pressed="true"]{border-color:var(--pink);box-shadow:0 0 0 3px var(--pink-soft)}
+.swatches button:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.swatches i{width:22px;height:22px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.08)}
+.bgdesc{font-size:13px;color:var(--muted);text-align:center;min-height:1.6em;max-width:60ch}
+
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;align-items:center}
+figcaption{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
+figcaption b{color:var(--ink);font-weight:600}
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:10px}
+.notes ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.notes ul b{color:var(--ink)}
+
+/* ---------- 手机 ---------- */
+.phone{width:280px;max-width:100%;height:606px;border-radius:44px;border:9px solid var(--frame);overflow:hidden;position:relative;
+  font-family:var(--sans);font-size:13px;line-height:1.35;color:var(--p-ink);background:var(--p-bg);
+  box-shadow:0 18px 40px -18px rgba(60,20,35,.35);transition:background .3s}
+.phone *{box-sizing:border-box}
+.scr{position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column}
+.scr::before{content:"";position:absolute;inset:0 0 auto 0;height:300px;background:var(--p-wash);pointer-events:none;transition:opacity .3s}
+.scr>*{position:relative}
+.scr.detail::before{height:360px;background:var(--p-dwash)}
+
+/* 背景方案：变量只在这里定义，界面元素只读变量 */
+.phones{
+  --p-bg:#FBF8F8;--p-ink:#241C20;--p-sub:#85777D;--p-faint:#A89BA0;--p-hair:rgba(90,50,65,.12);
+  --p-glass:rgba(255,255,255,.55);--p-glass-b:rgba(255,255,255,.85);--p-glass-sh:0 6px 20px -10px rgba(120,40,70,.28);
+  --p-track:rgba(240,75,122,.14);--p-accent:#E8456F;--p-ring-a:#FF9DB7;--p-ring-b:#E8456F;
+  --p-wash:radial-gradient(120% 70% at 85% 0%,#FFD9E4 0%,rgba(255,217,228,0) 60%),radial-gradient(90% 60% at 0% 10%,#FFE8DA 0%,rgba(255,232,218,0) 65%);
+  --p-dwash:linear-gradient(180deg,#FFD3DF 0%,#FFE9EF 45%,rgba(251,248,248,0) 100%);
+  --p-chip:rgba(255,255,255,.7);
+}
+.phones[data-bg="frost"]{
+  --p-bg:#F5F6F8;--p-ink:#1E2026;--p-sub:#767A86;--p-faint:#A0A4AE;--p-hair:rgba(40,50,70,.1);
+  --p-glass:rgba(255,255,255,.6);--p-glass-b:rgba(255,255,255,.9);--p-glass-sh:0 6px 20px -10px rgba(40,50,80,.25);
+  --p-track:rgba(40,50,70,.1);
+  --p-wash:radial-gradient(110% 60% at 100% 0%,#FFE0EA 0%,rgba(255,224,234,0) 55%),radial-gradient(90% 55% at 0% 0%,#E3ECF6 0%,rgba(227,236,246,0) 60%);
+  --p-dwash:linear-gradient(180deg,#FBDDE6 0%,#F4E9EF 45%,rgba(245,246,248,0) 100%);
+}
+.phones[data-bg="paper"]{
+  --p-bg:#FFFFFF;--p-ink:#1C1C1E;--p-sub:#8A8A8E;--p-faint:#AEAEB2;--p-hair:rgba(60,60,67,.12);
+  --p-glass:rgba(248,248,250,.72);--p-glass-b:rgba(255,255,255,.95);--p-glass-sh:0 4px 16px -8px rgba(0,0,0,.2);
+  --p-track:rgba(60,60,67,.1);
+  --p-wash:linear-gradient(180deg,#FFF2F5 0%,rgba(255,255,255,0) 100%);
+  --p-dwash:linear-gradient(180deg,#FFE0E9 0%,#FFF3F6 45%,rgba(255,255,255,0) 100%);
+}
+.phones[data-bg="night"]{
+  --p-bg:#141014;--p-ink:#F4ECEF;--p-sub:#A5979D;--p-faint:#7D7076;--p-hair:rgba(255,220,230,.1);
+  --p-glass:rgba(60,44,52,.5);--p-glass-b:rgba(255,255,255,.14);--p-glass-sh:0 8px 24px -10px rgba(0,0,0,.6);
+  --p-track:rgba(255,143,176,.16);--p-accent:#FF8FB0;--p-ring-a:#FFB3C8;--p-ring-b:#FF6F97;
+  --p-wash:radial-gradient(120% 65% at 90% 0%,#4A1C2E 0%,rgba(74,28,46,0) 62%),radial-gradient(90% 55% at 0% 5%,#3A2226 0%,rgba(58,34,38,0) 60%);
+  --p-dwash:linear-gradient(180deg,#5A2238 0%,#2E1822 45%,rgba(20,16,20,0) 100%);
+  --p-chip:rgba(255,255,255,.1);
+}
+
+.sb{height:40px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 24px 0 28px;font-weight:600;font-size:13px}
+.sb i{display:flex;gap:4px;align-items:center}
+.sb i s{display:block;background:currentColor;border-radius:1px;width:3px}
+.sb i em{display:block;width:21px;height:10px;border:1.4px solid currentColor;border-radius:3px;position:relative}
+.sb i em::after{content:"";position:absolute;inset:1.2px;right:5px;background:currentColor;border-radius:1px}
+.ico{display:inline-block;vertical-align:middle;flex:none}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tnum{font-variant-numeric:tabular-nums}
+
+.g{background:var(--p-glass);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);border:1px solid var(--p-glass-b);box-shadow:var(--p-glass-sh),inset 0 1px 0 var(--p-glass-b)}
+.top{display:flex;justify-content:space-between;padding:4px 14px}
+.gb{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--p-ink)}
+.gp{height:34px;padding:0 14px;border-radius:999px;display:grid;place-items:center;font-weight:600;font-size:12.5px}
+h4{margin:4px 20px 10px;font-size:28px;font-weight:800;letter-spacing:-.01em}
+.srch{margin:0 14px 8px;height:36px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 12px;color:var(--p-sub)}
+.sec{font-size:11.5px;font-weight:700;color:var(--p-sub);padding:10px 20px 2px;letter-spacing:.04em}
+.it{display:flex;align-items:center;gap:11px;padding:8px 20px;position:relative}
+.it+.it::before{content:"";position:absolute;top:0;left:72px;right:0;height:.5px;background:var(--p-hair)}
+.nm{font-weight:600;font-size:14.5px}
+.pv{font-size:12.5px;color:var(--p-sub);margin-top:1px}
+.tm{font-size:11px;color:var(--p-faint)}
+.tag{font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;background:var(--p-chip);flex:none}
+.tag.live{color:var(--p-accent)}
+.tag.wait{color:#B7791F}
+.tag.fix{color:#2F8F5B}
+.tag.bad{color:#C0453F}
+.phones[data-bg="night"] .tag.wait{color:#F2C166}
+.phones[data-bg="night"] .tag.fix{color:#6FCF97}
+.phones[data-bg="night"] .tag.bad{color:#FF8A80}
+.aff{font-size:11.5px;color:var(--p-accent);display:flex;align-items:center;gap:2px;font-weight:600}
+
+.mono{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;flex:none;text-shadow:0 1px 2px rgba(60,20,40,.25);box-shadow:inset 0 1px 1px rgba(255,255,255,.6),inset 0 -2px 4px rgba(0,0,0,.08)}
+.ring{border-radius:50%;flex:none;display:grid;place-items:center}
+.ring>.mono{box-shadow:0 0 0 2px var(--p-bg),inset 0 1px 1px rgba(255,255,255,.6)}
+
+.idx{position:absolute;right:4px;top:212px;display:flex;flex-direction:column;gap:1px;font-size:8.5px;font-weight:700;color:var(--p-accent);text-align:center}
+.fav{display:flex;gap:6px;padding:4px 16px 6px}
+.fav>div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600}
+.fav small{font-size:10px;color:var(--p-accent);font-weight:600}
+
+.tab{position:absolute;left:14px;right:14px;bottom:14px;display:flex;justify-content:space-around;align-items:center;padding:6px;border-radius:30px}
+.tab .t{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9.5px;color:var(--p-sub);width:44px}
+.tab .t.on{color:var(--p-accent)}
+.tab .qs{width:40px;height:40px;border-radius:50%;background:#F04B7A;display:grid;place-items:center;box-shadow:0 6px 14px -4px rgba(240,75,122,.6)}
+.tab .qs::after{content:"";width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.35)}
+
+/* 详情 */
+.dv{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 14px}
+.gauge{position:relative;width:120px;height:120px;margin-top:2px}
+.gauge .c{position:absolute;inset:0;display:grid;place-items:center}
+.dname{font-size:22px;font-weight:800}
+.dnote{font-size:12px;color:var(--p-sub);margin-top:-4px}
+.score{display:flex;gap:6px;align-items:center}
+.score .tag{font-size:11px;padding:2px 9px}
+.acts{display:flex;gap:14px;justify-content:center;margin:4px 0 4px}
+.acts>div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--p-sub)}
+.acts .gb{width:44px;height:44px;color:var(--p-accent)}
+.trend{width:100%;border-radius:22px;padding:12px 14px 10px}
+.seg{display:flex;background:var(--p-track);border-radius:8px;padding:2px}
+.seg span{font-size:10.5px;padding:2px 9px;border-radius:6px;color:var(--p-sub)}
+.seg span.on{background:var(--p-glass-b);color:var(--p-ink);font-weight:600}
+.phones[data-bg="night"] .seg span.on{background:rgba(255,255,255,.18)}
+.ledger{display:flex;flex-direction:column;gap:5px;margin-top:8px;padding-top:8px;border-top:.5px solid var(--p-hair)}
+.ledger div{display:flex;gap:8px;font-size:11.5px;align-items:baseline}
+.ledger .d{font-weight:700;width:24px;flex:none}
+.ledger .up{color:#2F8F5B}.ledger .dn{color:#C0453F}
+.phones[data-bg="night"] .ledger .up{color:#6FCF97}
+.phones[data-bg="night"] .ledger .dn{color:#FF8A80}
+.kv{width:100%;display:flex;justify-content:space-between;gap:12px;padding:10px 6px;border-top:.5px solid var(--p-hair);font-size:13px}
+.kv .v{color:var(--p-sub);min-width:0}
+
+@media (max-width:860px){.changes{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.changes{grid-template-columns:1fr}.wrap{padding-block:28px 56px}}
+@media (prefers-reduced-motion:reduce){.phone,.scr::before{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GALCHAT · 最近 / 联系 · 第二轮</div>
+    <h1>玻璃档案 C+</h1>
+    <p class="lead">以方案 C 的液态玻璃为基础，按你的反馈做了四处调整。背景提供四种，可以在下面切换对比，三张图会一起变。</p>
+  </header>
+
+  <div class="changes">
+    <div><b>列表不再套玻璃框</b><span>会话和联系人直接铺在背景上，用细分隔线区分。玻璃只用在浮在内容之上的控件：顶部按钮、搜索框和底栏。</span></div>
+    <div><b>联系人头像加好感环</b><span>沿用方案 A：圆环长度就是好感度 0–100。关系待修复的联系人圆环变成琥珀色。</span></div>
+    <div><b>详情页加好感追踪</b><span>沿用方案 B：头像外圈是好感度圆环，下方是 7 天 / 30 天走势，以及最近几次加减分的原因。</span></div>
+    <div><b>换掉紫灰渐变</b><span>改为浅底，只在顶部加一层淡淡的品牌粉晕染；详情页顶部跟随联系人的头像颜色。</span></div>
+  </div>
+
+  <div class="picker">
+    <span class="lbl" id="bg-label">背景</span>
+    <div class="swatches" role="group" aria-labelledby="bg-label">
+      <button type="button" id="bg-blush" data-bg="blush" aria-pressed="true"><i style="background:radial-gradient(circle at 75% 20%,#FFD2DF,#FFE8DA 55%,#FBF8F8)"></i>樱雾</button>
+      <button type="button" id="bg-frost" data-bg="frost" aria-pressed="false"><i style="background:radial-gradient(circle at 80% 15%,#FFE0EA,#E3ECF6 55%,#F5F6F8)"></i>霜白</button>
+      <button type="button" id="bg-paper" data-bg="paper" aria-pressed="false"><i style="background:linear-gradient(180deg,#FFF2F5,#FFFFFF)"></i>素白</button>
+      <button type="button" id="bg-night" data-bg="night" aria-pressed="false"><i style="background:radial-gradient(circle at 75% 20%,#5A2238,#141014 70%)"></i>夜樱（深色）</button>
+    </div>
+    <p class="bgdesc" id="bgdesc" aria-live="polite"></p>
+  </div>
+
+  <div class="phones" id="phones" data-bg="blush"></div>
+
+  <section class="notes" aria-labelledby="n-h">
+    <h2 id="n-h">落到 UIKit 时怎么做</h2>
+    <ul>
+      <li><b>玻璃</b>：iOS 26 上顶部按钮、搜索框和底栏用 <code>UIGlassEffect</code>，iOS 26 以下降级为 <code>.systemUltraThinMaterial</code>。列表单元格背景设为透明，不再用 <code>.insetGrouped</code>。</li>
+      <li><b>背景</b>：底色加一层 <code>CAGradientLayer</code> 顶部晕染，固定在视图上、不随列表滚动；深色模式自动切到“夜樱”。</li>
+      <li><b>好感环</b>：头像外圈用一个 <code>CAShapeLayer</code>，<code>strokeEnd = total / 100</code>；<code>rupturedUntilResolved</code> 时换成琥珀色。</li>
+      <li><b>走势</b>：需要按天记录好感度，这是现在 JSON 里没有的数据（台账只留 24 小时）。数据库里加一张 <code>affection_daily</code> 表，每天保存一次收盘分数；“最近变化”直接读 <code>scored_turn</code> 的 <code>delta</code>。</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+const P={
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  person:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5"/>',
+  star:'<path d="M12 3.5l2.4 5 5.3.7-3.9 3.6 1 5.3L12 15.5l-4.8 2.6 1-5.3-3.9-3.6 5.3-.7z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2.6M12 18.4V21M21 12h-2.6M5.6 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4L5.6 5.6"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  sort:'<path d="M7 5v14M4 8l3-3 3 3M17 19V5M14 16l3 3 3-3"/>',
+  tagi:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+  heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'
+};
+const ic=(n,s=20,fill)=>`<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="${fill?'currentColor':'none'}" stroke="${fill?'none':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const COL={'林小满':'#F08BA6','苏禾':'#6FAF97','何夕':'#8B98D8','周予安':'#E3A266','阿毛':'#98A6B6','陈一一':'#C696C8','许嘉言':'#7FB2D6','周末爬山小分队':'#A3B584'};
+const mono=(n,s,two)=>`<div class="mono" style="width:${s}px;height:${s}px;font-size:${Math.round(s*(two?.32:.42))}px;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%),${COL[n]||'#B5A9B0'}">${two?n.slice(-2):n.slice(-1)}</div>`;
+const ring=(c,s,w=3)=>{const col=c.rupt?'#E0A04A':'var(--p-ring-b)';const col2=c.rupt?'#F2C27E':'var(--p-ring-a)';
+  return `<div class="ring" style="width:${s+w*2+4}px;height:${s+w*2+4}px;background:conic-gradient(from 0deg,${col2} 0deg,${col} ${c.a*3.6}deg,var(--p-track) ${c.a*3.6}deg)" aria-label="${c.n} 好感度 ${c.a}">${mono(c.n,s+4-2)}</div>`;};
+
+const contacts=[
+  {n:'阿毛',a:55,note:'高中同桌',py:'A'},
+  {n:'陈一一',a:41,note:'上次聊崩了，先别急',py:'C',rupt:true},
+  {n:'何夕',a:71,note:'健身房认识',py:'H'},
+  {n:'林小满',a:78,note:'大学同学 · 喜欢猫',py:'L',active:true},
+  {n:'苏禾',a:88,note:'同事 · 周末一起爬山',py:'S'},
+  {n:'许嘉言',a:30,note:'',py:'X'},
+  {n:'周予安',a:62,note:'相亲对象 · 慢热',py:'Z'}
+];
+const recents=[
+  {n:'林小满',t:'10:40',g:'今天',who:'对方',msg:'今晚那家店还开吗？想吃他家的芒果',a:78,live:true},
+  {n:'周予安',t:'09:34',g:'今天',who:'我',msg:'那我明天顺路带过去给你',a:62},
+  {n:'周末爬山小分队',t:'昨天',g:'昨天',who:'对方',msg:'集合时间改到七点半',unbound:true},
+  {n:'苏禾',t:'昨天',g:'昨天',who:'对方',msg:'哈哈哈你也太会了吧',a:88,fixed:true},
+  {n:'陈一一',t:'星期一',g:'更早',who:'我',msg:'上次是我语气不好，抱歉',a:41,rupt:true},
+  {n:'何夕',t:'9月26日',g:'更早',who:'对方',msg:'[图片]',a:71}
+];
+const sb=()=>`<div class="sb"><span>9:41</span><i><s style="height:4px"></s><s style="height:6px"></s><s style="height:8px"></s><s style="height:10px"></s><em></em></i></div>`;
+const tab=on=>`<div class="tab g">${[['clock','最近'],['person','联系'],null,['star','人格'],['gear','设置']].map((x,i)=>x?`<div class="t${i===on?' on':''}">${ic(x[0],21)}<span>${x[1]}</span></div>`:'<div class="qs" aria-label="快速开启"></div>').join('')}</div>`;
+const phone=(inner,cap,cls='')=>`<figure><div class="phone" role="img" aria-label="${cap.replace(/<[^>]+>/g,'')}"><div class="scr ${cls}">${inner}</div></div><figcaption>${cap}</figcaption></figure>`;
+const tagR=r=>(r.live?'<span class="tag live">识别中</span>':'')+(r.unbound?'<span class="tag wait">待确认</span>':r.fixed?'<span class="tag fix">已纠正</span>':r.rupt?'<span class="tag bad">待修复</span>':'');
+
+/* 最近 */
+const rec=`${sb()}<div class="top"><div class="gb g">${ic('search',17)}</div><div class="gb g">${ic('pencil',16)}</div></div><h4>最近</h4>
+${['今天','昨天','更早'].map(g=>`<div class="sec">${g}</div>${recents.filter(r=>r.g===g).map(r=>`<div class="it">${mono(r.n,42)}<div class="grow"><div class="row" style="justify-content:space-between;gap:6px"><span class="row" style="gap:5px;min-width:0"><span class="nm ell">${r.n}</span>${tagR(r)}</span><span class="tm">${r.t}</span></div><div class="row" style="gap:6px;justify-content:space-between"><span class="pv ell">${r.who}：${r.msg}</span>${r.a!=null?`<span class="aff tnum">${ic('heart',10,1)}${r.a}</span>`:''}</div></div></div>`).join('')}`).join('')}${tab(0)}`;
+
+/* 联系 */
+const fav=[...contacts].sort((a,b)=>b.a-a.a).slice(0,4);
+const groups={};contacts.forEach(c=>(groups[c.py]=groups[c.py]||[]).push(c));
+const con=`${sb()}<div class="top"><div class="gb g">${ic('sort',16)}</div><div class="gb g">${ic('plus',18)}</div></div><h4>联系</h4>
+<div class="srch g">${ic('search',15)}<span>搜索名称、别名或备注</span></div>
+<div class="sec">常聊</div><div class="fav">${fav.map(c=>`<div>${ring(c,46,3)}<span>${c.n}</span><small class="tnum">♥ ${c.a}</small></div>`).join('')}</div>
+${Object.keys(groups).slice(0,4).map(k=>`<div class="sec">${k}</div>${groups[k].map(c=>`<div class="it">${ring(c,36,2.5)}<div class="grow"><div class="row" style="gap:5px"><span class="nm">${c.n}</span>${c.active?'<span class="tag live">在聊</span>':''}${c.rupt?'<span class="tag bad">待修复</span>':''}</div><div class="pv ell">${c.note||'未设置备注'}</div></div><span class="tm tnum" style="font-size:12.5px;margin-right:8px">${c.a}</span></div>`).join('')}`).join('')}
+<div class="idx">${'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('').map(x=>`<span>${x}</span>`).join('')}</div>${tab(1)}`;
+
+/* 详情 */
+const lc=contacts.find(c=>c.active);
+const pts=[66,69,68,72,70,75,78];
+const W=236,H=58,x=i=>6+i*(W-12)/6,y=v=>H-8-(v-60)/(80-60)*(H-16);
+const line=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+const R=54,C=2*Math.PI*R;
+const det=`${sb()}<div class="top"><div class="gb g">${ic('back',18)}</div><div class="gp g">编辑</div></div>
+<div class="dv">
+  <div class="gauge"><svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB0C5"/><stop offset="1" stop-color="#E8456F"/></linearGradient></defs>
+  <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--p-track)" stroke-width="7"/>
+  <circle cx="60" cy="60" r="${R}" fill="none" stroke="url(#gg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C*lc.a/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 60 60)"/></svg>
+  <div class="c">${mono(lc.n,92,true)}</div></div>
+  <div class="dname">${lc.n}</div><div class="dnote">${lc.note}</div>
+  <div class="score"><span class="tag live tnum">♥ 78 / 100</span><span class="tag fix">今天 +3</span></div>
+  <div class="acts">${[['chat','聊天记录'],['spark','分析'],['person','人设'],['tagi','别名']].map(a=>`<div><div class="gb g">${ic(a[0],19)}</div>${a[1]}</div>`).join('')}</div>
+  <div class="trend g">
+    <div class="row" style="justify-content:space-between"><span style="font-weight:700;font-size:12.5px">好感走势</span><div class="seg"><span class="on">7 天</span><span>30 天</span></div></div>
+    <svg width="100%" viewBox="0 0 ${W} ${H}" style="margin-top:6px;display:block" aria-hidden="true">
+      <line x1="0" x2="${W}" y1="${y(70)}" y2="${y(70)}" stroke="var(--p-hair)" stroke-dasharray="3 3"/>
+      <polyline points="${x(0)},${H} ${line} ${x(6)},${H}" fill="var(--p-track)" stroke="none"/>
+      <polyline points="${line}" fill="none" stroke="var(--p-accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${x(6)}" cy="${y(78)}" r="3.8" fill="var(--p-accent)" stroke="var(--p-bg)" stroke-width="1.5"/>
+    </svg>
+    <div class="row tm tnum" style="justify-content:space-between;margin-top:2px"><span>9/24 · 66</span><span>70</span><span>今天 · 78</span></div>
+    <div class="ledger">
+      <div><span class="d up tnum">+3</span><span class="grow ell">主动约晚饭，对方接得很快</span><span class="tm">10:40</span></div>
+      <div><span class="d dn tnum">−2</span><span class="grow ell">回复间隔长，语气敷衍</span><span class="tm">9/28</span></div>
+    </div>
+  </div>
+  <div class="kv"><span>对方人设</span><span class="v ell">慢热，喜欢被认真回复</span></div>
+</div>`;
+
+const host=document.getElementById('phones');
+host.innerHTML=
+  phone(rec,'<b>最近</b> · 按今天 / 昨天 / 更早分段，行直接铺在背景上')+
+  phone(con,'<b>联系</b> · 常聊和全部联系人都带好感环，琥珀色表示待修复')+
+  phone(det,'<b>详情</b> · 好感圆环、走势和最近加减分原因','detail');
+
+const DESC={
+  blush:'樱雾（推荐）：暖白底，顶部一层淡粉和杏色晕染，和 Galchat 的品牌粉最搭。',
+  frost:'霜白：偏冷的浅灰底，右上角一点粉、左上角一点浅蓝，更冷静、更像系统。',
+  paper:'素白：纯白底，只在顶部留很淡的粉色，最干净，玻璃效果最弱。',
+  night:'夜樱：深色模式下的对应版本，暗底配酒红晕染，粉色提亮以保证对比度。'
+};
+const btns=[...document.querySelectorAll('.swatches button')];
+const desc=document.getElementById('bgdesc');
+function setBg(k){host.dataset.bg=k;btns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.bg===k));desc.textContent=DESC[k];try{localStorage.setItem('gc-bg',k)}catch(e){}}
+btns.forEach(b=>b.addEventListener('click',()=>setBg(b.dataset.bg)));
+let saved='blush';try{saved=localStorage.getItem('gc-bg')||'blush'}catch(e){}
+setBg(DESC[saved]?saved:'blush');
+})();
+</script>

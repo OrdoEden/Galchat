@@ -385,7 +385,11 @@ final class LiveChatCoordinator {
                     let harvest = await harvester.harvest(input)
                     if self.screenshotEpoch == epoch, self.captureGeneration == generation,
                        self.captureState == .broadcasting, !harvest.regions.isEmpty {
-                        self.avatars.ingest(harvest, context: self.currentContext)
+                        if self.avatars.ingest(harvest, context: self.currentContext), let avatar = self.avatars.portrait {
+                            // 识别到头像时可能还没绑定联系人，先暂存，绑定后再写进联系人。
+                            PendingChatAvatar.stash(avatar.image)
+                            self.adoptChatAvatarIfPossible()
+                        }
                         if self.stickers.ingest(harvest, context: self.currentContext) { self.rebuildContext() }
                     }
                 }
@@ -483,7 +487,17 @@ final class LiveChatCoordinator {
         }
     }
 
+    /// 绑定联系人（或换绑）后再试一次：识别到头像时可能还没有归属。
+    private func adoptChatAvatarIfPossible() {
+        guard GCConfig.shared.autoContactAvatar,
+              let contactID = currentContext?.contactID,
+              ContactsStore.shared.contact(id: contactID)?.avatarSource != "manual",
+              let image = PendingChatAvatar.latest else { return }
+        ContactsStore.shared.adoptChatAvatar(image, contactID: contactID)
+    }
+
     private func notify() {
+        adoptChatAvatarIfPossible()
         avatars.contextDidChange(currentContext)
         if captureState == .broadcasting, scheduler.phase == .ready,
            let outcome = scheduler.outcome, !outcome.stale,

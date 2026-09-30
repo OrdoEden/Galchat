@@ -1,4 +1,4 @@
-import Foundation
+import UIKit
 
 /// 联系人档案、好感度台账与好感度历史的持久化。
 ///
@@ -111,6 +111,8 @@ final class ContactsStore {
         var note: String? = nil
         var persona: String? = nil
         var avatarData: Data? = nil
+        /// 头像来源：`auto` 来自聊天识别，`manual` 由用户选择；手动头像不会被自动提取覆盖。
+        var avatarSource: String? = nil
     }
 
     /// 一条已计分记录。用来防止同一轮对话被反复计分。
@@ -207,7 +209,10 @@ final class ContactsStore {
         document.contacts[index].note = note.trimmingCharacters(in: .whitespacesAndNewlines)
         document.contacts[index].persona = persona.trimmingCharacters(in: .whitespacesAndNewlines)
         document.contacts[index].aliases = normalized
-        document.contacts[index].avatarData = avatarData
+        if document.contacts[index].avatarData != avatarData {
+            document.contacts[index].avatarData = avatarData
+            document.contacts[index].avatarSource = avatarData == nil ? nil : "manual"
+        }
         if let total, total != document.contacts[index].total {
             recordEvent(contactID: contactID, from: document.contacts[index].total, to: total,
                         source: .manual, reason: "手动调整")
@@ -247,6 +252,7 @@ final class ContactsStore {
         document.contacts.removeAll { $0.id == contactID }
         if document.activeContactID == contactID { document.activeContactID = nil }
         if save() {
+            illustrationIDs.remove(contactID)
             NotificationCenter.default.post(name: Self.profileChanged, object: self, userInfo: ["contactID": contactID])
         }
     }
@@ -255,6 +261,49 @@ final class ContactsStore {
         guard contact(id: contactID) != nil else { throw EditError.message("此联系人已不存在。") }
         delete(contactID: contactID)
         if let lastError { throw EditError.message(lastError) }
+    }
+
+    // MARK: - 头像与立绘
+
+    /// 识别聊天时得到的对方头像。只在联系人没有手动头像时保存。
+    func adoptChatAvatar(_ image: UIImage, contactID: String) {
+        guard let index = document.contacts.firstIndex(where: { $0.id == contactID }),
+              document.contacts[index].avatarSource != "manual",
+              let data = Self.avatarJPEG(image), data != document.contacts[index].avatarData else { return }
+        document.contacts[index].avatarData = data
+        document.contacts[index].avatarSource = "auto"
+        save()
+    }
+
+    /// 与编辑页相同的上限（100 KB）：缩到 256 像素内再压 JPEG。
+    private static func avatarJPEG(_ image: UIImage) -> Data? {
+        let side: CGFloat = 256
+        let scale = min(1, side / max(image.size.width, image.size.height, 1))
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let resized = UIGraphicsImageRenderer(size: size).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+        return resized.jpegData(compressionQuality: 0.8).flatMap { $0.count <= 100_000 ? $0 : resized.jpegData(compressionQuality: 0.5) }
+    }
+
+    private lazy var illustrationIDs: Set<String> = (try? database?.illustrationIDs()) ?? []
+    private let illustrationCache = NSCache<NSString, UIImage>()
+
+    func hasIllustration(_ contactID: String) -> Bool { illustrationIDs.contains(contactID) }
+
+    func illustration(for contactID: String) -> UIImage? {
+        guard hasIllustration(contactID) else { return nil }
+        if let cached = illustrationCache.object(forKey: contactID as NSString) { return cached }
+        guard let image = (try? database?.illustration(contactID: contactID)).flatMap({ $0 }).flatMap(UIImage.init(data:)) else { return nil }
+        illustrationCache.setObject(image, forKey: contactID as NSString)
+        return image
+    }
+
+    /// 传 nil 删除立绘。
+    func setIllustration(_ data: Data?, contactID: String) throws {
+        guard let database else { throw EditError.message("联系人数据库不可用。") }
+        try database.setIllustration(data, contactID: contactID)
+        illustrationCache.removeObject(forKey: contactID as NSString)
+        if data == nil { illustrationIDs.remove(contactID) } else { illustrationIDs.insert(contactID) }
+        NotificationCenter.default.post(name: Self.changed, object: self)
     }
 
     // MARK: - 台账
@@ -402,5 +451,30 @@ final class ContactsStore {
     /// 两边各写一份迟早会漂移。
     nonisolated static func normalize(_ raw: String) -> String {
         ContactMatcher.normalize(raw)
+    }
+}
+
+/// 识别到、但还没有归属联系人的头像。
+///
+/// 录屏里识别出对方头像时，用户可能还没把这轮会话绑定到某个联系人；
+/// 直接丢掉的话，绑定之后就要再等一次识别。这里先按同一套压缩规则写一张小图，
+/// 绑定后由 `LiveChatCoordinator` 取走并写进联系人；不覆盖手动头像。
+enum PendingChatAvatar {
+    private static let fileName = "pending-avatar.jpg"
+
+    static var latest: UIImage? {
+        guard let url = GalchatSharedFile.fileURL(named: fileName),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return UIImage(data: data)
+    }
+
+    static func stash(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        guard let url = GalchatSharedFile.fileURL(named: fileName) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    static func clear() {
+        GalchatSharedFile.remove(named: fileName)
     }
 }

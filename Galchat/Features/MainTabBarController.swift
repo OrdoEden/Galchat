@@ -257,9 +257,12 @@ final class MainTabBarController: UITabBarController, UITabBarControllerDelegate
     }
 
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        navigationController.setNavigationBarHidden(
-            viewController === navigationController.viewControllers.first, animated: animated
-        )
+        // 次级页面隐藏底部标签栏：hidesBottomBarWhenPushed 管系统底栏，
+        // 自定义的快速开启按钮要一起收起来。
+        let isRoot = viewController === navigationController.viewControllers.first
+        viewController.hidesBottomBarWhenPushed = !isRoot
+        setTabBar(hidden: !isRoot, animated: animated)
+        navigationController.setNavigationBarHidden(isRoot, animated: animated)
         guard navigationController === selectedViewController else { return }
         guard animated, let coordinator = navigationController.transitionCoordinator else {
             quickStartButton.isHidden = viewController.hidesBottomBarWhenPushed
@@ -290,6 +293,16 @@ final class MainTabBarController: UITabBarController, UITabBarControllerDelegate
         if !registered {
             isNavigationTransitioning = false
             synchronizeQuickStartButton()
+        }
+    }
+
+    /// 隐藏底部标签栏。iOS 18 起切换 `isHidden` 会带动画，`hidesBottomBarWhenPushed` 只处理转场那一帧。
+    private func setTabBar(hidden: Bool, animated: Bool) {
+        guard tabBar.isHidden != hidden else { return }
+        if animated, #available(iOS 18.0, *) {
+            setTabBarHidden(hidden, animated: true)
+        } else {
+            tabBar.isHidden = hidden
         }
     }
 

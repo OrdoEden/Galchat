@@ -19,6 +19,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         self.window = window
         window.tintColor = .galchatPink
+        ThemeStore.shared.applyToWindows()
         if OnbViewController.hasCompleted {
             window.rootViewController = MainTabBarController()
         } else {
