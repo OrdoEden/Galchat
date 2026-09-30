@@ -84,16 +84,33 @@ final class AffectionCommitter {
             // 重算：替换而非累加。先扣掉旧值再加新值，总分不会翻倍。
             store.replaceScoredTurn(contactID: contactID, turn: turn,
                                     delta: output.appliedStep,
-                                    newTotal: contact.total - existing.delta + output.appliedStep)
+                                    newTotal: contact.total - existing.delta + output.appliedStep,
+                                    reason: Self.reason(for: analysis))
         } else {
             store.commit(contactID: contactID,
                          turns: scoredTurns(in: request),
                          delta: output.appliedStep,
-                         totalBefore: contact.total)
+                         totalBefore: contact.total,
+                         reason: Self.reason(for: analysis))
         }
 
         store.save()
         publisher.publish(step: output.appliedStep)
+    }
+
+    /// 联系人详情“最近变化”里显示的原因：温度变化 + 对方意图，均来自判断题的固定选项。
+    static func reason(for analysis: Analysis) -> String? {
+        let temperature: [String: String] = [
+            "warm_up": "明显变热络", "slight_up": "稍微热络", "neutral": "温度不变",
+            "slight_down": "稍微冷淡", "cold_down": "明显变冷"
+        ]
+        let intent: [String: String] = [
+            "casual_chat": "轻松闲聊", "close_topic": "话题平稳收尾", "confirm_you_care": "在确认你是否在意",
+            "request_action": "希望你给出行动", "seek_explanation": "想要一个解释", "vent_anger": "在表达不满"
+        ]
+        let parts = [analysis.affectionDelta.flatMap { temperature[$0.choice] },
+                     analysis.trueIntent.flatMap { intent[$0.choice] }].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// 把窗口内**所有**对方消息 id 一次性入账。

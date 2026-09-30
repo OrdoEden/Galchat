@@ -12,6 +12,7 @@
 		4D32167D53586A298C10431F /* SeeU in Frameworks */ = {isa = PBXBuildFile; productRef = 1CDAF930BDB25433A4A6C5C2 /* SeeU */; };
 		5CE9A6C1F7FA282FED7F5CBC /* GalchatBroadcastExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DC0E29E5CA688E24A8B5242A /* GalchatBroadcastExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		77DF653630680B8500678096 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 77DF653530680B8500678096 /* SnapKit */; };
+		9A7C1E0F2B3D4C5E6F708194 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 9A7C1E0F2B3D4C5E6F708193 /* GRDB */; };
 		A1B2C3D4E5F6071829304A5D /* GalchatKeyboardExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304A5C /* GalchatKeyboardExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B46138095F5795515E07FE18 /* VisynBroadcast in Frameworks */ = {isa = PBXBuildFile; productRef = F9A3C929DA0E4707F0FE10B0 /* VisynBroadcast */; };
 		B7A1C0DE5E1F4A2B3C4D5E63 /* SwiftKeyboard in Frameworks */ = {isa = PBXBuildFile; productRef = B7A1C0DE5E1F4A2B3C4D5E62 /* SwiftKeyboard */; };
@@ -126,6 +127,7 @@
 			files = (
 				4D32167B53586A298C10431D /* VisynCapture in Frameworks */,
 				77DF653630680B8500678096 /* SnapKit in Frameworks */,
+				9A7C1E0F2B3D4C5E6F708194 /* GRDB in Frameworks */,
 				4D32167C53586A298C10431E /* Synapse in Frameworks */,
 				4D32167D53586A298C10431F /* SeeU in Frameworks */,
 			);
@@ -237,6 +239,7 @@
 				1CDAF92FBDB25433A4A6C5C1 /* Synapse */,
 				1CDAF930BDB25433A4A6C5C2 /* SeeU */,
 				77DF653530680B8500678096 /* SnapKit */,
+				9A7C1E0F2B3D4C5E6F708193 /* GRDB */,
 			);
 			productName = Galchat;
 			productReference = DC5D1CFF3062845E0033519A /* Galchat.app */;
@@ -295,6 +298,7 @@
 				E3E4B155D2AB06FC7383CDA3 /* XCLocalSwiftPackageReference "../SeeU" */,
 				B7A1C0DE5E1F4A2B3C4D5E61 /* XCLocalSwiftPackageReference "../SwiftKeyboard" */,
 				77DF653430680B8500678096 /* XCRemoteSwiftPackageReference "SnapKit" */,
+				9A7C1E0F2B3D4C5E6F708192 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC5D1D003062845E0033519A /* Products */;
@@ -732,6 +736,14 @@
 				minimumVersion = 6.0.0;
 			};
 		};
+		9A7C1E0F2B3D4C5E6F708192 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.11.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -754,6 +766,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 77DF653430680B8500678096 /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
+		};
+		9A7C1E0F2B3D4C5E6F708193 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A7C1E0F2B3D4C5E6F708192 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
 		};
 		B7A1C0DE5E1F4A2B3C4D5E62 /* SwiftKeyboard */ = {
 			isa = XCSwiftPackageProductDependency;

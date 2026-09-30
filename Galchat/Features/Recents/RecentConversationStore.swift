@@ -1,6 +1,8 @@
 import Foundation
 
 /// 仅保存文字；OCR 原文与人工纠正分层，后续识别不会覆盖用户的编辑。
+/// 数据存在 `GalchatDatabase`；每次只写入发生变化的会话，不再整文件重写。
+/// 旧版 App Group 里的 `recents.json` 首次启动时导入，成功后改名为 `.migrated` 保留。
 @MainActor
 final class RecentConversationStore {
     static let shared = RecentConversationStore()
@@ -9,7 +11,7 @@ final class RecentConversationStore {
     static let conversationCapacity = 100
     static let messageCapacity = 500
     static let textCapacity = 2000
-    private static let fileName = "recents.json"
+    private static let legacyFileName = "recents.json"
 
     struct Correction: Codable, Equatable, Sendable {
         var speakerRaw: String
@@ -76,38 +78,51 @@ final class RecentConversationStore {
     private var deletedIDs = Set<String>()
     private var recordingSessionID: UUID?
 
+    private let database: GalchatDatabase?
+
     private init() {
-        guard let url = GalchatSharedFile.fileURL(named: Self.fileName) else {
-            loadError = "无法访问会话存储，请检查 App Group 配置后重新打开应用。"
-            lastError = loadError
-            return
-        }
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        var database: GalchatDatabase?
         do {
-            let loaded = try GalchatSharedFile.decoder.decode(Document.self, from: Data(contentsOf: url))
-            guard loaded.schemaVersion == 1,
-                  loaded.conversations.count <= Self.conversationCapacity,
-                  Set(loaded.conversations.map(\.id)).count == loaded.conversations.count,
-                  loaded.conversations.allSatisfy({ entry in
-                      entry.id == Self.identifier(sessionID: entry.sessionID, conversationID: entry.conversationID)
-                          && entry.messages.count <= Self.messageCapacity
-                          && entry.sourceTitle.count <= 200
-                          && Set(entry.messages.map(\.id)).count == entry.messages.count
-                          && entry.messages.allSatisfy { message in
-                              Speaker(rawValue: message.speakerRaw) != nil
-                                  && message.text.count <= Self.textCapacity
-                                  && (message.correction.map {
-                                      Speaker(rawValue: $0.speakerRaw) != nil && $0.text.count <= Self.textCapacity
-                                  } ?? true)
-                          }
-                  }) else {
-                throw StorageError.message("会话文件版本或内容不受支持。")
+            let opened = try GalchatDatabase.shared.get()
+            database = opened
+            if try !opened.flag(GalchatDatabase.recentsImportedKey),
+               let url = GalchatSharedFile.fileURL(named: Self.legacyFileName),
+               FileManager.default.fileExists(atPath: url.path) {
+                do {
+                    let loaded = try GalchatSharedFile.decoder.decode(Document.self, from: Data(contentsOf: url))
+                    guard Self.isValid(loaded) else { throw StorageError.message("会话文件版本或内容不受支持。") }
+                    try opened.saveConversations(from: opened.loadConversations(), to: loaded.conversations,
+                                                 markImported: true)
+                    GalchatDatabase.retireLegacyFile(named: Self.legacyFileName)
+                } catch {
+                    loadError = "旧版最近会话无法导入，已保留原文件并暂停保存。\(error.localizedDescription)"
+                }
             }
-            document = loaded
+            if loadError == nil { document.conversations = try opened.loadConversations() }
         } catch {
-            loadError = "最近会话无法读取，已保留原文件并暂停保存。\(error.localizedDescription)"
-            lastError = loadError
+            loadError = "会话数据库无法打开，修改暂不会保存。请重新打开应用后再试。\(error.localizedDescription)"
         }
+        self.database = database
+        lastError = loadError
+    }
+
+    private static func isValid(_ loaded: Document) -> Bool {
+        loaded.schemaVersion == 1
+            && loaded.conversations.count <= Self.conversationCapacity
+            && Set(loaded.conversations.map(\.id)).count == loaded.conversations.count
+            && loaded.conversations.allSatisfy({ entry in
+                entry.id == Self.identifier(sessionID: entry.sessionID, conversationID: entry.conversationID)
+                    && entry.messages.count <= Self.messageCapacity
+                    && entry.sourceTitle.count <= 200
+                    && Set(entry.messages.map(\.id)).count == entry.messages.count
+                    && entry.messages.allSatisfy { message in
+                        Speaker(rawValue: message.speakerRaw) != nil
+                            && message.text.count <= Self.textCapacity
+                            && (message.correction.map {
+                                Speaker(rawValue: $0.speakerRaw) != nil && $0.text.count <= Self.textCapacity
+                            } ?? true)
+                    }
+            })
     }
 
     func conversations(contactID: String? = nil) -> [Conversation] {
@@ -280,7 +295,10 @@ final class RecentConversationStore {
 
     private func persist(_ candidate: Document, editedConversationID: String?) throws {
         if let loadError { throw StorageError.message(loadError) }
-        guard GalchatSharedFile.write(candidate, named: Self.fileName) else {
+        do {
+            guard let database else { throw StorageError.message("会话数据库不可用。") }
+            try database.saveConversations(from: document.conversations, to: candidate.conversations)
+        } catch {
             let error = StorageError.message("会话保存失败，修改尚未保存。请检查设备存储空间后重试。")
             report(error)
             throw error

@@ -1,21 +1,20 @@
 import Foundation
 
-/// 联系人档案与好感度台账的持久化。
+/// 联系人档案、好感度台账与好感度历史的持久化。
 ///
-/// 设计取舍：
-/// - **单文件**。按联系人拆成多个文件会引入跨文件一致性问题（改两个文件时中途崩溃
-///   就留下不自洽的状态），而单文件一次原子写就够。200 条台账约 8 KB，可忽略。
-/// - **不引入 Realm / CoreData**。数据量是"几十个联系人 × 几百条记录"，上面还有
-///   24 小时裁剪，一个 JSON 文件完全够用，不值得为此加一个数据库依赖和迁移负担。
-/// - 与 `ReplyBundleStore` 共用 `GalchatSharedFile` 的落盘方式：同一 App Group 目录、
-///   同样的 `.atomic` + 文件保护 + 排除备份。
+/// 数据存在 `GalchatDatabase`（GRDB / SQLite）里；内存中保留完整 `Document`，
+/// 对外的同步查询不变。`save()` 只把与上次成功保存相比有变化的联系人写入数据库，
+/// 头像单独存表，改备注或计分时不会重写图片。
+///
+/// 旧版 App Group 里的 `contacts.json` 在首次启动时导入，成功后改名为 `.migrated` 保留。
 @MainActor
 final class ContactsStore {
     static let shared = ContactsStore()
     static let changed = Notification.Name("Galchat.ContactsStore.changed")
     static let profileChanged = Notification.Name("Galchat.ContactsStore.profileChanged")
 
-    static let fileName = "contacts.json"
+    /// 旧版 JSON 文件名，只用于一次性导入。
+    static let legacyFileName = "contacts.json"
     /// 台账保留条数。必须大于 `LiveAnalysisScheduler.historyContextLimit`（50），
     /// 否则一次 `check_history` 刷新就能把整个台账冲掉，导致旧消息被重复计分。
     static let ledgerCapacity = 200
@@ -26,21 +25,34 @@ final class ContactsStore {
     private var persisted: Document
     private(set) var lastError: String?
     private var loadError: String?
+    private let database: GalchatDatabase?
+    /// 尚未落盘的好感度变化，随下一次 `save()` 一起写入。
+    private var pendingEvents: [GalchatDatabase.AffectionEvent] = []
 
     private init() {
         var loaded = Document()
         var failure: String?
-        if let url = GalchatSharedFile.fileURL(named: Self.fileName) {
-            if FileManager.default.fileExists(atPath: url.path) {
+        var database: GalchatDatabase?
+        do {
+            let opened = try GalchatDatabase.shared.get()
+            database = opened
+            if try !opened.flag(GalchatDatabase.contactsImportedKey),
+               let url = GalchatSharedFile.fileURL(named: Self.legacyFileName),
+               FileManager.default.fileExists(atPath: url.path) {
                 do {
-                    loaded = try GalchatSharedFile.decoder.decode(Document.self, from: Data(contentsOf: url))
+                    let legacy = try GalchatSharedFile.decoder.decode(Document.self, from: Data(contentsOf: url))
+                    let existing = try opened.loadContacts()
+                    try opened.saveContacts(from: existing, to: legacy, events: [], markImported: true)
+                    GalchatDatabase.retireLegacyFile(named: Self.legacyFileName)
                 } catch {
-                    failure = "联系人数据无法读取，已保留原文件并暂停保存。\(error.localizedDescription)"
+                    failure = "旧版联系人数据无法导入，已保留原文件并暂停保存。\(error.localizedDescription)"
                 }
             }
-        } else {
-            failure = "无法访问联系人共享存储，请检查 App Group 配置后重新打开应用。"
+            if failure == nil { loaded = try opened.loadContacts() }
+        } catch {
+            failure = "联系人数据库无法打开，修改暂不会保存。请重新打开应用后再试。\(error.localizedDescription)"
         }
+        self.database = database
         document = loaded
         persisted = loaded
         loadError = failure
@@ -84,7 +96,7 @@ final class ContactsStore {
         var activeContact: Contact? { contact(id: activeContactID) }
     }
 
-    struct Contact: Codable, Sendable, Identifiable {
+    struct Contact: Codable, Equatable, Sendable, Identifiable {
         let id: String
         var displayName: String
         /// 归一化后的标题别名。同一个联系人可能被 OCR 出多种写法。
@@ -102,7 +114,7 @@ final class ContactsStore {
     }
 
     /// 一条已计分记录。用来防止同一轮对话被反复计分。
-    struct ScoredTurn: Codable, Sendable {
+    struct ScoredTurn: Codable, Equatable, Sendable {
         /// 消息 id（`ContextMessage.id`）。这是唯一的去重键。
         let id: String
         /// 该轮的 applied step。
@@ -196,7 +208,11 @@ final class ContactsStore {
         document.contacts[index].persona = persona.trimmingCharacters(in: .whitespacesAndNewlines)
         document.contacts[index].aliases = normalized
         document.contacts[index].avatarData = avatarData
-        if let total { document.contacts[index].total = total }
+        if let total, total != document.contacts[index].total {
+            recordEvent(contactID: contactID, from: document.contacts[index].total, to: total,
+                        source: .manual, reason: "手动调整")
+            document.contacts[index].total = total
+        }
         guard save() else { throw EditError.message(lastError ?? "联系人保存失败。") }
         NotificationCenter.default.post(name: Self.profileChanged, object: self, userInfo: ["contactID": contactID])
     }
@@ -250,9 +266,11 @@ final class ContactsStore {
 
     /// 在既有记录上做**替换**而非累加。用于 `clipped` 翻转后的重算：
     /// 先减掉旧值再加新值，总分不会因为重算而翻倍。
-    func replaceScoredTurn(contactID: String, turn: ScoredTurn, delta applied: Int, newTotal: Int) {
+    func replaceScoredTurn(contactID: String, turn: ScoredTurn, delta applied: Int, newTotal: Int,
+                           reason: String? = nil) {
         guard let index = document.contacts.firstIndex(where: { $0.id == contactID }) else { return }
         var scratch = document.contacts[index]
+        let before = scratch.total
         if let turnIndex = scratch.ledger.firstIndex(where: { $0.id == turn.id }) {
             scratch.ledger[turnIndex] = turn
         } else {
@@ -261,19 +279,72 @@ final class ContactsStore {
         scratch.total = min(max(newTotal, AffectionScoring.minimum), AffectionScoring.maximum)
         scratch.lastCommitAt = Date()
         document.contacts[index] = scratch
+        recordEvent(contactID: contactID, from: before, to: scratch.total, source: .analysis, reason: reason)
     }
 
     /// 记录一次计分。`delta` 是已经算好的 applied step。
-    func commit(contactID: String, turns: [ScoredTurn], delta: Int, totalBefore: Int) {
+    func commit(contactID: String, turns: [ScoredTurn], delta: Int, totalBefore: Int, reason: String? = nil) {
         guard let index = document.contacts.firstIndex(where: { $0.id == contactID }) else { return }
         var scratch = document.contacts[index]
         for turn in turns where !scratch.ledger.contains(where: { $0.id == turn.id }) {
             scratch.ledger.append(turn)
         }
+        let before = scratch.total
         scratch.total = min(max(totalBefore + delta, AffectionScoring.minimum), AffectionScoring.maximum)
         scratch.lastCommitAt = Date()
         document.contacts[index] = scratch
         pruneContact(at: index)
+        recordEvent(contactID: contactID, from: before, to: scratch.total, source: .analysis, reason: reason)
+    }
+
+    /// 只记录真正改变了分数的变化；0 分变化对走势和“最近变化”都没有意义。
+    private func recordEvent(contactID: String, from before: Int, to after: Int,
+                             source: GalchatDatabase.AffectionEvent.Source, reason: String?) {
+        guard before != after else { return }
+        pendingEvents.append(.init(contactID: contactID, at: Date(), delta: after - before,
+                                   totalAfter: after, source: source, reason: reason))
+    }
+
+    // MARK: - 好感度历史
+
+    /// 最近 `days` 天每天结束时的好感度，最后一个值是今天（即当前分数）。
+    /// 没有任何变化记录时是一条水平线。
+    func affectionTrend(contactID: String, days: Int) -> [Int] {
+        guard let contact = contact(id: contactID), days > 0 else { return [] }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let start = calendar.date(byAdding: .day, value: -(days - 1), to: today),
+              let history = try? database?.affectionEvents(contactID: contactID, since: start) else {
+            return Array(repeating: contact.total, count: days)
+        }
+        var value = history.before?.totalAfter
+            ?? history.events.first.map { $0.totalAfter - $0.delta }
+            ?? contact.total
+        var events = history.events[...]
+        var points: [Int] = []
+        for offset in 0..<days {
+            guard let dayEnd = calendar.date(byAdding: .day, value: offset + 1, to: start) else { break }
+            while let event = events.first, event.at < dayEnd {
+                value = event.totalAfter
+                events = events.dropFirst()
+            }
+            points.append(value)
+        }
+        // 未保存的变化或手动修改的分数以内存为准。
+        if !points.isEmpty { points[points.count - 1] = contact.total }
+        return points
+    }
+
+    /// 最近的好感度变化，最新在前。
+    func recentAffectionEvents(contactID: String, limit: Int = 3) -> [GalchatDatabase.AffectionEvent] {
+        (try? database?.latestAffectionEvents(contactID: contactID, limit: limit)) ?? []
+    }
+
+    /// 今天的累计变化。
+    func affectionChangeToday(contactID: String) -> Int {
+        let start = Calendar.current.startOfDay(for: Date())
+        let saved = (try? database?.affectionEvents(contactID: contactID, since: start).events) ?? []
+        return saved.reduce(0) { $0 + $1.delta }
     }
 
     func setRuptured(contactID: String, _ ruptured: Bool) {
@@ -303,16 +374,22 @@ final class ContactsStore {
     func save() -> Bool {
         if let loadError {
             document = persisted
+            pendingEvents.removeAll()
             lastError = loadError
             return false
         }
         prune()
         document.updatedAt = Date()
-        guard GalchatSharedFile.write(document, named: Self.fileName) else {
+        do {
+            guard let database else { throw EditError.message("联系人数据库不可用。") }
+            try database.saveContacts(from: persisted, to: document, events: pendingEvents)
+        } catch {
             document = persisted
+            pendingEvents.removeAll()
             lastError = "联系人保存失败，修改尚未保存。请检查设备存储空间后重试。"
             return false
         }
+        pendingEvents.removeAll()
         persisted = document
         lastError = nil
         NotificationCenter.default.post(name: Self.changed, object: self)

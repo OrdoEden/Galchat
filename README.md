@@ -48,7 +48,16 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 | Synapse | [`../Synapse`](../Synapse/README.md) | BYOK 模型配置与凭据管理、请求快照、Jev/Chat Completions 协议与 Alamofire 传输 |
 | SwiftKeyboard | [`../SwiftKeyboard`](../SwiftKeyboard/README.md) | 对齐系统中文键盘的全拼键盘与离线拼音引擎；Galchat 键盘只继承它并注入三条回复建议 |
 
-SeeU 与 Synapse 各自提供一个公开模块，可独立接入其他项目；两者互不依赖。好感度、联系人、人设、情绪判断题、候选生成策略及键盘发布属于 App 业务，未引入两个库。当前没有新增 Realm 或联系人数据库。
+SeeU 与 Synapse 各自提供一个公开模块，可独立接入其他项目；两者互不依赖。好感度、联系人、人设、情绪判断题、候选生成策略及键盘发布属于 App 业务，未引入两个库。
+
+## 联系人与最近会话存储
+
+联系人、好感度台账、好感度历史和最近会话存在主 App 沙盒的 SQLite 数据库 `Application Support/Galchat/galchat.sqlite`，通过 SPM 引入的 [GRDB](https://github.com/groue/GRDB.swift)（7.x）读写，见 `Galchat/Live/Storage/GalchatDatabase.swift`。
+
+- 数据库只给主 App 用，不放 App Group：键盘与录屏扩展不读这些数据，共享容器里的 SQLite 在 App 挂起时持有文件锁会被系统终止。键盘所需的好感度仍通过 `AffectionProjection` 共享。
+- `ContactsStore`、`RecentConversationStore` 对外接口不变，内存里保留完整数据；保存时只写入有变化的联系人或会话，头像和立绘各自单独存表。
+- 好感度每次变化写入 `affection_event`（保留 180 天），联系人详情的 7 天 / 30 天走势和“最近变化”从这里读取。
+- 旧版 App Group 中的 `contacts.json`、`recents.json` 首次启动时自动导入，成功后改名为 `.migrated` 保留；旧文件无法解析时保留原文件、提示错误并暂停保存。
 
 Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package 引用。SeeU 要求 Swift 6.2 工具链、使用 Swift 5 语言模式；Synapse 的包清单为 Swift 5.9，但既有 Alamofire 5.11.1 依赖要求 Swift 6.2，因此整个工程仍需 Swift 6.2 工具链。两者不继承主 App 的默认 MainActor 隔离。迁移边界、兼容性与手动验收见 [框架拆分说明](docs/architecture/package-extraction.md)。
 
