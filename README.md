@@ -8,6 +8,26 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 
 “人格”页可以选择、新建、编辑、导入和导出人格，也可以选择“不使用人格”。人格包含性格、价值观、看事情的方式和说话习惯。所有内容放在 [Galchat/Personas](Galchat/Personas) 的独立文件里，Swift 只负责加载和保存。
 
+## 赞助
+
+<details open>
+<summary>点击折叠</summary>
+
+<table>
+  <tr>
+    <td width="180" align="center">
+      <a href="https://vibeapi.cc/sign-up?aff=AOYp">
+        <img src="docs/assets/sponsors/vibeapi.jpg" alt="VibeAPI" width="150">
+      </a>
+    </td>
+    <td>
+      感谢 <b>VibeAPI</b> 赞助本项目！<b>VibeAPI</b> 主要面向重度开发者与团队，提供主流 AI 模型统一接入。主打 Codex 与 Claude 系列，坚持自建号池可溯源。首流响应极速，SLA 稳定性达 99.9%，缓存命中率高达 95%+。提供 7×24 小时人工技术支持，全面支持对公开票与企业合作。<a href="https://vibeapi.cc/sign-up?aff=AOYp">点此前往薅赛博鸡蛋 →</a>
+    </td>
+  </tr>
+</table>
+
+</details>
+
 ## 人格文件
 
 - 一个文件夹就是一个人格：`manifest.json` 写名称、简介、版本和文件清单，`documents` 按顺序列出要完整发送给模型的 Markdown，`licenseFiles` 列出随包保留、但不发送的许可与署名。照着任意现有文件夹添加即可，不需要修改 Swift。
