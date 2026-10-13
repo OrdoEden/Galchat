@@ -1,14 +1,66 @@
-# Galchat iOS
+<div align="center">
 
-UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/拼接聊天截图，通过 Synapse 调用模型。
+<img src="docs/assets/logo.png" alt="Galchat" width="128">
 
-画中画默认保持横屏长条，首页可选横屏、竖屏、矩形，或输入宽高后点击“应用尺寸”；运行中也可修改，成功后自动记住尺寸。
+# Galchat
+
+**会看聊天、懂人设的 iOS 聊天回复助手**
+
+[![Swift](https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white)](https://www.swift.org)
+[![iOS](https://img.shields.io/badge/iOS-16.6%2B-000000?logo=apple&logoColor=white)](https://developer.apple.com/ios/)
+[![UIKit](https://img.shields.io/badge/UI-UIKit-2396F3)](https://developer.apple.com/documentation/uikit)
+[![GRDB](https://img.shields.io/badge/GRDB-7.x-4B8BBE)](https://github.com/groue/GRDB.swift)
+[![SnapKit](https://img.shields.io/badge/SnapKit-6.x-F7931E)](https://github.com/SnapKit/SnapKit)
+[![LINUX DO](https://img.shields.io/badge/LINUX%20DO-社区-FFB003)](https://linux.do)
+
+</div>
+
+## 🌟 这是什么？
+
+Galchat 是一款 iOS 聊天辅助 App。它在你聊天时通过录屏和画中画实时“看”到对话，识别并拼接聊天截图，再结合你选的人格和对方的好感度，调用你自己配置的大模型（BYOK）给出三条回复建议，并通过自定义键盘一键发送。
+
+- 📹 **实时识别**：ReplayKit 录屏 + 画中画悬浮窗，切到任意聊天 App 也能持续识别
+- 🧩 **跨屏合并**：OCR 识别聊天版式，滚动截图自动去重拼接，可导出长图
+- 🎭 **人格系统**：六个预设人格，可新建、编辑，以 `.personal` 单文件导入导出
+- 💗 **好感度与联系人**：按联系人记录好感度变化，提供 7 天 / 30 天走势
+- ⌨️ **Galchat 键盘**：系统风格全拼键盘，顶部直接显示三条回复建议
+- 🔑 **BYOK**：自带模型密钥，兼容 Chat Completions 协议
+
+## 🛠️ 技术栈
+
+| 类别 | 选型 |
+|---|---|
+| 语言 / 工具链 | Swift 6.2 工具链（Swift 5 语言模式），Xcode |
+| 最低系统 | iOS 16.6（主 App 与键盘扩展） |
+| UI | UIKit + SnapKit |
+| 录屏与画中画 | ReplayKit、AVKit，封装在 [Visyn](../Visyn) |
+| OCR 与截图拼接 | Vision，封装在 [SeeU](../SeeU/README.md) |
+| 模型调用 | Alamofire，封装在 [Synapse](../Synapse/README.md)（BYOK、Chat Completions） |
+| 键盘 | 自研拼音引擎 [SwiftKeyboard](../SwiftKeyboard/README.md) |
+| 本地存储 | [GRDB](https://github.com/groue/GRDB.swift) 7.x（SQLite） |
+| 扩展通信 | App Group 共享文件 |
+
+## 📦 项目结构
+
+```
+Galchat/
+├── 📱 Galchat/                     主 App
+│   ├── Features/                   联系人、最近、人格、设置、引导
+│   ├── Live/                       录屏识别、PiP、分析、回复、好感度、存储
+│   ├── BYOK/                       模型配置与对话业务
+│   ├── Personas/                   预设人格包
+│   └── Prompts/                    提示词
+├── 🎥 GalchatBroadcastExtension/   录屏广播扩展
+├── ⌨️ GalchatKeyboardExtension/    自定义键盘扩展
+├── 🔗 GalchatShared/               主 App 与扩展共享的模型
+├── 🧰 scripts/                     人格打包与检查脚本
+├── 🗂️ dist/personals/              人格资源库发布目录
+└── 📚 docs/                        架构与设计文档
+```
 
 业务接入架构见 [iOS 业务架构设计](docs/architecture/ios-business-architecture.md)，包括 OCR、跨屏会话合并、BYOK、语义分析、PiP 和 Galchat 自定义键盘。
 
-“人格”页可以选择、新建、编辑、导入和导出人格，也可以选择“不使用人格”。人格包含性格、价值观、看事情的方式和说话习惯。所有内容放在 [Galchat/Personas](Galchat/Personas) 的独立文件里，Swift 只负责加载和保存。
-
-## 赞助
+## 💖 赞助
 
 <details open>
 <summary>点击折叠</summary>
@@ -28,7 +80,11 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 
 </details>
 
-## 人格文件
+## 🎭 人格
+
+“人格”页可以选择、新建、编辑、导入和导出人格，也可以选择“不使用人格”。人格包含性格、价值观、看事情的方式和说话习惯。所有内容放在 [Galchat/Personas](Galchat/Personas) 的独立文件里，Swift 只负责加载和保存。
+
+### 人格文件
 
 - 一个文件夹就是一个人格：`manifest.json` 写名称、简介、版本和文件清单，`documents` 按顺序列出要完整发送给模型的 Markdown，`licenseFiles` 列出随包保留、但不发送的许可与署名。照着任意现有文件夹添加即可，不需要修改 Swift。
 - **分发格式是 `.personal`**：一个 UTF-8 JSON 单文件，包含清单和全部文字。用户下载后在“文件”、隔空投送或浏览器里点开，选 Galchat 打开即可导入；也可以在“+ → 从文件导入”里选择。编辑页“导出”得到的也是 `.personal`。旧版 JSON、完整文件夹和单个 Markdown 仍可导入。格式、目录约定与写作规范见 [人格文件格式](docs/persona-file-format.md)。
@@ -38,7 +94,7 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 - 包可以在清单里声明 `replyTransform` 做回复后处理（目前只有 `replaceText`：把所有文字换成一个字符，保留空格、标点和表情）。在排序之后、展示和发给键盘之前生成，改写后重复的候选会补上不同的结尾标点。
 - 包只支持文字，不执行脚本或访问内容中的链接。清单和文字合计最多 1 MB，实际人格上下文最多 128 KB；超过上限会提示，不偷偷截短。
 
-### 预设人格
+#### 预设人格
 
 | 人格 | 标识 | 风格 | 来源与许可 |
 |---|---|---|---|
@@ -59,7 +115,7 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 4. 删除当前人格后重启，再导入同一文件，应仍“不使用人格”；文件缺失、路径越界、不支持版本、超大文件应提示错误且不覆盖已有内容。编辑页打开时从外部打开 `.personal`，提示应显示在最上层且不丢弃编辑页。检查小屏、大字体、VoiceOver、文件选择及分享窗口。
 5. 同一聊天分别选六个人格和不使用人格，检查模型请求包含所选包的全文；选“远古巨人”时，排序请求仍是原文，最近/键盘/分析页显示的三条均为“恰”加空格标点且互不相同；新回复仍为三条、各不超过 40 字，贴合聊天对象。未实际调用模型验证这些效果。
 
-## 独立 Swift Packages
+## 🧱 独立 Swift Packages
 
 | 库 | 路径 | 职责 |
 |---|---|---|
@@ -70,7 +126,7 @@ UIKit 聊天辅助 App，使用 Visyn 录屏和画中画，使用 SeeU 识别/�
 
 SeeU 与 Synapse 各自提供一个公开模块，可独立接入其他项目；两者互不依赖。好感度、联系人、人设、情绪判断题、候选生成策略及键盘发布属于 App 业务，未引入两个库。
 
-## 联系人与最近会话存储
+## 🗄️ 联系人与最近会话存储
 
 联系人、好感度台账、好感度历史和最近会话存在主 App 沙盒的 SQLite 数据库 `Application Support/Galchat/galchat.sqlite`，通过 SPM 引入的 [GRDB](https://github.com/groue/GRDB.swift)（7.x）读写，见 `Galchat/Live/Storage/GalchatDatabase.swift`。
 
@@ -81,7 +137,7 @@ SeeU 与 Synapse 各自提供一个公开模块，可独立接入其他项目；
 
 Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package 引用。SeeU 要求 Swift 6.2 工具链、使用 Swift 5 语言模式；Synapse 的包清单为 Swift 5.9，但既有 Alamofire 5.11.1 依赖要求 Swift 6.2，因此整个工程仍需 Swift 6.2 工具链。两者不继承主 App 的默认 MainActor 隔离。迁移边界、兼容性与手动验收见 [框架拆分说明](docs/architecture/package-extraction.md)。
 
-## 运行
+## 🚀 运行
 
 用 Xcode 打开 `Galchat.xcodeproj`，选择 `Galchat` scheme。
 项目通过本地 Swift Package 引用 `../Visyn`、`../SeeU`、`../Synapse` 和 `../SwiftKeyboard`，请保持这些目录与主仓库位于同一级。
@@ -98,7 +154,7 @@ Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package �
 项目已包含两端的 entitlement、Info.plist 参数和主 App 的 Audio 后台模式。
 如果使用其他 App Group，在项目 Build Settings 中修改 `VISYN_APP_GROUP`。
 
-## 验证
+## ✅ 验证
 
 开发者在 Xcode 中完成构建和运行；自动化修改只做静态检查，不执行构建、依赖安装或模拟器运行。
 模拟器可查看页面；ReplayKit 授权、跨 App 采集、后台与画中画需要真机验证。
@@ -106,7 +162,9 @@ Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package �
 切换其他 App → 返回 → 停止录屏 → 确认状态与计数复位；取消授权时应保持待机。
 会话文字和长图在内存中处理，用户可主动导出长图。Visyn 的跨进程帧邮箱会临时写入 JPEG；键盘只读取独立的短期候选 JSON。模型密钥沿用现有 UserDefaults 存储策略，旧配置键继续兼容。
 
-## 画中画尺寸
+## 🖼️ 画中画尺寸
+
+画中画默认保持横屏长条，首页可选横屏、竖屏、矩形，或输入宽高后点击“应用尺寸”；运行中也可修改，成功后自动记住尺寸。
 
 首页直接使用 `VisynPictureInPictureSize` 的三个预设：横屏 `414×80`（默认）、竖屏 `80×60`、矩形 `80×80`。名称与宽高顺序沿用库的约定。自定义尺寸在宽、高输入框中填写，点击“应用尺寸”生效；支持小数，由 Visyn 校验 1～640 点范围并取整，输入框回填实际应用值。
 
@@ -122,3 +180,20 @@ Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package �
 4. 在不同尺寸下切换到聊天 App，移动和双指缩放 PiP，确认内容继续刷新。检查实时会话和长截图：Galchat 自身文字未被识别成消息，被遮住的聊天不应作为完整消息进入分析。
 5. 连续切换比例后立即切回聊天，确认短暂停顿后恢复识别，没有套用旧尺寸的遮挡区域；停止并重启录屏也能恢复。
 6. 小屏、横屏、大字体与 VoiceOver 下确认首页可滚动，预设、宽高输入框和应用按钮可访问。
+
+## 🤝 友情链接
+
+<table>
+  <tr>
+    <td width="180" align="center">
+      <a href="https://linux.do">
+        <img src="docs/assets/friends/linuxdo.png" alt="LINUX DO" width="96">
+      </a>
+      <br>
+      <b>LINUX DO</b>
+    </td>
+    <td>
+      感谢 <a href="https://linux.do"><b>LINUX DO</b></a> 社区的支持与交流。真诚、友善、团结、专业，共建你我引以为荣之社区。<a href="https://linux.do">前往 LINUX DO →</a>
+    </td>
+  </tr>
+</table>
