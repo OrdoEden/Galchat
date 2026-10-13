@@ -12,6 +12,8 @@
 [![GRDB](https://img.shields.io/badge/GRDB-7.x-4B8BBE)](https://github.com/groue/GRDB.swift)
 [![SnapKit](https://img.shields.io/badge/SnapKit-6.x-F7931E)](https://github.com/SnapKit/SnapKit)
 [![LINUX DO](https://img.shields.io/badge/LINUX%20DO-社区-FFB003)](https://linux.do)
+[![QQ 群](https://img.shields.io/badge/QQ群-1130074146-12B7F5?logo=qq&logoColor=white)](#-找到我们)
+[![微信](https://img.shields.io/badge/微信-用户交流群-07C160?logo=wechat&logoColor=white)](#-找到我们)
 
 </div>
 
@@ -207,6 +209,41 @@ Synapse 位于主仓库相邻目录 `../Synapse`，通过本地 Swift Package �
 4. 在不同尺寸下切换到聊天 App，移动和双指缩放 PiP，确认内容继续刷新。检查实时会话和长截图：Galchat 自身文字未被识别成消息，被遮住的聊天不应作为完整消息进入分析。
 5. 连续切换比例后立即切回聊天，确认短暂停顿后恢复识别，没有套用旧尺寸的遮挡区域；停止并重启录屏也能恢复。
 6. 小屏、横屏、大字体与 VoiceOver 下确认首页可滚动，预设、宽高输入框和应用按钮可访问。
+
+## 📮 找到我们
+
+用着顺手、踩到 Bug、想要新人格，或者只是想分享一段被 Galchat 救场的聊天，都欢迎来群里坐坐。新版本、人格包和测试资格也会第一时间在群里发布。
+
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <img src="docs/assets/community/qq-group.png" alt="GalChat 股东群 QQ 二维码" width="200">
+      <br>
+      <b>QQ 群 · GalChat 股东群</b>
+      <br>
+      <sub>群号 <code>1130074146</code>，长期有效</sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/community/wechat-group.jpg" alt="Galchat 用户交流群微信二维码" width="200">
+      <br>
+      <b>微信群 · Galchat 用户交流群</b>
+      <br>
+      <sub>群码 7 天有效，过期请加作者拉你进群</sub>
+    </td>
+    <td width="33%" align="center">
+      <img src="docs/assets/community/wechat-gidon.jpg" alt="作者 Gidon 微信二维码" width="200">
+      <br>
+      <b>作者微信 · Gidon</b>
+      <br>
+      <sub>加好友请备注「Galchat」</sub>
+    </td>
+  </tr>
+</table>
+
+- 🐧 **QQ**：打开 QQ 扫码，或搜索群号 `1130074146` 申请加入。
+- 💬 **微信群**：用微信扫一扫中间的群码。微信群码每 7 天刷新一次，扫不进去说明已过期，直接加作者微信即可。
+- 🙋 **作者微信**：合作、赞助、人格投稿或反馈问题都可以直接找 Gidon，备注「Galchat」通过更快。
+- 🐛 **GitHub**：可复现的 Bug 和功能建议也欢迎提 Issue，附上机型、iOS 版本和复现步骤。
 
 ## 🤝 友情链接
 
