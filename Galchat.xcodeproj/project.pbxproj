@@ -427,7 +427,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = GalchatKeyboardExtension/GalchatKeyboardExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10002;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GalchatKeyboardExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 键盘";
@@ -455,7 +455,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = GalchatKeyboardExtension/GalchatKeyboardExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10002;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GalchatKeyboardExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Galchat 键盘";
@@ -485,11 +485,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Galchat/Galchat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10002;
 				DEVELOPMENT_TEAM = 43MJ7CT2NR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Galchat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Galchat;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -519,11 +520,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Galchat/Galchat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10002;
 				DEVELOPMENT_TEAM = 43MJ7CT2NR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Galchat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Galchat;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

@@ -93,7 +93,6 @@ Galchat/
 
 <details open>
 <summary>点击折叠</summary>
-
 <table>
   <tr>
     <td width="180" align="center">
@@ -102,10 +101,11 @@ Galchat/
       </a>
     </td>
     <td>
-      感谢 <b>VibeAPI</b> 赞助本项目！<b>VibeAPI</b> 主要面向重度开发者与团队，提供主流 AI 模型统一接入。主打 Codex 与 Claude 系列，坚持自建号池可溯源。首流响应极速，SLA 稳定性达 99.9%，缓存命中率高达 95%+。提供 7×24 小时人工技术支持，全面支持对公开票与企业合作。<a href="https://vibeapi.cc/sign-up?aff=AOYp">点此前往薅赛博鸡蛋 →</a>
+      感谢 <b>VibeAPI</b> 赞助本项目！<b>VibeAPI</b> 主要面向重度开发者与团队，提供主流 AI 模型统一接入。主打 Codex 与 Claude 系列，坚持自建号池可溯源。首流响应极速，SLA 稳定性达 99.9%，缓存命中率高达 95%+。提供 7×24 小时人工技术支持，全面支持对公开票与企业合作。<a href="https://vibeapi.cc/sign-up?aff=BIp8">点此前往薅赛博鸡蛋 →</a>
     </td>
   </tr>
 </table>
+
 
 </details>
 
